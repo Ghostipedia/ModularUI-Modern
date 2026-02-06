@@ -3,10 +3,23 @@ package brachy.modularui.utils;
 import brachy.modularui.api.widget.Interactable;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 public record MouseData(Dist side, int mouseButton, boolean shift, boolean ctrl, boolean alt) {
+
+    public static MouseData readPacket(FriendlyByteBuf buffer) {
+        int button = buffer.readVarInt();
+        byte data = buffer.readByte();
+        return new MouseData(Dist.DEDICATED_SERVER, button, (data & 1) != 0, (data & 2) != 0, (data & 4) != 0);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static MouseData create(int mouse) {
+        return new MouseData(Dist.CLIENT, mouse,
+                Interactable.hasShiftDown(), Interactable.hasControlDown(), Interactable.hasAltDown());
+    }
 
     public boolean isClient() {
         return this.side.isClient();
@@ -19,17 +32,5 @@ public record MouseData(Dist side, int mouseButton, boolean shift, boolean ctrl,
         if (this.ctrl) data |= 2;
         if (this.alt) data |= 4;
         buffer.writeByte(data);
-    }
-
-    public static MouseData readPacket(FriendlyByteBuf buffer) {
-        int button = buffer.readVarInt();
-        byte data = buffer.readByte();
-        return new MouseData(Dist.DEDICATED_SERVER, button, (data & 1) != 0, (data & 2) != 0, (data & 4) != 0);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static MouseData create(int mouse) {
-        return new MouseData(Dist.CLIENT, mouse,
-                Interactable.hasShiftDown(), Interactable.hasControlDown(), Interactable.hasAltDown());
     }
 }

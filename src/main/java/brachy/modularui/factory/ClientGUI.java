@@ -7,8 +7,8 @@ import brachy.modularui.screen.RecipeViewerSettingsImpl;
 import brachy.modularui.screen.UISettings;
 
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,14 +33,14 @@ public class ClientGUI {
     }
 
     /**
-     * Opens a modular screen on the next client tick with custom jei settings.
+     * Opens a modular screen on the next client tick with custom recipe viewer settings.
      * It needs to be opened in next tick, because we might break the current GUI if we open it now.
      *
      * @param screen      new modular screen
-     * @param jeiSettings custom jei settings
+     * @param recipeViewerSettings custom recipe viewer settings
      */
-    public static void open(@NotNull ModularScreen screen, @NotNull RecipeViewerSettingsImpl jeiSettings) {
-        GuiManager.openScreen(screen, new UISettings(jeiSettings));
+    public static void open(@NotNull ModularScreen screen, @NotNull RecipeViewerSettingsImpl recipeViewerSettings) {
+        GuiManager.openScreen(screen, new UISettings(recipeViewerSettings));
     }
 
     /**
@@ -57,16 +57,16 @@ public class ClientGUI {
     }
 
     /**
-     * Opens a modular screen on the next client tick with custom jei settings.
+     * Opens a modular screen on the next client tick with custom recipeViewer settings.
      * It needs to be opened in next tick, because we might break the current GUI if we open it now.
      *
-     * @param screen      new modular screen
-     * @param jeiSettings custom jei settings
-     * @param container   custom container
+     * @param screen               new modular screen
+     * @param recipeViewerSettings custom recipeViewer settings
+     * @param container            custom container
      */
-    public static void open(@NotNull ModularScreen screen, @NotNull RecipeViewerSettingsImpl jeiSettings,
+    public static void open(@NotNull ModularScreen screen, @NotNull RecipeViewerSettingsImpl recipeViewerSettings,
                             @Nullable IntFunction<ModularContainerMenu> container) {
-        UISettings settings = new UISettings(jeiSettings);
+        UISettings settings = new UISettings(recipeViewerSettings);
         settings.customContainer(container);
         GuiManager.openScreen(screen, settings);
     }

@@ -2,7 +2,6 @@ package brachy.modularui.integration.rei.recipe;
 
 import brachy.modularui.api.widget.ITooltip;
 import brachy.modularui.api.widget.IWidget;
-import brachy.modularui.client.component.FormattedTextContents;
 import brachy.modularui.drawable.text.RichText;
 import brachy.modularui.integration.recipeviewer.RecipeSlotRole;
 import brachy.modularui.integration.recipeviewer.RecipeViewerScreenWrapper;
@@ -21,10 +20,14 @@ import brachy.modularui.widgets.slot.ItemSlot;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
 import lombok.Getter;
 import me.shedaniel.math.Rectangle;
@@ -47,7 +50,7 @@ import java.util.function.Supplier;
 public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> implements Display {
 
     @Getter
-    protected final T recipe;
+    protected final RecipeHolder<T> recipe;
     protected final MemoizedSupplier<ModularScreen> screen;
 
     @Getter
@@ -58,7 +61,7 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
     @Getter
     protected final CategoryIdentifier<?> categoryIdentifier;
 
-    public ModularUIREIDisplay(T recipe, Supplier<W> widgetSupplier, CategoryIdentifier<?> category) {
+    public ModularUIREIDisplay(RecipeHolder<T> recipe, Supplier<W> widgetSupplier, CategoryIdentifier<?> category) {
         this.recipe = recipe;
 
         this.inputEntries = new ArrayList<>();
@@ -68,9 +71,9 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
 
         this.screen = Memoizer.memoize(() -> {
             W widget = widgetSupplier.get();
-            ModularPanel panel = ModularPanel.defaultPanel(recipe.getId().toString(), widget.getArea().w(), widget.getArea().h());
+            ModularPanel panel = ModularPanel.defaultPanel(recipe.id().toString(), widget.getArea().w(), widget.getArea().h());
             panel.child(widget);
-            return new ModularScreen(recipe.getId().getNamespace(), panel);
+            return new ModularScreen(recipe.id().getNamespace(), panel);
         }, Duration.ofSeconds(10));
 
         for (IWidget widget : WidgetUtil.getFlatWidgetCollection(widgetSupplier.get())) {
@@ -99,7 +102,7 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
 
     @Override
     public Optional<ResourceLocation> getDisplayLocation() {
-        return Optional.of(this.recipe.getId());
+        return Optional.of(this.recipe.id());
     }
 
     public List<Widget> createWidgets(Rectangle bounds) {
@@ -144,7 +147,23 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
                     var textList = richText.getAsText();
                     entryWidget.tooltipProcessor(text -> {
                         for (FormattedText line : textList) {
-                            text = text.add(MutableComponent.create(new FormattedTextContents(line)));
+                            text = text.add(MutableComponent.create(new ComponentContents() {
+
+                                @Override
+                                public <R> Optional<R> visit(FormattedText.ContentConsumer<R> acceptor) {
+                                    return line.visit(acceptor);
+                                }
+
+                                @Override
+                                public <R> Optional<R> visit(FormattedText.StyledContentConsumer<R> acceptor, Style style) {
+                                    return line.visit(acceptor, style);
+                                }
+
+                                @Override
+                                public Type<?> type() {
+                                    return PlainTextContents.TYPE;
+                                }
+                            }));
                         }
                         return text;
                     });
@@ -208,8 +227,8 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
         }
 
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double scrollDelta) {
-            return screen.get().mouseScrolled(mouseX, mouseY, scrollDelta);
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+            return screen.get().mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
         @Override

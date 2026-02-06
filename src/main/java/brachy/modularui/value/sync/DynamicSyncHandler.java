@@ -2,11 +2,12 @@ package brachy.modularui.value.sync;
 
 import brachy.modularui.api.IPacketWriter;
 import brachy.modularui.api.widget.IWidget;
+import brachy.modularui.utils.sides.SidedAccessHelper;
 import brachy.modularui.widget.WidgetTree;
-import brachy.modularui.widgets.DynamicSyncedWidget;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
+import io.netty.buffer.Unpooled;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,33 +15,27 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * This sync handler is used to update a widget dynamically. The update can be called from client and server side.
- * To use it add a widget provider with {@link #widgetProvider(IWidgetProvider)} and link this sync handler to a
- * {@link DynamicSyncedWidget DynamicSyncedWidget}. When you want the widget to be
- * updated call
- * {@link #notifyUpdate(IPacketWriter)}. The passed in packed writer will write a packet, which can the be read inside
- * the widget provider.
- * The widget provider as ran on both sides. Inside the provider sync handlers can be registered with variants of
- * {@link ISyncRegistrar#getOrCreateSyncHandler(String, int, Class, Supplier)}.
+ * This sync handler calls a function on client and server which creates a widget after being notified. The widget is
+ * then handed over to a
+ * linked {@link DynamicSyncHandler}.
  */
-@ApiStatus.Obsolete
-public class DynamicSyncHandler extends SyncHandler implements IDynamicSyncNotifiable {
+public class DynamicSyncHandler extends SyncHandler {
 
     private IWidgetProvider widgetProvider;
     private Consumer<IWidget> onWidgetUpdate;
 
-    private IPacketWriter lastRejectedPacket;
+    private IPacketWriter<? super RegistryFriendlyByteBuf> lastRejectedPacket;
     private IWidget lastRejectedWidget;
 
     @Override
-    public void readOnClient(int id, FriendlyByteBuf buf) {
+    public void readOnClient(int id, RegistryFriendlyByteBuf buf) {
         if (id == 0) {
             updateWidget(parseWidget(buf));
         }
     }
 
     @Override
-    public void readOnServer(int id, FriendlyByteBuf buf) {
+    public void readOnServer(int id, RegistryFriendlyByteBuf buf) {
         if (id == 0) {
             // do nothing with the widget on server side
             parseWidget(buf);
@@ -56,7 +51,7 @@ public class DynamicSyncHandler extends SyncHandler implements IDynamicSyncNotif
         }
     }
 
-    private IWidget parseWidget(FriendlyByteBuf buf) {
+    private IWidget parseWidget(RegistryFriendlyByteBuf buf) {
         getSyncManager().allowTemporarySyncHandlerRegistration(true);
         IWidget widget = this.widgetProvider.createWidget(getSyncManager(), buf);
         getSyncManager().allowTemporarySyncHandlerRegistration(false);
@@ -92,7 +87,7 @@ public class DynamicSyncHandler extends SyncHandler implements IDynamicSyncNotif
      *
      * @param packetWriter data to pass to the function
      */
-    public void notifyUpdate(IPacketWriter packetWriter) {
+    public void notifyUpdate(IPacketWriter<? super RegistryFriendlyByteBuf> packetWriter) {
         if (!isValid()) {
             // sync handler not yet initialised
             // store for later
@@ -100,7 +95,9 @@ public class DynamicSyncHandler extends SyncHandler implements IDynamicSyncNotif
             this.lastRejectedPacket = packetWriter;
             return;
         }
-        IWidget widget = parseWidget(packetWriter.toPacket());
+        RegistryFriendlyByteBuf buffer = SidedAccessHelper.makeRegistryByteBuf(Unpooled.buffer());
+        packetWriter.write(buffer);
+        IWidget widget = parseWidget(buffer);
         if (getSyncManager().isClient()) {
             updateWidget(widget);
         }
@@ -112,7 +109,7 @@ public class DynamicSyncHandler extends SyncHandler implements IDynamicSyncNotif
      * {@link PanelSyncManager#getOrCreateSyncHandler(String, int, Class, Supplier)}. Returning null in the function
      * will not update the widget.
      * On client side the result is handed over to a linked
-     * {@link DynamicSyncedWidget}.
+     * {@link brachy.modularui.widgets.DynamicSyncedWidget}.
      *
      * @param widgetProvider the widget creator function
      * @return this
@@ -124,10 +121,9 @@ public class DynamicSyncHandler extends SyncHandler implements IDynamicSyncNotif
     }
 
     /**
-     * An internal function which is used to link the {@link DynamicSyncedWidget}.
+     * An internal function which is used to link the {@link brachy.modularui.widgets.DynamicSyncedWidget}.
      */
     @ApiStatus.Internal
-    @Override
     public void attachDynamicWidgetListener(Consumer<IWidget> onWidgetUpdate) {
         this.onWidgetUpdate = onWidgetUpdate;
         if (this.onWidgetUpdate != null && this.lastRejectedWidget != null) {
@@ -148,6 +144,6 @@ public class DynamicSyncHandler extends SyncHandler implements IDynamicSyncNotif
          * @return a new widget or null if widget shouldn't be updated
          */
         @Nullable
-        IWidget createWidget(PanelSyncManager syncManager, FriendlyByteBuf buf);
+        IWidget createWidget(PanelSyncManager syncManager, RegistryFriendlyByteBuf buf);
     }
 }

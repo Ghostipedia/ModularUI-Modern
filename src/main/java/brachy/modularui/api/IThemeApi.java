@@ -29,6 +29,7 @@ import java.util.List;
  */
 @ApiStatus.NonExtendable
 public interface IThemeApi {
+    // @formatter:off
 
     // widget themes
     WidgetThemeKey<WidgetTheme> FALLBACK = get().widgetThemeKeyBuilder("default", WidgetTheme.class)
@@ -66,10 +67,8 @@ public interface IThemeApi {
             .register();
 
     WidgetThemeKey<SelectableTheme> TOGGLE_BUTTON = get().widgetThemeKeyBuilder("toggleButton", SelectableTheme.class)
-            .defaultTheme(
-                    SelectableTheme.whiteTextShadow(18, 18, GuiTextures.MC_BUTTON, GuiTextures.MC_BUTTON_DISABLED))
-            .defaultHoverTheme(SelectableTheme.whiteTextShadow(18, 18, GuiTextures.MC_BUTTON_HOVERED,
-                    IDrawable.NONE))
+            .defaultTheme(SelectableTheme.whiteTextShadow(18, 18, GuiTextures.MC_BUTTON, GuiTextures.MC_BUTTON_DISABLED))
+            .defaultHoverTheme(SelectableTheme.whiteTextShadow(18, 18, GuiTextures.MC_BUTTON_HOVERED, IDrawable.NONE))
             .register();
 
     // subwidget themes
@@ -99,6 +98,8 @@ public interface IThemeApi {
     String SELECTED_TEXT_COLOR = "selectedTextColor";
     String SELECTED_TEXT_SHADOW = "selectedTextShadow";
     String SELECTED_ICON_COLOR = "selectedIconColor";
+
+    // @formatter:on
 
     /**
      * @return the default api implementation

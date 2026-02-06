@@ -4,7 +4,8 @@ import brachy.modularui.GuiError;
 import brachy.modularui.ModularUI;
 import brachy.modularui.ModularUIConfig;
 import brachy.modularui.api.GuiAxis;
-import brachy.modularui.api.widget.IWidget;
+import brachy.modularui.api.layout.IResizeable;
+import brachy.modularui.api.widget.IGuiElement;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -19,7 +20,6 @@ import java.util.function.IntSupplier;
 @ApiStatus.Internal
 public class DimensionSizer {
 
-    private final ResizeNode resizer;
     private final GuiAxis axis;
 
     private final Unit p1 = new Unit(), p2 = new Unit();
@@ -38,8 +38,7 @@ public class DimensionSizer {
     private boolean marginPaddingApplied = false;
     private boolean canRelayout = false;
 
-    public DimensionSizer(ResizeNode resizer, GuiAxis axis) {
-        this.resizer = resizer;
+    public DimensionSizer(GuiAxis axis) {
         this.axis = axis;
     }
 
@@ -80,7 +79,7 @@ public class DimensionSizer {
         }
     }
 
-    public void setCoverChildren(boolean coverChildren, IWidget widget) {
+    public void setCoverChildren(boolean coverChildren, IGuiElement widget) {
         getSize(widget);
         this.coverChildren = coverChildren;
     }
@@ -132,13 +131,9 @@ public class DimensionSizer {
     }
 
     public boolean dependsOnParent() {
-        if (this.coverChildren) {
-            // if we cover children we ignore size config
-            return this.end != null || (this.start != null && this.start.isRelative());
-        }
-        return this.end != null ||
+        return !this.coverChildren && (this.end != null ||
                 (this.start != null && this.start.isRelative()) ||
-                (this.size != null && this.size.isRelative());
+                (this.size != null && this.size.isRelative()));
     }
 
     public void setResized(boolean all) {
@@ -155,16 +150,15 @@ public class DimensionSizer {
         return unit.isRelative() && unit.getAnchor() != 0;
     }
 
-    public void apply(Area area, ResizeNode relativeTo, IntSupplier defaultSize) {
-        boolean sizeCalculated = isSizeCalculated();
-        boolean posCalculated = isPosCalculated();
-        if (sizeCalculated && posCalculated) return;
+    public void apply(Area area, IResizeable relativeTo, IntSupplier defaultSize) {
+        // is already calculated
+        if (this.sizeCalculated && this.posCalculated) return;
         int p, s;
         int parentSize = relativeTo.getArea().getSize(this.axis);
         boolean calcParent = relativeTo.isSizeCalculated(this.axis);
         Box padding = relativeTo.getArea().getPadding();
 
-        if (sizeCalculated) { // pos not calculated
+        if (this.sizeCalculated && !this.posCalculated) {
             // size was calculated before
             s = area.getSize(this.axis);
             if (this.start != null) {
@@ -172,10 +166,9 @@ public class DimensionSizer {
             } else if (this.end != null) {
                 p = calcPoint(this.end, padding, s, parentSize, calcParent) - s;
             } else {
-                p = 0;
-                this.posCalculated = true;
+                throw new IllegalStateException();
             }
-        } else if (posCalculated) {
+        } else if (!this.sizeCalculated && this.posCalculated) {
             // pos was calculated before
             p = area.getRelativePoint(this.axis);
             if (this.size != null) {
@@ -184,7 +177,7 @@ public class DimensionSizer {
                 s = defaultSize.getAsInt();
                 this.sizeCalculated = s > 0;
             }
-        } else { // pos and size not calculated
+        } else {
             // calc start, end and size
             if (this.start == null && this.end == null) {
                 p = 0;
@@ -241,7 +234,7 @@ public class DimensionSizer {
             s = Math.min(s, parentSize /*- padding.getTotal(this.axis)*/ - margin.getTotal(this.axis));
         }
         area.setRelativePoint(this.axis, p);
-        area.setPoint(this.axis, p + relativeTo.getArea().getPoint(this.axis)); // temporary
+        area.setPoint(this.axis, p + relativeTo.getArea().x); // temporary
         area.setSize(this.axis, s);
     }
 
@@ -287,41 +280,41 @@ public class DimensionSizer {
         }
     }
 
-    public void applyMarginAndPaddingToPos(IWidget parent, Area area, Area relativeTo) {
+    public void applyMarginAndPaddingToPos(IGuiElement parent, Area area, Area relativeTo) {
         // apply self margin and parent padding if not done yet
         if (isMarginPaddingApplied()) return;
         setMarginPaddingApplied(true);
-        int start = area.getMargin().getStart(this.axis) + relativeTo.getPadding().getStart(this.axis);
-        int end = area.getMargin().getEnd(this.axis) + relativeTo.getPadding().getEnd(this.axis);
-        if (start > 0 && ((this.start != null && !this.start.isRelative()) ||
+        int left = area.getMargin().getStart(this.axis) + relativeTo.getPadding().getStart(this.axis);
+        int right = area.getMargin().getEnd(this.axis) + relativeTo.getPadding().getEnd(this.axis);
+        if (left > 0 && ((this.start != null && !this.start.isRelative()) ||
                 (this.end != null && !this.end.isRelative() && (this.size == null || !this.size.isRelative())))) {
-            start = 0;
+            left = 0;
         }
-        if (end > 0 && ((this.end != null && !this.end.isRelative()) ||
+        if (right > 0 && ((this.end != null && !this.end.isRelative()) ||
                 (this.start != null && !this.start.isRelative() && (this.size == null || !this.size.isRelative())))) {
-            end = 0;
+            right = 0;
         }
-        if (start == 0 && end == 0) return;
+        if (left == 0 && right == 0) return;
         int parentS = relativeTo.getSize(this.axis);
         int s = area.getSize(this.axis);
         int rp = area.getRelativePoint(this.axis); // relative pos
-        if (start > 0) {
-            if (end > 0) {
-                if (start + end + s > parentS) {
+        if (left > 0) {
+            if (right > 0) {
+                if (left + right + s > parentS) {
                     // widget and margin + padding is larger than available space
-                    area.setRelativePoint(this.axis, start);
+                    area.setRelativePoint(this.axis, left);
                     GuiError.throwNew(parent, GuiError.Type.SIZING,
                             "Margin/padding is set on both sides on axis " + this.axis +
                                     ", but total size exceeds parent size.");
                     return;
                 }
-                if (end > parentS - s - rp) area.setRelativePoint(this.axis, parentS - end - s);
-                else if (start > rp) area.setRelativePoint(this.axis, start);
+                if (right > parentS - s - rp) area.setRelativePoint(this.axis, parentS - right - s);
+                else if (left > rp) area.setRelativePoint(this.axis, left);
                 return;
             }
-            if (start > rp) area.setRelativePoint(this.axis, start);
-        } else if (end > 0) {
-            if (end > parentS - s - rp) area.setRelativePoint(this.axis, parentS - end - s);
+            if (left > rp) area.setRelativePoint(this.axis, left);
+        } else if (right > 0) {
+            if (right > parentS - s - rp) area.setRelativePoint(this.axis, parentS - right - s);
         }
     }
 
@@ -363,7 +356,7 @@ public class DimensionSizer {
      * @param newState the new unit type for the found unit
      * @return a used or unused unit.
      */
-    private Unit getNext(IWidget widget, Unit.State newState) {
+    private Unit getNext(IGuiElement widget, Unit.State newState) {
         Unit ret = this.next;
         Unit other = ret == this.p1 ? this.p2 : this.p1;
         if (ret.state != Unit.State.UNUSED) {
@@ -372,7 +365,7 @@ public class DimensionSizer {
             if (ret == this.start) this.start = null;
             if (ret == this.end) this.end = null;
             if (ret == this.size) this.size = null;
-            if (ModularUIConfig.Dev.debugUI() && ModularUI.isClientThread()) {
+            if (ModularUIConfig.isGuiDebugMode() && ModularUI.isClientThread()) {
                 // only log on client in debug mode since its sometimes intentional
                 ModularUI.LOGGER.info("unit {} of widget {} was already used and will be overwritten with unit {}",
                         ret.state.getText(this.axis), widget, newState.getText(this.axis));
@@ -384,21 +377,21 @@ public class DimensionSizer {
         return ret;
     }
 
-    protected Unit getStart(IWidget widget) {
+    protected Unit getStart(IGuiElement widget) {
         if (this.start == null) {
             this.start = getNext(widget, Unit.State.START);
         }
         return this.start;
     }
 
-    protected Unit getEnd(IWidget widget) {
+    protected Unit getEnd(IGuiElement widget) {
         if (this.end == null) {
             this.end = getNext(widget, Unit.State.END);
         }
         return this.end;
     }
 
-    protected Unit getSize(IWidget widget) {
+    protected Unit getSize(IGuiElement widget) {
         if (this.size == null) {
             this.size = getNext(widget, Unit.State.SIZE);
         }

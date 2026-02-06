@@ -35,8 +35,7 @@ public interface ISynced<W extends IWidget> {
      * Returns if the given value or sync handler is valid for this widget. This is usually a call to
      * {@link ISyncOrValue#isTypeOrEmpty(Class)}. If the widget must specify a value (disallow null) instanceof check
      * can be used. You can
-     * check for primitive types which don't have a dedicated {@link IValue
-     * IValue} interface with
+     * check for primitive types which don't have a dedicated {@link IValue} interface with
      * {@link ISyncOrValue#isValueOfType(Class)}.
      *
      * @param syncOrValue a sync handler or a value, but never null

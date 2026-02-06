@@ -1,23 +1,25 @@
 package brachy.modularui.value.sync;
 
 import brachy.modularui.ModularUI;
+import brachy.modularui.api.IPacketWriter;
 import brachy.modularui.api.IPanelHandler;
 import brachy.modularui.api.ISyncedAction;
 import brachy.modularui.network.ModularNetwork;
 import brachy.modularui.screen.ModularContainerMenu;
+import brachy.modularui.utils.sides.SidedAccessHelper;
 import brachy.modularui.widgets.slot.ModularSlot;
 import brachy.modularui.widgets.slot.SlotGroup;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.wrapper.PlayerMainInvWrapper;
 
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import lombok.Getter;
+import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,23 +42,26 @@ public class PanelSyncManager implements ISyncRegistrar<PanelSyncManager> {
     @Getter
     private final ModularSyncManager modularSyncManager;
     @Getter
+    private final boolean client;
+    private final List<Consumer<Player>> openListener = new ArrayList<>();
+    private final List<Consumer<Player>> closeListener = new ArrayList<>();
+    private final List<Runnable> tickListener = new ArrayList<>();
+    @Getter
     private String panelName;
     private boolean init = true;
     @Getter
     private boolean locked = false;
     private boolean allowSyncHandlerRegistration = false;
-    @Getter
-    private final boolean client;
-
-    private final List<Consumer<Player>> openListener = new ArrayList<>();
-    private final List<Consumer<Player>> closeListener = new ArrayList<>();
-    private final List<Runnable> tickListener = new ArrayList<>();
 
     @ApiStatus.Internal
     public PanelSyncManager(ModularSyncManager msm, boolean main) {
         this.modularSyncManager = msm;
         this.client = msm.isClient();
         if (main) msm.setMainPSM(this);
+    }
+
+    public static String makeSyncKey(String name, int id) {
+        return name + ":" + id;
     }
 
     @ApiStatus.Internal
@@ -127,7 +132,7 @@ public class PanelSyncManager implements ISyncRegistrar<PanelSyncManager> {
     }
 
     @ApiStatus.Internal
-    public void receiveWidgetUpdate(String mapKey, boolean action, int id, FriendlyByteBuf buf) {
+    public void receiveWidgetUpdate(String mapKey, boolean action, int id, RegistryFriendlyByteBuf buf) {
         if (action) {
             invokeSyncedAction(mapKey, buf);
             return;
@@ -145,7 +150,7 @@ public class PanelSyncManager implements ISyncRegistrar<PanelSyncManager> {
         }
     }
 
-    private boolean invokeSyncedAction(String mapKey, FriendlyByteBuf buf) {
+    private boolean invokeSyncedAction(String mapKey, RegistryFriendlyByteBuf buf) {
         SyncedAction syncedAction = this.syncedActions.get(mapKey);
         if (syncedAction == null) {
             ModularUI.LOGGER.warn("SyncAction '{}' does not exist for panel '{}'!.", mapKey, panelName);
@@ -162,6 +167,12 @@ public class PanelSyncManager implements ISyncRegistrar<PanelSyncManager> {
         }
         // true if the action should be executed on the other side
         return syncedAction.isExecute(!this.client);
+    }
+
+    private boolean invokeSyncedAction(String mapKey, IPacketWriter<? super RegistryFriendlyByteBuf> writer) {
+        RegistryFriendlyByteBuf buf = SidedAccessHelper.makeRegistryByteBuf(Unpooled.buffer(), getPlayer());
+        writer.write(buf);
+        return invokeSyncedAction(mapKey, buf);
     }
 
     public ItemStack getCursorItem() {
@@ -275,12 +286,6 @@ public class PanelSyncManager implements ISyncRegistrar<PanelSyncManager> {
         return this;
     }
 
-    public interface SlotFunction {
-
-        @NotNull
-        ModularSlot apply(@NotNull PlayerMainInvWrapper playerInv, int index);
-    }
-
     public PanelSyncManager addOpenListener(Consumer<Player> listener) {
         this.openListener.add(listener);
         return this;
@@ -319,21 +324,15 @@ public class PanelSyncManager implements ISyncRegistrar<PanelSyncManager> {
         return this;
     }
 
-    public void callSyncedAction(String mapKey, FriendlyByteBuf packet) {
-        if (invokeSyncedAction(mapKey, packet)) {
-            ModularNetwork.get(isClient()).sendActionPacket(getModularSyncManager(), this.panelName, mapKey, packet,
-                    getPlayer());
+    public void callSyncedAction(String mapKey, IPacketWriter<? super RegistryFriendlyByteBuf> writer) {
+        if (invokeSyncedAction(mapKey, writer)) {
+            ModularNetwork.get(isClient())
+                    .sendActionPacket(getModularSyncManager(), this.panelName, mapKey, writer, getPlayer());
         }
     }
 
-    public void callSyncedAction(String mapKey, Consumer<FriendlyByteBuf> packetBuilder) {
-        FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
-        packetBuilder.accept(packet);
-        callSyncedAction(mapKey, packet);
-    }
-
     public void callSyncedAction(String mapKey) {
-        callSyncedAction(mapKey, new FriendlyByteBuf(Unpooled.buffer(0)));
+        callSyncedAction(mapKey, buf -> {});
     }
 
     @Override
@@ -369,6 +368,12 @@ public class PanelSyncManager implements ISyncRegistrar<PanelSyncManager> {
         return this.slotGroups.values();
     }
 
+    @ApiStatus.ScheduledForRemoval(inVersion = "3.2.0")
+    @Deprecated
+    public @Nullable SyncHandler getSyncHandler(String mapKey) {
+        return getSyncHandlerFromMapKey(mapKey);
+    }
+
     public @Nullable SyncHandler getSyncHandlerFromMapKey(String mapKey) {
         return this.syncHandlers.get(mapKey);
     }
@@ -394,7 +399,9 @@ public class PanelSyncManager implements ISyncRegistrar<PanelSyncManager> {
         this.allowSyncHandlerRegistration = allow;
     }
 
-    public static String makeSyncKey(String name, int id) {
-        return name + ":" + id;
+    public interface SlotFunction {
+
+        @NotNull
+        ModularSlot apply(@NotNull PlayerMainInvWrapper playerInv, int index);
     }
 }

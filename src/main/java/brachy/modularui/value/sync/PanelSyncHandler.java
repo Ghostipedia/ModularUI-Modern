@@ -6,7 +6,7 @@ import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
 import brachy.modularui.widget.WidgetTree;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -156,7 +156,7 @@ public final class PanelSyncHandler extends SyncHandler implements IPanelHandler
     }
 
     @Override
-    public void readOnClient(int i, FriendlyByteBuf packetBuffer) {
+    public void readOnClient(int i, RegistryFriendlyByteBuf packetBuffer) {
         if (i == SYNC_OPEN) {
             openPanel(false);
         } else if (i == SYNC_CLOSE) {
@@ -167,7 +167,7 @@ public final class PanelSyncHandler extends SyncHandler implements IPanelHandler
     }
 
     @Override
-    public void readOnServer(int i, FriendlyByteBuf packetBuffer) {
+    public void readOnServer(int i, RegistryFriendlyByteBuf packetBuffer) {
         if (i == SYNC_NOTIFY_OPEN) {
             openPanel(false);
             syncToClient(SYNC_OPEN);

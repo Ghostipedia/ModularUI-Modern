@@ -28,15 +28,15 @@ import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.datafixers.util.Either;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RenderTooltipEvent;
-import net.minecraftforge.common.MinecraftForge;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.experimental.Tolerate;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.RenderTooltipEvent;
+import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -73,8 +73,40 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         parent(Area.ZERO);
     }
 
-    @Override
-    public RichTooltip reset() {
+    public static void findIngredientArea(Area area, int x, int y) {
+        Screen screen = MCHelper.getCurrentScreen();
+        if (screen instanceof AbstractContainerScreen<?> containerScreen) {
+            Slot slot = containerScreen.getSlotUnderMouse();
+            if (slot != null) {
+                int sx = slot.x + containerScreen.getGuiLeft();
+                int sy = slot.y + containerScreen.getGuiTop();
+                if (sx >= 0 && sy >= 0) {
+                    area.set(sx - 1, sy - 1, 18, 18);
+                    return;
+                }
+            }
+        }
+        /*
+         * TODO fix this JEI compat thing
+         * if (ModularUI.Mods.isJEILoaded()) {
+         * IShowsRecipeFocuses overlay = (IShowsRecipeFocuses)
+         * ModularUIJeiPlugin.getRuntime().getIngredientListOverlay();
+         * IClickedIngredient<?> ingredient = overlay.getIngredientUnderMouse(x, y);
+         * if (ingredient == null || ingredient.getArea() == null) {
+         * overlay = (IShowsRecipeFocuses) ModularUIJeiPlugin.getRuntime().getBookmarkOverlay();
+         * ingredient = overlay.getIngredientUnderMouse(x, y);
+         * }
+         * if (ingredient != null && ingredient.getArea() != null) {
+         * Rectangle slot = ingredient.getArea();
+         * area.set(slot.x - 1, slot.y - 1, 18, 18);
+         * return;
+         * }
+         * }
+         */
+        area.set(Area.ZERO);
+    }
+
+    public void reset() {
         clearText();
         this.pos = null;
         this.tooltipBuilder = null;
@@ -85,7 +117,6 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         this.x = 0;
         this.y = 0;
         this.maxWidth = Integer.MAX_VALUE;
-        return this;
     }
 
     @Tolerate
@@ -146,8 +177,7 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
 
         var gatherEvent = new RenderTooltipEvent.GatherComponents(stack, screen.width, screen.height,
                 textLines, this.maxWidth);
-        if (MinecraftForge.EVENT_BUS.post(gatherEvent)) {
-            // canceled
+        if (NeoForge.EVENT_BUS.post(gatherEvent).isCanceled()) {
             return;
         }
 
@@ -165,8 +195,7 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         RichTooltipEvent.Pre event = new RichTooltipEvent.Pre(stack, context.getGraphics(),
                 mouseX, mouseY, screen.width, screen.height,
                 context.getFont(), components, DefaultTooltipPositioner.INSTANCE, copy);
-        if (MinecraftForge.EVENT_BUS.post(event)) {
-            // canceled
+        if (NeoForge.EVENT_BUS.post(event).isCanceled()) {
             return;
         }
         // we are supposed to now use the strings of the event, but we can't properly determine where to put them
@@ -190,7 +219,7 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         context.getGraphics().pose().translate(0, 0, 400);
         GuiDraw.drawTooltipBackground(context, stack, components, area.x, area.y, area.width, area.height, this);
 
-        // MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostBackground(stack, textLines, area.x, area.y,
+        // NeoForge.EVENT_BUS.post(new RenderTooltipEvent.PostBackground(stack, textLines, area.x, area.y,
         // TextRenderer.getFont(), area.width, area.height));
 
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
@@ -212,7 +241,7 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
 
         Pos pos = this.pos;
         if (pos == null) {
-            pos = ModularUIConfig.tooltipPos();
+            pos = ModularUIConfig.getTooltipPos();
         }
         if (pos == Pos.FIXED) {
             return new Rectangle(this.x, this.y, width, height);
@@ -364,7 +393,7 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
 
     public RichTooltip tooltipBuilder(Consumer<RichTooltip> tooltipBuilder) {
         Consumer<RichTooltip> existingBuilder = this.tooltipBuilder;
-        if (existingBuilder != null && tooltipBuilder != null) {
+        if (existingBuilder != null) {
             this.tooltipBuilder = tooltip -> {
                 existingBuilder.accept(this);
                 tooltipBuilder.accept(this);
@@ -396,39 +425,6 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         this.titleMargin = margin;
         this.appliedMargin = false;
         return this;
-    }
-
-    public static void findIngredientArea(Area area, int x, int y) {
-        Screen screen = MCHelper.getCurrentScreen();
-        if (screen instanceof AbstractContainerScreen<?> containerScreen) {
-            Slot slot = containerScreen.getSlotUnderMouse();
-            if (slot != null) {
-                int sx = slot.x + containerScreen.getGuiLeft();
-                int sy = slot.y + containerScreen.getGuiTop();
-                if (sx >= 0 && sy >= 0) {
-                    area.set(sx - 1, sy - 1, 18, 18);
-                    return;
-                }
-            }
-        }
-        /*
-         * TODO fix this JEI compat thing
-         * if (ModularUI.Mods.isJEILoaded()) {
-         * IShowsRecipeFocuses overlay = (IShowsRecipeFocuses)
-         * ModularUIJeiPlugin.getRuntime().getIngredientListOverlay();
-         * IClickedIngredient<?> ingredient = overlay.getIngredientUnderMouse(x, y);
-         * if (ingredient == null || ingredient.getArea() == null) {
-         * overlay = (IShowsRecipeFocuses) ModularUIJeiPlugin.getRuntime().getBookmarkOverlay();
-         * ingredient = overlay.getIngredientUnderMouse(x, y);
-         * }
-         * if (ingredient != null && ingredient.getArea() != null) {
-         * Rectangle slot = ingredient.getArea();
-         * area.set(slot.x - 1, slot.y - 1, 18, 18);
-         * return;
-         * }
-         * }
-         */
-        area.set(Area.ZERO);
     }
 
     public enum Pos {

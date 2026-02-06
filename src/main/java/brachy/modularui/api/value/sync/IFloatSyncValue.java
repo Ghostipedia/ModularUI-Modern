@@ -2,7 +2,9 @@ package brachy.modularui.api.value.sync;
 
 import brachy.modularui.api.value.IFloatValue;
 
-public interface IFloatSyncValue<T> extends IValueSyncHandler<T>, IFloatValue<T> {
+import io.netty.buffer.ByteBuf;
+
+public interface IFloatSyncValue<B extends ByteBuf, T> extends IValueSyncHandler<B, T>, IFloatValue<T> {
 
     @Override
     default void setFloatValue(float val) {

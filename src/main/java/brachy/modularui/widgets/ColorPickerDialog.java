@@ -16,23 +16,15 @@ import brachy.modularui.widgets.layout.Column;
 import brachy.modularui.widgets.layout.Row;
 import brachy.modularui.widgets.textfield.TextFieldWidget;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class ColorPickerDialog extends Dialog<Integer> {
 
     private static final IDrawable handleBackground = new Rectangle().color(Color.WHITE.main);
-
-    private int color;
-    private int red;
-    private int green;
-    private int blue;
-    private double hue;
-    private double saturation;
-    private double value;
-
-    private int alpha;
     private final boolean controlAlpha;
-
     private final Rectangle preview = new Rectangle();
     private final Rectangle sliderBackgroundR = new Rectangle();
     private final Rectangle sliderBackgroundG = new Rectangle();
@@ -40,6 +32,14 @@ public class ColorPickerDialog extends Dialog<Integer> {
     private final Rectangle sliderBackgroundA = new Rectangle();
     private final Rectangle sliderBackgroundS = new Rectangle();
     private final Rectangle sliderBackgroundV = new Rectangle();
+    private int color;
+    private int red;
+    private int green;
+    private int blue;
+    private double hue;
+    private double saturation;
+    private double value;
+    private int alpha;
 
     public ColorPickerDialog(Consumer<Integer> resultConsumer, int startColor, boolean controlAlpha) {
         this("color_picker", resultConsumer, startColor, controlAlpha);
@@ -51,7 +51,7 @@ public class ColorPickerDialog extends Dialog<Integer> {
         this.controlAlpha = controlAlpha;
         this.alpha = Color.getAlpha(startColor);
         updateAll(startColor);
-        size(140, controlAlpha ? 106 : 94);
+        size(140, controlAlpha ? 106 : 94).background(GuiTextures.MC_BACKGROUND);
 
         PagedWidget.Controller controller = new PagedWidget.Controller();
         child(new Column()
@@ -94,6 +94,7 @@ public class ColorPickerDialog extends Dialog<Integer> {
                         .mainAxisAlignment(Alignment.MainAxis.SPACE_BETWEEN)
                         .child(new ButtonWidget<>()
                                 .heightRel(1f).width(50)
+                                // TODO make translatable
                                 .overlay(IKey.str("Cancel"))
                                 .onMousePressed((mouseX, mouseY, button) -> {
                                     closeIfOpen();
@@ -101,6 +102,7 @@ public class ColorPickerDialog extends Dialog<Integer> {
                                 }))
                         .child(new ButtonWidget<>()
                                 .heightRel(1f).width(50)
+                                // TODO make translatable
                                 .overlay(IKey.str("Confirm"))
                                 .onMousePressed((mouseX, mouseY, button) -> {
                                     closeWith(this.color);
@@ -108,7 +110,16 @@ public class ColorPickerDialog extends Dialog<Integer> {
                                 }))));
     }
 
-    private IWidget createRGBPage(IWidget alphaSlider) {
+    private static SliderWidget createSlider(IDrawable background) {
+        return new SliderWidget()
+                .expanded()
+                .heightRel(1f)
+                .background(background.asIcon().size(0, 4))
+                .sliderTexture(handleBackground)
+                .sliderSize(2, 8);
+    }
+
+    private IWidget createRGBPage(@Nullable Supplier<IWidget> alphaSlider) {
         return new Column()
                 .sizeRel(1f, 1f)
                 .child(new Row()
@@ -132,10 +143,10 @@ public class ColorPickerDialog extends Dialog<Integer> {
                                 .name("blue")
                                 .bounds(0, 255)
                                 .value(new DoubleValue.Dynamic(() -> this.blue, this::updateBlue))))
-                .childIf(alphaSlider != null, () -> alphaSlider);
+                .childIf(alphaSlider != null, alphaSlider);
     }
 
-    private IWidget createHSVPage(IWidget alphaSlider) {
+    private IWidget createHSVPage(@Nullable Supplier<IWidget> alphaSlider) {
         return new Column()
                 .sizeRel(1f, 1f)
                 .child(new Row()
@@ -159,27 +170,20 @@ public class ColorPickerDialog extends Dialog<Integer> {
                                 .name("value")
                                 .bounds(0, 1)
                                 .value(new DoubleValue.Dynamic(() -> this.value, this::updateValue))))
-                .childIf(alphaSlider != null, () -> alphaSlider);
+                .childIf(alphaSlider != null, alphaSlider);
     }
 
-    private static SliderWidget createSlider(IDrawable background) {
-        return new SliderWidget()
-                .expanded()
-                .heightRel(1f)
-                .background(background.asIcon().size(0, 4))
-                .sliderTexture(handleBackground)
-                .sliderSize(2, 8);
-    }
-
-    private IWidget createAlphaSlider(String s) {
-        return controlAlpha ? new Row()
+    private @Nullable Supplier<IWidget> createAlphaSlider(String s) {
+        if (!controlAlpha) {
+            return null;
+        }
+        return () -> new Row()
                 .widthRel(1f).height(12)
                 .child(IKey.str("A: ").asWidget().heightRel(1f))
                 .child(createSlider(this.sliderBackgroundA)
                         .name("alpha " + s)
                         .bounds(0, 255)
-                        .value(new DoubleValue.Dynamic(() -> this.alpha, this::updateAlpha))) :
-                null;
+                        .value(new DoubleValue.Dynamic(() -> this.alpha, this::updateAlpha)));
     }
 
     private String validateRawColor(String raw) {

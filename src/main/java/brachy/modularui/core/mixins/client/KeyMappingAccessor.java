@@ -1,0 +1,18 @@
+package brachy.modularui.core.mixins.client;
+
+import net.minecraft.client.KeyMapping;
+
+import net.neoforged.neoforge.client.settings.KeyMappingLookup;
+import org.apache.commons.lang3.NotImplementedException;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+// TODO check if this is used
+@Mixin(KeyMapping.class)
+public interface KeyMappingAccessor {
+
+    @Accessor
+    static KeyMappingLookup getMAP() {
+        throw new NotImplementedException("KeyBindingMap getMAP()");
+    }
+}

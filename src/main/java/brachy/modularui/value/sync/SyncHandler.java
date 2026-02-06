@@ -5,14 +5,12 @@ import brachy.modularui.api.value.ISyncOrValue;
 import brachy.modularui.network.ModularNetwork;
 import brachy.modularui.network.ModularNetworkSide;
 
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.VarInt;
 
-import io.netty.buffer.Unpooled;
 import lombok.Getter;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +30,27 @@ public abstract class SyncHandler implements ISyncOrValue {
      */
     @Getter
     private String key;
+
+    private static void send(ModularNetworkSide network, String panel, IPacketWriter<? super RegistryFriendlyByteBuf> writer,
+                             SyncHandler syncHandler) {
+        Objects.requireNonNull(writer);
+        Objects.requireNonNull(syncHandler);
+        if (!syncHandler.isValid()) {
+            throw new IllegalStateException("Not initialized sync handlers can't send packets!");
+        }
+        network.sendSyncHandlerPacket(panel, syncHandler, writer, syncHandler.syncManager.getPlayer());
+    }
+
+    public static void sendToClient(String panel, IPacketWriter<? super RegistryFriendlyByteBuf> writer,
+                                    SyncHandler syncHandler) {
+        send(ModularNetwork.SERVER, panel, writer, syncHandler);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void sendToServer(String panel, IPacketWriter<? super RegistryFriendlyByteBuf> writer,
+                                    SyncHandler syncHandler) {
+        send(ModularNetwork.CLIENT, panel, writer, syncHandler);
+    }
 
     @ApiStatus.OverrideOnly
     @MustBeInvokedByOverriders
@@ -53,11 +72,12 @@ public abstract class SyncHandler implements ISyncOrValue {
      * @param id             an internal denominator to identify this package
      * @param bufferConsumer the package builder
      */
-    public final void syncToClient(int id, @NotNull IPacketWriter bufferConsumer) {
-        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
-        buffer.writeVarInt(id);
-        bufferConsumer.write(buffer);
-        sendToClient(getSyncManager().getPanelName(), buffer, this);
+    public final void syncToClient(int id, @NotNull IPacketWriter<? super RegistryFriendlyByteBuf> bufferConsumer) {
+        IPacketWriter<? super RegistryFriendlyByteBuf> writer = buffer -> {
+            VarInt.write(buffer, id);
+            bufferConsumer.write(buffer);
+        };
+        sendToClient(getSyncManager().getPanelName(), writer, this);
     }
 
     /**
@@ -67,11 +87,12 @@ public abstract class SyncHandler implements ISyncOrValue {
      * @param bufferConsumer the package builder
      */
     @OnlyIn(Dist.CLIENT)
-    public final void syncToServer(int id, @NotNull IPacketWriter bufferConsumer) {
-        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
-        buffer.writeVarInt(id);
-        bufferConsumer.write(buffer);
-        sendToServer(getSyncManager().getPanelName(), buffer, this);
+    public final void syncToServer(int id, @NotNull IPacketWriter<? super RegistryFriendlyByteBuf> bufferConsumer) {
+        IPacketWriter<? super RegistryFriendlyByteBuf> writer = buffer -> {
+            VarInt.write(buffer, id);
+            bufferConsumer.write(buffer);
+        };
+        sendToServer(getSyncManager().getPanelName(), writer, this);
     }
 
     /**
@@ -80,11 +101,12 @@ public abstract class SyncHandler implements ISyncOrValue {
      * @param id             an internal denominator to identify this package
      * @param bufferConsumer the package builder
      */
-    public final void sync(int id, @NotNull IPacketWriter bufferConsumer) {
-        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
-        buffer.writeVarInt(id);
-        bufferConsumer.write(buffer);
-        send(ModularNetwork.get(getSyncManager().isClient()), getSyncManager().getPanelName(), buffer, this);
+    public final void sync(int id, @NotNull IPacketWriter<? super RegistryFriendlyByteBuf> bufferConsumer) {
+        IPacketWriter<? super RegistryFriendlyByteBuf> writer = buffer -> {
+            VarInt.write(buffer, id);
+            bufferConsumer.write(buffer);
+        };
+        send(ModularNetwork.get(getSyncManager().isClient()), getSyncManager().getPanelName(), writer, this);
     }
 
     /**
@@ -122,7 +144,7 @@ public abstract class SyncHandler implements ISyncOrValue {
      */
     @ApiStatus.OverrideOnly
     @OnlyIn(Dist.CLIENT)
-    public abstract void readOnClient(int id, FriendlyByteBuf buf);
+    public abstract void readOnClient(int id, RegistryFriendlyByteBuf buf);
 
     /**
      * Called when this sync handler receives a packet on server.
@@ -131,7 +153,7 @@ public abstract class SyncHandler implements ISyncOrValue {
      * @param buf package
      */
     @ApiStatus.OverrideOnly
-    public abstract void readOnServer(int id, FriendlyByteBuf buf);
+    public abstract void readOnServer(int id, RegistryFriendlyByteBuf buf);
 
     /**
      * Called at least every tick. Use it to compare a cached value to its original and sync it.
@@ -165,24 +187,5 @@ public abstract class SyncHandler implements ISyncOrValue {
     @Override
     public boolean isSyncHandler() {
         return true;
-    }
-
-    private static void send(ModularNetworkSide network, String panel, FriendlyByteBuf buffer,
-                             SyncHandler syncHandler) {
-        Objects.requireNonNull(buffer);
-        Objects.requireNonNull(syncHandler);
-        if (!syncHandler.isValid()) {
-            throw new IllegalStateException("Not initialized sync handlers can't send packets!");
-        }
-        network.sendSyncHandlerPacket(panel, syncHandler, buffer, syncHandler.syncManager.getPlayer());
-    }
-
-    public static void sendToClient(String panel, FriendlyByteBuf buffer, SyncHandler syncHandler) {
-        send(ModularNetwork.SERVER, panel, buffer, syncHandler);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public static void sendToServer(String panel, FriendlyByteBuf buffer, SyncHandler syncHandler) {
-        send(ModularNetwork.CLIENT, panel, buffer, syncHandler);
     }
 }

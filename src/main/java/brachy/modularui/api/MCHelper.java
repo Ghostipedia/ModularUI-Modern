@@ -8,30 +8,26 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.List;
 
+@OnlyIn(Dist.CLIENT)
 public class MCHelper {
 
-    @SideOnly(Side.CLIENT)
     public static Minecraft getMc() {
         return Minecraft.getInstance();
     }
 
-    @SideOnly(Side.CLIENT)
     public static Player getPlayer() {
         return getMc().player;
     }
 
-    @SideOnly(Side.CLIENT)
-    public static boolean closeScreen() {
+    public static void closeScreen() {
         getMc().popGuiLayer();
-        return false;
     }
 
-    @SideOnly(Side.CLIENT)
     public static void popScreen(boolean openParentOnClose, Screen parent) {
         Player player = MCHelper.getPlayer();
         if (player != null) {
@@ -58,12 +54,10 @@ public class MCHelper {
         }
     }
 
-    @SideOnly(Side.CLIENT)
     public static Screen getCurrentScreen() {
         return getMc().screen;
     }
 
-    @SideOnly(Side.CLIENT)
     public static Font getFont() {
         return getMc().font;
     }

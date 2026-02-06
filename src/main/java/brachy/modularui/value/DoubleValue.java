@@ -11,18 +11,18 @@ import java.util.function.DoubleSupplier;
 
 public class DoubleValue implements IDoubleValue<Double>, IFloatValue<Double>, IStringValue<Double> {
 
+    private double value;
+
+    public DoubleValue(double value) {
+        this.value = value;
+    }
+
     public static Dynamic wrap(IDoubleValue<?> val) {
         return new Dynamic(val::getDoubleValue, val::setDoubleValue);
     }
 
     public static Dynamic wrapAtomic(AtomicDouble val) {
         return new Dynamic(val::get, val::set);
-    }
-
-    private double value;
-
-    public DoubleValue(double value) {
-        this.value = value;
     }
 
     @Override

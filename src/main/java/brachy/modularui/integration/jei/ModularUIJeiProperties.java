@@ -6,6 +6,7 @@ import brachy.modularui.widget.sizer.Area;
 import net.minecraft.client.gui.screens.Screen;
 
 import lombok.Getter;
+import lombok.experimental.Accessors;
 import mezz.jei.api.gui.handlers.IGuiProperties;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -14,6 +15,7 @@ import java.util.Objects;
 /**
  * This needs to be an immutable class, otherwise JEI shits itself.
  */
+@Accessors(fluent = true)
 public class ModularUIJeiProperties implements IGuiProperties {
 
     @Getter
@@ -46,12 +48,12 @@ public class ModularUIJeiProperties implements IGuiProperties {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("x", getGuiLeft())
-                .append("y", getGuiTop())
-                .append("width", getGuiXSize())
-                .append("height", getGuiYSize())
-                .append("screenWidth", getScreenWidth())
-                .append("screenHeight", getScreenHeight())
+                .append("x", guiLeft())
+                .append("y", guiTop())
+                .append("width", guiXSize())
+                .append("height", guiYSize())
+                .append("screenWidth", screenWidth())
+                .append("screenHeight", screenHeight())
                 .toString();
     }
 

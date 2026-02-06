@@ -5,14 +5,12 @@ import brachy.modularui.api.IMuiScreen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import lombok.Getter;
-import lombok.experimental.Accessors;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
-@Accessors(fluent = true)
 @OnlyIn(Dist.CLIENT)
 public class ScreenWrapper extends Screen implements IMuiScreen {
 
@@ -26,8 +24,8 @@ public class ScreenWrapper extends Screen implements IMuiScreen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics guiGraphics) {
-        handleDrawBackground(guiGraphics, super::renderBackground);
+    public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        handleDrawBackground(guiGraphics, mouseX, mouseY, partialTick, super::renderBackground);
     }
 
     @Override
@@ -37,6 +35,6 @@ public class ScreenWrapper extends Screen implements IMuiScreen {
 
     @Override
     public String toString() {
-        return "Wrapper(" + screen() + ")";
+        return "Wrapper(" + getScreen() + ")";
     }
 }

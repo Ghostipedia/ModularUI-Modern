@@ -23,8 +23,7 @@ import brachy.modularui.widgets.ToggleButton;
 import brachy.modularui.widgets.menu.ContextMenuButton;
 import brachy.modularui.widgets.menu.Menu;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -38,6 +37,28 @@ public class DebugOverlay extends CustomModularScreen {
     public DebugOverlay(IMuiScreen screen) {
         super(ModularUI.MOD_ID);
         this.parent = screen;
+    }
+
+    public static IWidget toggleOption(int i, String name, String field) {
+        Object config = ModularUIConfig.CONFIG.getValues().get(List.of("dev", field));
+        if (!(config instanceof ModConfigSpec.ConfigValue<?> configValue) || !(configValue.get() instanceof Boolean)) {
+            throw new IllegalArgumentException("Config field 'dev.%s' is not a boolean value!".formatted(field));
+        }
+        @SuppressWarnings("unchecked")
+        ModConfigSpec.ConfigValue<Boolean> configField = (ModConfigSpec.ConfigValue<Boolean>) config;
+        IBoolValue<?> val = new BoolValue.Dynamic(configField::get, configField::set);
+
+        return new ToggleButton()
+                .name("hover_info_toggle" + i)
+                .invisible()
+                .widthRel(1f)
+                .height(12)
+                .value(val)
+                .overlay(true, new NamedDrawableRow()
+                        .name(IKey.str(name))
+                        .drawable(CHECKMARK))
+                .overlay(false, new NamedDrawableRow()
+                        .name(IKey.str(name)));
     }
 
     @Override
@@ -110,28 +131,6 @@ public class DebugOverlay extends CustomModularScreen {
                                                         .child(toggleOption(12, "Size", "showParentSize"))
                                                         .child(toggleOption(13, "Widget Theme", "showParentWidgetTheme"))
                                                         .child(toggleOption(14, "Outline", "showParentOutline")))))));
-    }
-
-    public static IWidget toggleOption(int i, String name, String field) {
-        Object config = ModularUIConfig.CONFIG.getValues().get(List.of("dev", field));
-        if (!(config instanceof ForgeConfigSpec.ConfigValue<?> configValue) || !(configValue.get() instanceof Boolean)) {
-            throw new IllegalArgumentException("Config field 'dev.%s' is not a boolean value!".formatted(field));
-        }
-        @SuppressWarnings("unchecked")
-        ForgeConfigSpec.ConfigValue<Boolean> configField = (ForgeConfigSpec.ConfigValue<Boolean>) config;
-        IBoolValue<?> val = new BoolValue.Dynamic(configField::get, configField::set);
-
-        return new ToggleButton()
-                .name("hover_info_toggle" + i)
-                .invisible()
-                .widthRel(1f)
-                .height(12)
-                .value(val)
-                .overlay(true, new NamedDrawableRow()
-                        .name(IKey.str(name))
-                        .drawable(CHECKMARK))
-                .overlay(false, new NamedDrawableRow()
-                        .name(IKey.str(name)));
     }
 
     private boolean logWidgetTrees(int b) {

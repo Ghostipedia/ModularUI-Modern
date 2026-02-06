@@ -1,51 +1,55 @@
 package brachy.modularui.network.packets;
 
+import brachy.modularui.ModularUI;
 import brachy.modularui.api.UIFactory;
 import brachy.modularui.factory.GuiData;
 import brachy.modularui.factory.GuiManager;
-import brachy.modularui.network.NetworkHandler;
-import brachy.modularui.utils.NetworkUtils;
+import brachy.modularui.network.NetworkUtils;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.VarInt;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+public record OpenGuiPacket<T extends GuiData>(int windowId, int networkId, UIFactory<T> factory, RegistryFriendlyByteBuf data)
+        implements CustomPacketPayload {
 
-@NoArgsConstructor
-@AllArgsConstructor
-public class OpenGuiPacket<T extends GuiData> implements NetworkHandler.INetPacket {
+    public static final ResourceLocation ID = ModularUI.id("open_gui");
+    public static final Type<OpenGuiPacket<?>> TYPE = new Type<>(ID);
+    public static final StreamCodec<RegistryFriendlyByteBuf, OpenGuiPacket<?>> CODEC = StreamCodec
+            .ofMember(OpenGuiPacket::encode, OpenGuiPacket::decode);
 
-    private int windowId;
-    private int networkId;
-    private UIFactory<T> factory;
-    private FriendlyByteBuf data;
-
-    public OpenGuiPacket(FriendlyByteBuf buf) {
-        this.windowId = buf.readVarInt();
-        this.networkId = buf.readVarInt();
-        this.factory = (UIFactory<T>) GuiManager.getFactory(buf.readResourceLocation());
-        this.data = NetworkUtils.readFriendlyByteBuf(buf);
+    public static <T extends GuiData> OpenGuiPacket<T> decode(RegistryFriendlyByteBuf buf) {
+        int windowId = VarInt.read(buf);
+        int networkId = VarInt.read(buf);
+        // noinspection unchecked
+        UIFactory<T> factory = (UIFactory<T>) GuiManager.getFactory(ResourceLocation.STREAM_CODEC.decode(buf));
+        RegistryFriendlyByteBuf data = new RegistryFriendlyByteBuf(NetworkUtils.readByteBuf(buf), buf.registryAccess(), buf.getConnectionType());
+        return new OpenGuiPacket<>(windowId, networkId, factory, data);
     }
 
-    @Override
-    public void encode(FriendlyByteBuf buf) {
-        buf.writeVarInt(this.windowId);
-        buf.writeVarInt(this.networkId);
-        buf.writeResourceLocation(this.factory.getFactoryName());
+    public void encode(RegistryFriendlyByteBuf buf) {
+        VarInt.write(buf, this.windowId);
+        VarInt.write(buf, this.networkId);
+        ResourceLocation.STREAM_CODEC.encode(buf, this.factory.getFactoryName());
         NetworkUtils.writeByteBuf(buf, this.data);
     }
 
-    @Override
-    public void execute(NetworkEvent.Context handler) {
-        if (handler.getDirection() == NetworkDirection.PLAY_TO_CLIENT) {
-            GuiManager.openFromClient(this.windowId, this.networkId, this.factory, this.data,
-                    Minecraft.getInstance().player);
-        } else if (handler.getDirection() == NetworkDirection.PLAY_TO_SERVER) {
-            T guiData = this.factory.readGuiData(handler.getSender(), this.data);
-            GuiManager.open(this.factory, guiData, handler.getSender());
+    public void execute(IPayloadContext context) {
+        if (context.flow() == PacketFlow.CLIENTBOUND) {
+            GuiManager.openFromClient(this.windowId, this.networkId, this.factory, this.data, context.player());
+        } else if (context.flow() == PacketFlow.SERVERBOUND && context.player() instanceof ServerPlayer serverPlayer) {
+            T guiData = this.factory.readGuiData(serverPlayer, this.data);
+            GuiManager.open(this.factory, guiData, serverPlayer);
         }
+    }
+
+    @Override
+    public Type<OpenGuiPacket<?>> type() {
+        return TYPE;
     }
 }

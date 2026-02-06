@@ -1,9 +1,10 @@
 package brachy.modularui.utils;
 
-import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.viewport.LocatedWidget;
+import brachy.modularui.screen.viewport.TransformationMatrix;
 
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import org.jetbrains.annotations.Nullable;
 
 public class HoveredWidgetList {
@@ -14,8 +15,8 @@ public class HoveredWidgetList {
         this.delegate = delegate;
     }
 
-    public void add(IWidget widget, IViewportStack viewports, Object additionalHoverInfo) {
-        this.delegate.addFirst(new LocatedWidget(widget, viewports.peek(), additionalHoverInfo));
+    public void add(IWidget widget, TransformationMatrix viewports, Object additionalHoverInfo) {
+        this.delegate.add(0, new LocatedWidget(widget, viewports, additionalHoverInfo));
     }
 
     @Nullable

@@ -1,29 +1,30 @@
 package brachy.modularui.utils.math;
 
-import com.ezylang.evalex.BaseException;
-import com.ezylang.evalex.data.EvaluationValue;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 public class ParseResult {
 
-    private final EvaluationValue result;
-    private final BaseException error;
+    @Getter
+    private final double result;
+    @Getter
+    private final String error;
 
-    public static ParseResult success(EvaluationValue result) {
+    private ParseResult(double result, String error) {
+        this.result = result;
+        this.error = error;
+    }
+
+    public static ParseResult success(double result) {
         return new ParseResult(result, null);
     }
 
-    public static ParseResult failure(@NotNull BaseException error) {
-        return failure(null, error);
+    public static ParseResult failure(@NotNull String error) {
+        return failure(Double.NaN, error);
     }
 
-    public static ParseResult failure(EvaluationValue value, @NotNull BaseException error) {
+    public static ParseResult failure(double value, @NotNull String error) {
         return new ParseResult(value, error);
-    }
-
-    private ParseResult(EvaluationValue result, BaseException error) {
-        this.result = result;
-        this.error = error;
     }
 
     public boolean isSuccess() {
@@ -35,21 +36,6 @@ public class ParseResult {
     }
 
     public boolean hasValue() {
-        return this.result != null;
-    }
-
-    public EvaluationValue getResult() {
-        return result;
-    }
-
-    public BaseException getError() {
-        return error;
-    }
-
-    public String getErrorMessage() {
-        return isFailure() ?
-                String.format("%s for Token %s at %d:%d",
-                        this.error.getMessage(), this.error.getTokenString(),
-                        this.error.getStartPosition(), this.error.getEndPosition()) : null;
+        return !Double.isNaN(this.result);
     }
 }

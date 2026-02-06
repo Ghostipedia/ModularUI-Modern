@@ -10,12 +10,12 @@ import brachy.modularui.widget.sizer.Box;
 
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 /**
  * Scrollable area
@@ -26,13 +26,13 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ScrollArea extends Area {
 
+    private final ScrollPadding scrollPadding = new ScrollPadding();
     @Getter
     @Setter
     private HorizontalScrollData scrollX;
     @Getter
     @Setter
     private VerticalScrollData scrollY;
-    private final ScrollPadding scrollPadding = new ScrollPadding();
     @Getter
     @Setter
     private int scrollBarBackgroundColor = Color.withAlpha(Color.BLACK.main, 0.25f);
@@ -92,14 +92,15 @@ public class ScrollArea extends Area {
 
     @OnlyIn(Dist.CLIENT)
     public boolean mouseScroll(GuiContext context) {
-        return this.mouseScroll(context.getMouseX(), context.getMouseY(), context.getMouseScrollDelta(),
+        return this.mouseScroll(context.getMouseX(), context.getMouseY(),
+                context.getMouseScrollDeltaX(), context.getMouseScrollDeltaY(),
                 Screen.hasShiftDown());
     }
 
     /**
      * This method should be invoked when mouse wheel is scrolling
      */
-    public boolean mouseScroll(int x, int y, double scroll, boolean shift) {
+    public boolean mouseScroll(int x, int y, double scrollX, double scrollY, boolean shift) {
         ScrollData data;
         if (this.scrollX != null) {
             data = this.scrollY == null || shift ? this.scrollX : this.scrollY;
@@ -110,7 +111,7 @@ public class ScrollArea extends Area {
             return false;
         }
 
-        int scrollAmount = (int) Math.copySign(data.getScrollSpeed(), scroll);
+        int scrollAmount = (int) Math.copySign(data.getScrollSpeed(), scrollY);
         int scrollTo;
         if (data.isAnimating()) {
             scrollTo = data.getAnimatingTo() - scrollAmount;

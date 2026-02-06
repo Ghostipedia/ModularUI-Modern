@@ -1,10 +1,8 @@
 package brachy.modularui.screen;
 
-import brachy.modularui.ModularUIConfig;
 import brachy.modularui.animation.Animator;
 import brachy.modularui.api.IPanelHandler;
 import brachy.modularui.api.ITheme;
-import brachy.modularui.api.IThemeApi;
 import brachy.modularui.api.MCHelper;
 import brachy.modularui.api.layout.IViewport;
 import brachy.modularui.api.layout.IViewportStack;
@@ -21,7 +19,6 @@ import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.HoveredWidgetList;
 import brachy.modularui.utils.Interpolation;
 import brachy.modularui.utils.Interpolations;
-import brachy.modularui.utils.ObjectList;
 import brachy.modularui.value.sync.PanelSyncHandler;
 import brachy.modularui.value.sync.PanelSyncManager;
 import brachy.modularui.widget.ParentWidget;
@@ -31,6 +28,8 @@ import brachy.modularui.widgets.SlotGroupWidget;
 
 import net.minecraft.Util;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.ApiStatus;
@@ -48,12 +47,42 @@ import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 /**
- * This class is like a window in windows. It can hold any amount of widgets. It may also be draggable.
+ * This class is like a window in windows. It can hold any amount of widgets. It may also be draggable.<br>
  * To open another panel on top of the main panel you must use
- * {@link IPanelHandler#simple(ModularPanel, SecondaryPanel.IPanelBuilder, boolean)}
- * or {@link PanelSyncManager#panel(String, PanelSyncHandler.IPanelBuilder, boolean)} if the panel should be synced.
+ * {@link IPanelHandler#simple(ModularPanel, SecondaryPanel.IPanelBuilder, boolean)},
+ * or {@link PanelSyncManager#syncedPanel(String, boolean, PanelSyncHandler.IPanelBuilder)} if the panel should be synced.
  */
 public class ModularPanel extends ParentWidget<ModularPanel> implements IViewport, IDragResizeable {
+
+    private static final int tapTime = 200;
+    @Getter
+    private final @NotNull String name;
+    @Getter
+    private final @NotNull ObjectArrayList<LocatedWidget> hovering = new ObjectArrayList<>();
+    private final Input keyboard = new Input();
+    private final Input mouse = new Input();
+    private final Area startArea = new Area();
+    private final List<IPanelHandler> clientSubPanels = new ArrayList<>();
+    private ModularScreen screen;
+    @Setter
+    private IPanelHandler panelHandler;
+    @Getter
+    private State state = State.IDLE;
+    private boolean cantDisposeNow = false;
+    // drag resizing
+    private IDragResizeable currentResizing = null;
+    private LocatedWidget currentResizingWidget = null;
+    private ResizeDragArea draggingDragArea = null;
+    private int dragX, dragY;
+    private boolean invisible = false;
+    private Animator animator;
+    private boolean resizeable = false;
+    private Runnable onCloseAction;
+
+    public ModularPanel(@NotNull String name) {
+        this.name = Objects.requireNonNull(name, "A panels name must not be null and should be unique!");
+        center();
+    }
 
     public static ModularPanel defaultPanel(@NotNull String name) {
         return defaultPanel(name, 176, 166);
@@ -61,43 +90,6 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
 
     public static ModularPanel defaultPanel(@NotNull String name, int width, int height) {
         return new ModularPanel(name).size(width, height);
-    }
-
-    private static final int tapTime = 200;
-
-    @Getter
-    private final @NotNull String name;
-    private ModularScreen screen;
-    @Setter
-    private IPanelHandler panelHandler;
-    @Getter
-    private State state = State.IDLE;
-    private boolean cantDisposeNow = false;
-    @Getter
-    private final @NotNull ObjectList<LocatedWidget> hovering = ObjectList.create();
-    private final Input keyboard = new Input();
-    private final Input mouse = new Input();
-
-    // drag resizing
-    private IDragResizeable currentResizing = null;
-    private LocatedWidget currentResizingWidget = null;
-    private ResizeDragArea draggingDragArea = null;
-    private final Area startArea = new Area();
-    private int dragX, dragY;
-
-    private final List<IPanelHandler> clientSubPanels = new ArrayList<>();
-    private boolean invisible = false;
-    private Animator animator;
-
-    private boolean resizeable = false;
-    private String themeOverride;
-    private ITheme theme;
-
-    private Runnable onCloseAction;
-
-    public ModularPanel(@NotNull String name) {
-        this.name = Objects.requireNonNull(name, "A panels name must not be null and should be unique!");
-        center();
     }
 
     @Override
@@ -176,11 +168,6 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
         }
     }
 
-    @Deprecated
-    public void animateClose() {
-        closeIfOpen();
-    }
-
     @Override
     public boolean hasParent() {
         return false;
@@ -202,6 +189,20 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
             stack.translate(x, y);
             stack.scale(scale, scale);
             stack.translate(-x, -y);
+        }
+    }
+
+    @Override
+    public void getWidgetsAt(IViewportStack stack, HoveredWidgetList widgets, int x, int y) {
+        if (hasChildren()) {
+            IViewport.getChildrenAt(this, stack, widgets, x, y);
+        }
+    }
+
+    @Override
+    public void getSelfAt(IViewportStack stack, HoveredWidgetList widgets, int x, int y) {
+        if (isInside(stack, x, y)) {
+            widgets.add(this, stack.peek(), getAdditionalHoverInfo(stack, x, y));
         }
     }
 
@@ -233,7 +234,6 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
     public void onOpen(ModularScreen screen) {
         this.screen = screen;
         getArea().z(1);
-        resizer().initialize(this.screen.getResizeNode(), this.screen.getResizeNode());
         initialise(this, false);
         WidgetTree.onUpdate(this);
         // TODO: NEA handles main panel
@@ -261,8 +261,8 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
     }
 
     @Override
-    public boolean isExcludeAreaInRecipeViewer() {
-        return super.isExcludeAreaInRecipeViewer() || (!getScreen().isOverlay() && !this.invisible && !resizer().isFullSize());
+    public boolean isRecipeViewerExclusionArea() {
+        return super.isRecipeViewerExclusionArea() || (!getScreen().isOverlay() && !this.invisible && !flex().isFullSize());
     }
 
     @MustBeInvokedByOverriders
@@ -595,9 +595,9 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
         });
     }
 
-    public boolean onMouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         return doSafeBool(() -> {
-            if (interactFocused(widget -> widget.onMouseScrolled(mouseX, mouseY, delta), false)) {
+            if (interactFocused(widget -> widget.onMouseScrolled(mouseX, mouseY, scrollX, scrollY), false)) {
                 return true;
             }
             if (this.hovering.isEmpty()) return false;
@@ -605,7 +605,7 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
                 if (widget.getElement() == null || !widget.getElement().isValid()) continue;
                 if (widget.getElement() instanceof Interactable interactable) {
                     widget.applyMatrix(getContext());
-                    boolean result = interactable.onMouseScrolled(mouseX, mouseY, delta);
+                    boolean result = interactable.onMouseScrolled(mouseX, mouseY, scrollX, scrollY);
                     widget.unapplyMatrix(getContext());
                     if (result) return true;
                 }
@@ -753,7 +753,7 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
     }
 
     public float getScale() {
-        if (ModularUIConfig.animationTime() == 0) return 1f;
+        // if (ConfigHolder.INSTANCE.client.ui.animationTime == 0) return 1f;
         // 0.9 is default nea value
         return Interpolations.lerp(0.9f, 1f, getAnimator().getValue());
         // TODO NEA
@@ -762,7 +762,7 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
     }
 
     public float getAlpha() {
-        if (ModularUIConfig.animationTime() == 0) return 1f;
+        // if (ConfigHolder.INSTANCE.client.ui.animationTime == 0) return 1f;
         return getAnimator().getValue();
         // if (!ModularUI.Mods.NEA.isLoaded() || NEAConfig.openingAnimationTime == 0) return 1f;
         // return getAnimator().getValue();
@@ -777,7 +777,7 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
         if (this.animator == null) {
             this.animator = new Animator()
                     .bounds(0f, 1f)
-                    .duration(ModularUIConfig.animationTime())
+                    // .duration(ConfigHolder.INSTANCE.client.ui.animationTime)
                     .curve(Interpolation.SINE_OUT); // TODO: NEA config values
             this.animator.reset(true);
         }
@@ -804,13 +804,6 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
                 handler.closePanel();
             }
         }
-    }
-
-    public ITheme getTheme() {
-        if (this.theme == null) {
-            this.theme = IThemeApi.get().getThemeForScreen(this, this.themeOverride);
-        }
-        return this.theme;
     }
 
     public ModularPanel bindPlayerInventory() {
@@ -841,13 +834,7 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
         return this;
     }
 
-    public ModularPanel themeOverride(String id) {
-        this.themeOverride = id;
-        this.theme = null;
-        return this;
-    }
-
-    @Deprecated
+    @ApiStatus.Internal
     @Override
     public ModularPanel name(String name) {
         throw new IllegalStateException("Name for ModularPanels are final!");
@@ -883,7 +870,7 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
      */
     private static class Input {
 
-        private final ObjectList<Interactable> acceptedInteractions = ObjectList.create();
+        private final ObjectList<Interactable> acceptedInteractions = new ObjectArrayList<>();
         @Nullable
         private LocatedWidget lastPressed;
         private boolean held;

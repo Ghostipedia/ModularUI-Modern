@@ -14,9 +14,9 @@ public interface SlotAccessor {
 
     @Accessor("x")
     @Mutable
-    void gtceu$setX(int x);
+    void mui$setX(int x);
 
     @Accessor("x")
     @Mutable
-    void gtceu$setY(int y);
+    void mui$setY(int y);
 }

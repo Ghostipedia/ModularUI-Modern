@@ -6,7 +6,6 @@ import brachy.modularui.client.schemarenderer.BaseSchemaRenderer;
 import brachy.modularui.schema.ISchema;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetThemeEntry;
-import brachy.modularui.utils.MathUtil;
 import brachy.modularui.widget.Widget;
 
 import net.minecraft.network.chat.Component;
@@ -20,13 +19,13 @@ import org.joml.Vector3fc;
 public class SchemaWidget extends Widget<SchemaWidget> implements Interactable {
 
     private final BaseSchemaRenderer schemaRenderer;
+    private final Vector3f offset = new Vector3f();
     private boolean enableRotation = true;
     private boolean enableTranslation = true;
     private boolean enableScaling = true;
     private float scale = 10f;
-    private float pitch = MathUtil.PI_QUART;
+    private float pitch = MathHelper.QUART_PI;
     private float yaw = 0;
-    private final Vector3f offset = new Vector3f();
 
     public SchemaWidget(ISchema schema) {
         this(new BaseSchemaRenderer(schema));
@@ -47,13 +46,13 @@ public class SchemaWidget extends Widget<SchemaWidget> implements Interactable {
         Vector3fc f = this.schemaRenderer.schema().getFocus();
         this.schemaRenderer.camera().setLookAtAndAngle(f.x() + this.offset.x, f.y() + this.offset.y,
                 f.z() + this.offset.z, scale, yaw, pitch);
-        this.schemaRenderer.drawAtZeroPadded(context, getArea(), widgetTheme.theme());
+        this.schemaRenderer.drawAtZeroPadded(context, getArea(), widgetTheme.getTheme());
     }
 
     @Override
-    public boolean onMouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (this.enableScaling) {
-            incrementScale((float) (-delta / 12.0f));
+            incrementScale((float) (-scrollY / 12.0f));
             return true;
         }
         return false;
@@ -75,7 +74,7 @@ public class SchemaWidget extends Widget<SchemaWidget> implements Interactable {
         } else if (button == InputConstants.MOUSE_BUTTON_MIDDLE && this.enableTranslation) {
             float moveScale = 0.09f;
             Vector3f look = this.schemaRenderer.camera().getLookVec().normalize(); // direction camera is looking
-            Vector3f right = look.cross(MathUtil.UNIT_Y, new Vector3f()).normalize(); // right relative to screen
+            Vector3f right = look.cross(MathHelper.UNIT_Y, new Vector3f()).normalize(); // right relative to screen
             Vector3f up = right.cross(look, new Vector3f()); // up relative to screen
             this.offset.sub(right.mul(dx * moveScale)).add(up.mul(dy * moveScale));
         }

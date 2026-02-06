@@ -2,14 +2,12 @@ package brachy.modularui.widgets;
 
 import brachy.modularui.api.value.ISyncOrValue;
 import brachy.modularui.api.widget.IWidget;
-import brachy.modularui.value.sync.DynamicLinkedSyncHandler;
 import brachy.modularui.value.sync.DynamicSyncHandler;
-import brachy.modularui.value.sync.IDynamicSyncNotifiable;
-import brachy.modularui.value.sync.PanelSyncManager;
 import brachy.modularui.value.sync.SyncHandler;
 import brachy.modularui.widget.Widget;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -21,25 +19,24 @@ import java.util.function.Supplier;
  * The dynamic child can be a widget tree of any size which can also contain {@link SyncHandler}s. These sync handlers
  * MUST be registered
  * via a variant of
- * {@link PanelSyncManager#getOrCreateSyncHandler(String, Class, Supplier)
- * PanelSyncManager#getOrCreateSyncHandler(String, Class, Supplier)}.
+ * {@link brachy.modularui.value.sync.PanelSyncManager#getOrCreateSyncHandler(String, Class, Supplier)}
  *
  * @param <W> type of this widget
  */
 public class DynamicSyncedWidget<W extends DynamicSyncedWidget<W>> extends Widget<W> {
 
-    private IDynamicSyncNotifiable syncHandler;
+    private DynamicSyncHandler syncHandler;
     private IWidget child;
 
     @Override
     public boolean isValidSyncOrValue(@NotNull ISyncOrValue syncOrValue) {
-        return syncOrValue.isTypeOrEmpty(IDynamicSyncNotifiable.class);
+        return syncOrValue.isTypeOrEmpty(DynamicSyncHandler.class);
     }
 
     @Override
     protected void setSyncOrValue(@NotNull ISyncOrValue syncOrValue) {
         super.setSyncOrValue(syncOrValue);
-        this.syncHandler = syncOrValue.castNullable(IDynamicSyncNotifiable.class);
+        this.syncHandler = syncOrValue.castNullable(DynamicSyncHandler.class);
         if (this.syncHandler != null) this.syncHandler.attachDynamicWidgetListener(this::updateChild);
     }
 
@@ -65,12 +62,7 @@ public class DynamicSyncedWidget<W extends DynamicSyncedWidget<W>> extends Widge
         }
     }
 
-    public W syncHandler(DynamicSyncHandler syncHandler) {
-        setSyncOrValue(ISyncOrValue.orEmpty(syncHandler));
-        return getThis();
-    }
-
-    public W syncHandler(DynamicLinkedSyncHandler<?> syncHandler) {
+    public W syncHandler(@Nullable DynamicSyncHandler syncHandler) {
         setSyncOrValue(ISyncOrValue.orEmpty(syncHandler));
         return getThis();
     }

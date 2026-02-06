@@ -7,8 +7,8 @@ import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.serialization.json.JsonHelper;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -70,7 +70,7 @@ public record DrawableStack(IDrawable... drawables) implements IDrawable, IJsonS
             return IDrawable.EMPTY;
         }
         if (list.size() == 1) {
-            return list.get(0);
+            return list.getFirst();
         }
         return new DrawableStack(list.toArray(IDrawable[]::new));
     }

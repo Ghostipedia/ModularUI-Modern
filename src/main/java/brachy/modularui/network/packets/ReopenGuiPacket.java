@@ -1,37 +1,34 @@
 package brachy.modularui.network.packets;
 
-import brachy.modularui.api.MCHelper;
+import brachy.modularui.ModularUI;
 import brachy.modularui.network.ModularNetwork;
-import brachy.modularui.network.NetworkHandler;
 
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import io.netty.buffer.ByteBuf;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-@NoArgsConstructor
-@AllArgsConstructor
-public class ReopenGuiPacket implements NetworkHandler.INetPacket {
+public record ReopenGuiPacket(int networkId) implements CustomPacketPayload {
 
-    private int networkId;
+    public static final ResourceLocation ID = ModularUI.id("reopen_gui");
+    public static final Type<ReopenGuiPacket> TYPE = new Type<>(ID);
+    public static final StreamCodec<ByteBuf, ReopenGuiPacket> CODEC = ByteBufCodecs.VAR_INT
+            .map(ReopenGuiPacket::new, ReopenGuiPacket::networkId);
 
-    public ReopenGuiPacket(FriendlyByteBuf buffer) {
-        this.networkId = buffer.readVarInt();
-    }
-
-    @Override
-    public void encode(FriendlyByteBuf buffer) {
-        buffer.writeVarInt(networkId);
-    }
-
-    @Override
-    public void execute(NetworkEvent.Context handler) {
-        if (handler.getDirection() == NetworkDirection.PLAY_TO_CLIENT) {
-            ModularNetwork.CLIENT.reopen(MCHelper.getPlayer(), this.networkId, false);
+    public void execute(IPayloadContext context) {
+        if (context.flow() == PacketFlow.CLIENTBOUND) {
+            ModularNetwork.CLIENT.reopen(context.player(), this.networkId, false);
         } else {
-            ModularNetwork.SERVER.reopen(handler.getSender(), this.networkId, false);
+            ModularNetwork.SERVER.reopen(context.player(), this.networkId, false);
         }
+    }
+
+    @Override
+    public Type<ReopenGuiPacket> type() {
+        return TYPE;
     }
 }

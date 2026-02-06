@@ -6,9 +6,8 @@ import brachy.modularui.integration.recipeviewer.RecipeViewerState;
 import brachy.modularui.integration.recipeviewer.handlers.GhostIngredientSlot;
 import brachy.modularui.utils.Rectangle;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -18,17 +17,17 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Keeps track of everything related to recipe viewer integration in a Modular GUI.
- * By default, integration is disabled in client only GUIs.
- * This class can be safely interacted with even when EMI/JEI/REI is not installed.
+ * Keeps track of everything related to JEI in a Modular GUI.
+ * By default, JEI is disabled in client only GUIs.
+ * This class can be safely interacted with even when JEI/HEI is not installed.
  */
 @OnlyIn(Dist.CLIENT)
 public class RecipeViewerSettingsImpl implements RecipeViewerSettings {
 
-    private RecipeViewerState recipeViewerState = RecipeViewerState.DEFAULT;
     private final List<IWidget> exclusionWidgets = new ArrayList<>();
     private final List<Rectangle> exclusionAreas = new ArrayList<>();
     private final List<GhostIngredientSlot<?>> ghostIngredientSlots = new ArrayList<>();
+    private RecipeViewerState recipeViewerState = RecipeViewerState.DEFAULT;
 
     /**
      * Force JEI to be enabled

@@ -23,11 +23,10 @@ public class ThemeAPI implements IThemeApi {
     public static final ITheme DEFAULT_THEME = DefaultTheme.INSTANCE;
 
     public static final Pattern widgetThemeNamePattern = Pattern.compile("[a-zA-z0-9$_-]+");
-
-    private final Object2ObjectMap<String, ITheme> themes = new Object2ObjectOpenHashMap<>();
     protected final Object2ObjectMap<String, List<JsonBuilder>> defaultThemes = new Object2ObjectOpenHashMap<>();
-    private final List<WidgetThemeKey<?>> keys = new ArrayList<>();
     protected final Object2ObjectOpenHashMap<String, String> jsonScreenThemes = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<String, ITheme> themes = new Object2ObjectOpenHashMap<>();
+    private final List<WidgetThemeKey<?>> keys = new ArrayList<>();
     private final Object2ObjectMap<String, String> screenThemes = new Object2ObjectOpenHashMap<>();
 
     private ThemeAPI() {}
@@ -61,32 +60,19 @@ public class ThemeAPI implements IThemeApi {
     }
 
     @Override
-    public ITheme getThemeForScreen(String owner, String name, @Nullable String panel, @Nullable String defaultTheme,
-                                    @Nullable String fallbackTheme) {
-        String theme = getThemeIdForScreen(owner, name, panel);
+    public ITheme getThemeForScreen(String owner, String name, @Nullable String defaultTheme) {
+        String theme = getThemeIdForScreen(owner, name);
         if (theme != null) return getTheme(theme);
         if (defaultTheme != null) return getTheme(defaultTheme);
-        if (fallbackTheme != null) return getTheme(fallbackTheme);
         return getTheme(ModularUIConfig.useDarkThemeByDefault() ? "vanilla_dark" : "vanilla");
     }
 
-    private String getThemeIdForScreen(String mod, String name, String panelName) {
+    private String getThemeIdForScreen(String mod, String name) {
         String fullName = mod + ":" + name;
-        String fullPanelName = null;
-        if (panelName != null) fullPanelName = fullName + ":" + panelName;
-        String theme = null;
-        if (fullPanelName != null) {
-            theme = this.jsonScreenThemes.get(fullPanelName);
-            if (theme != null) return theme;
-        }
-        theme = this.jsonScreenThemes.get(fullName);
+        String theme = this.jsonScreenThemes.get(fullName);
         if (theme != null) return theme;
         theme = this.jsonScreenThemes.get(mod);
         if (theme != null) return theme;
-        if (fullPanelName != null) {
-            theme = this.screenThemes.get(fullPanelName);
-            if (theme != null) return theme;
-        }
         theme = this.screenThemes.get(fullName);
         return theme != null ? theme : this.screenThemes.get(mod);
     }

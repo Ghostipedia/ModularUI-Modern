@@ -113,8 +113,7 @@ public class BlockHighlight {
 
     public static void renderSolid(Matrix4f pose, @Nullable Direction direction) {
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder builder = tesselator.getBuilder();
-        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+        BufferBuilder builder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
         if (direction == null) {
             for (Direction dir : Direction.values()) {
                 buildFace(pose, builder, dir);
@@ -138,8 +137,7 @@ public class BlockHighlight {
         float[] vert = vertices[side.get3DDataValue()];
 
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder builder = tesselator.getBuilder();
-        builder.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION);
+        BufferBuilder builder = tesselator.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION);
         buildVertex(pose, builder, vert, 9);
         buildInnerVertex(pose, builder, vert, 9, side, offset);
         buildVertex(pose, builder, vert, 6);
@@ -151,14 +149,14 @@ public class BlockHighlight {
         buildVertex(pose, builder, vert, 9);
         buildInnerVertex(pose, builder, vert, 9, side, offset);
 
-        BufferUploader.drawWithShader(builder.end());
+        BufferUploader.drawWithShader(builder.buildOrThrow());
     }
 
     protected static void buildVertex(Matrix4f pose, BufferBuilder builder, float[] vertices, int vertexIndex) {
         float x = vertices[vertexIndex];
         float y = vertices[vertexIndex + 1];
         float z = vertices[vertexIndex + 2];
-        builder.vertex(pose, x, y, z).endVertex();
+        builder.addVertex(pose, x, y, z);
     }
 
     private static void buildInnerVertex(Matrix4f pose, BufferBuilder builder, float[] vertices, int vertexIndex,
@@ -178,7 +176,7 @@ public class BlockHighlight {
             if (z >= 1) z -= offset;
             else z += offset;
         }
-        builder.vertex(pose, x, y, z).endVertex();
+        builder.addVertex(pose, x, y, z);
     }
 
     protected static void buildFace(Matrix4f pose, BufferBuilder builder, @NotNull Direction side) {

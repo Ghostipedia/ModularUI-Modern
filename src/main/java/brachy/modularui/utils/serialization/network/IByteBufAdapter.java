@@ -1,19 +1,18 @@
 package brachy.modularui.utils.serialization.network;
 
-import brachy.modularui.utils.EqualityTest;
-
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 
 import org.jetbrains.annotations.NotNull;
 
-public interface IByteBufAdapter<T> extends IByteBufSerializer<T>, IByteBufDeserializer<T>, EqualityTest<T> {
+public interface IByteBufAdapter<B, V> extends StreamCodec<B, V>, IEquals<V> {
 
     @Override
-    T deserialize(FriendlyByteBuf buffer);
+    @NotNull
+    V decode(@NotNull B buffer);
 
     @Override
-    void serialize(FriendlyByteBuf buffer, T u);
+    void encode(@NotNull B buffer, @NotNull V u);
 
     @Override
-    boolean areEqual(@NotNull T t1, @NotNull T t2);
+    boolean areEqual(@NotNull V v1, @NotNull V v2);
 }

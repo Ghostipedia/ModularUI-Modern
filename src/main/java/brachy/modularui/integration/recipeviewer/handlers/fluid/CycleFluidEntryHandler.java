@@ -3,8 +3,8 @@ package brachy.modularui.integration.recipeviewer.handlers.fluid;
 import brachy.modularui.integration.recipeviewer.entry.fluid.FluidEntryList;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;

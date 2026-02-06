@@ -4,7 +4,7 @@ import brachy.modularui.ModularUI;
 import brachy.modularui.ModularUIMenuTypes;
 import brachy.modularui.core.mixins.client.AbstractContainerMenuAccessor;
 import brachy.modularui.factory.GuiData;
-import brachy.modularui.utils.NetworkUtils;
+import brachy.modularui.network.NetworkUtils;
 import brachy.modularui.value.sync.ModularSyncManager;
 import brachy.modularui.widgets.slot.ModularSlot;
 import brachy.modularui.widgets.slot.SlotGroup;
@@ -18,9 +18,8 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.items.ItemHandlerHelper;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import lombok.Getter;
 import org.jetbrains.annotations.ApiStatus;
@@ -116,14 +115,13 @@ public class ModularContainerMenu extends AbstractContainerMenu {
     public void opened() {}
 
     /**
-     * Called when this container closes. This is different to {@link AbstractContainerMenu#removed(Player)}, since that
-     * one is also
-     * called from {@link AbstractContainerScreen#removed()}, which means it is called even when the container may still
-     * exist.
-     * This happens when a temporary client screen takes over (like JEI,NEI,etc.). This is only called when the
-     * container actually closes.
+     * Called when this container closes.
+     * <p>
+     * This is different to {@link AbstractContainerMenu#removed(Player)}, since that one is also called from
+     * {@link AbstractContainerScreen#removed()}, which means it is called even when the container may still exist.
+     * That happens when a temporary client screen takes over (like EMI, JEI, etc.).
+     * This is only called when the container actually closes.
      */
-
     public void closed() {}
 
     public void disposed() {}
@@ -280,7 +278,7 @@ public class ModularContainerMenu extends AbstractContainerMenu {
                 do {
                     remainder = quickMoveStack(player, slotId);
                     returnable = remainder.copy();
-                } while (!remainder.isEmpty() && ItemHandlerHelper.canItemStacksStack(fromSlot.getItem(), remainder));
+                } while (!remainder.isEmpty() && ItemStack.isSameItemSameComponents(fromSlot.getItem(), remainder));
             } else {
                 Slot clickedSlot = getSlot(slotId);
 
@@ -308,12 +306,12 @@ public class ModularContainerMenu extends AbstractContainerMenu {
                         clickedSlot.setByPlayer(slotStack);
                         clickedSlot.onTake(player, this.getCarried());
                     } else if (clickedSlot.mayPlace(heldStack)) {
-                        if (ItemStack.isSameItemSameTags(slotStack, heldStack)) {
+                        if (ItemStack.isSameItemSameComponents(slotStack, heldStack)) {
                             int stackCount = mouseButton == LEFT_MOUSE ? heldStack.getCount() : 1;
 
-                            int lim = clickedSlot.getMaxStackSize(heldStack);
-                            if (stackCount > lim - slotStack.getCount()) {
-                                stackCount = lim - slotStack.getCount();
+                            int lim = clickedSlot.getMaxStackSize(heldStack) - slotStack.getCount();
+                            if (stackCount > lim) {
+                                stackCount = lim;
                             }
 
                             heldStack.shrink(stackCount);
@@ -325,7 +323,7 @@ public class ModularContainerMenu extends AbstractContainerMenu {
                             this.setCarried(slotStack);
                         }
                     } else if (heldStack.getMaxStackSize() > 1 &&
-                            ItemStack.isSameItemSameTags(slotStack, heldStack) && !slotStack.isEmpty()) {
+                            ItemStack.isSameItemSameComponents(slotStack, heldStack) && !slotStack.isEmpty()) {
                         int stackCount = slotStack.getCount();
 
                         if (stackCount + heldStack.getCount() <= heldStack.getMaxStackSize()) {
@@ -411,7 +409,7 @@ public class ModularContainerMenu extends AbstractContainerMenu {
                     stack.setCount(stack.getMaxStackSize());
                 }
                 ItemStack remainder = transferItem(slot, stack.copy());
-                if (ItemStack.isSameItemSameTags(remainder, stack)) return ItemStack.EMPTY;
+                if (ItemStack.isSameItemSameComponents(remainder, stack)) return ItemStack.EMPTY;
                 if (base == 0 && remainder.isEmpty()) stack = ItemStack.EMPTY;
                 else stack.setCount(base + remainder.getCount());
                 slot.set(stack);
@@ -432,7 +430,7 @@ public class ModularContainerMenu extends AbstractContainerMenu {
             SlotGroup slotGroup = Objects.requireNonNull(toSlot.getSlotGroup());
             if (slotGroup != fromSlotGroup && toSlot.isActive() && toSlot.mayPlace(fromStack)) {
                 ItemStack toStack = toSlot.getItem().copy();
-                if (!fromSlot.isPhantom() && ItemHandlerHelper.canItemStacksStack(fromStack, toStack)) {
+                if (!fromSlot.isPhantom() && ItemStack.isSameItemSameComponents(fromStack, toStack)) {
                     int j = toStack.getCount() + fromStack.getCount();
                     // Math.min(toSlot.getMaxStackSize(), fromStack.getMaxStackSize());
                     int maxSize = toSlot.getMaxStackSize(fromStack);

@@ -6,9 +6,9 @@ public class WidgetThemeMap extends Object2ObjectOpenHashMap<WidgetThemeKey<?>, 
 
     @Override
     public WidgetThemeEntry<?> put(WidgetThemeKey<?> widgetThemeKey, WidgetThemeEntry<?> widgetTheme) {
-        if (widgetThemeKey != widgetTheme.key()) {
+        if (widgetThemeKey != widgetTheme.getKey()) {
             throw new IllegalArgumentException(widgetThemeKey.getFullName() + " is not compatible with " +
-                    widgetTheme.key().getFullName());
+                    widgetTheme.getKey().getFullName());
         }
         return super.put(widgetThemeKey, widgetTheme);
     }

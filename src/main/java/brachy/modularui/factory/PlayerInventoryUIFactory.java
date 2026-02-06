@@ -7,11 +7,12 @@ import brachy.modularui.factory.inventory.InventoryType;
 import brachy.modularui.factory.inventory.InventoryTypes;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -42,20 +43,20 @@ public class PlayerInventoryUIFactory extends AbstractUIFactory<PlayerInventoryG
         GuiManager.open(this, PlayerInventoryGuiData.of(player, type, context, index), verifyServerSide(player));
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void openFromPlayerInventoryClient(int index) {
         GuiManager.openFromClient(this,
                 PlayerInventoryGuiData.of(MCHelper.getPlayer(), InventoryTypes.PLAYER, null, index));
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void openFromHandClient(InteractionHand hand) {
         openFromPlayerInventoryClient(
                 hand == InteractionHand.OFF_HAND ? Inventory.SLOT_OFFHAND :
                         MCHelper.getPlayer().getInventory().selected);
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void openFromCuriosClient(String type, int index) {
         if (!ModularUI.Mods.CURIOS.isLoaded()) {
             throw new IllegalArgumentException("Can't open UI for curios item when curios is not loaded!");
@@ -64,7 +65,7 @@ public class PlayerInventoryUIFactory extends AbstractUIFactory<PlayerInventoryG
                 this, PlayerInventoryGuiData.of(MCHelper.getPlayer(), InventoryTypes.CURIOS, type, index));
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public <T> void openClient(InventoryType<T> type, T context, int index) {
         GuiManager.openFromClient(this, PlayerInventoryGuiData.of(MCHelper.getPlayer(), type, context, index));
     }
@@ -79,22 +80,22 @@ public class PlayerInventoryUIFactory extends AbstractUIFactory<PlayerInventoryG
     }
 
     @Override
-    public void writeGuiData(PlayerInventoryGuiData<?> guiData, FriendlyByteBuf buffer) {
+    public void writeGuiData(PlayerInventoryGuiData<?> guiData, RegistryFriendlyByteBuf buffer) {
         guiData.getInventoryType().write(buffer);
         writeContext(buffer, guiData.getInventoryType(), guiData.getContext());
         buffer.writeVarInt(guiData.getSlotIndex());
     }
 
-    private static <T> void writeContext(FriendlyByteBuf buffer, InventoryType<T> type, Object context) {
+    private static <T> void writeContext(RegistryFriendlyByteBuf buffer, InventoryType<T> type, Object context) {
         type.writeContext(buffer, type.castContext(context));
     }
 
     @Override
-    public @NotNull PlayerInventoryGuiData<?> readGuiData(Player player, FriendlyByteBuf buffer) {
+    public @NotNull PlayerInventoryGuiData<?> readGuiData(Player player, RegistryFriendlyByteBuf buffer) {
         return readContext(player, buffer, InventoryType.read(buffer));
     }
 
-    private static <T> PlayerInventoryGuiData<?> readContext(Player player, FriendlyByteBuf buffer,
+    private static <T> PlayerInventoryGuiData<?> readContext(Player player, RegistryFriendlyByteBuf buffer,
                                                              InventoryType<T> inventoryType) {
         return PlayerInventoryGuiData.of(player, inventoryType, inventoryType.readContext(buffer), buffer.readVarInt());
     }

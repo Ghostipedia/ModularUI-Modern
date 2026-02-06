@@ -57,8 +57,8 @@ public class PhantomItemSlot extends ItemSlot implements GhostIngredientSlot<Ite
     }
 
     @Override
-    public boolean onMouseScrolled(double mouseX, double mouseY, double delta) {
-        MouseData mouseData = MouseData.create((int) delta);
+    public boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        MouseData mouseData = MouseData.create((int) scrollY);
         this.syncHandler.syncToServer(PhantomItemSlotSyncHandler.SYNC_SCROLL, mouseData::writeToPacket);
         return true;
     }

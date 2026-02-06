@@ -3,7 +3,6 @@ package brachy.modularui.widgets;
 import brachy.modularui.api.ITheme;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.value.IBoolValue;
-import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.RichTooltip;
 import brachy.modularui.theme.SelectableTheme;
 import brachy.modularui.theme.WidgetTheme;
@@ -102,9 +101,5 @@ public class ToggleButton extends AbstractCycleButtonWidget<ToggleButton> {
 
     public ToggleButton tooltipBuilder(boolean selected, Consumer<RichTooltip> builder) {
         return super.tooltipBuilder(selected ? 1 : 0, builder);
-    }
-
-    public ToggleButton child(boolean selected, IWidget widget) {
-        return stateChild(selected ? 1 : 0, widget);
     }
 }

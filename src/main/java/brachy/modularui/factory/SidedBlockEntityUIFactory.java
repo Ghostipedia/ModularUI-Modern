@@ -6,13 +6,13 @@ import brachy.modularui.api.MCHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -20,6 +20,10 @@ import java.util.Objects;
 public class SidedBlockEntityUIFactory extends AbstractUIFactory<SidedPosGuiData> {
 
     public static final SidedBlockEntityUIFactory INSTANCE = new SidedBlockEntityUIFactory();
+
+    private SidedBlockEntityUIFactory() {
+        super(ModularUI.id("sided_block_entity"));
+    }
 
     public <T extends BlockEntity & IUIHolder<SidedPosGuiData>> void open(Player player, T blockEntity,
                                                                           Direction facing) {
@@ -56,10 +60,6 @@ public class SidedBlockEntityUIFactory extends AbstractUIFactory<SidedPosGuiData
         GuiManager.openFromClient(this, data);
     }
 
-    private SidedBlockEntityUIFactory() {
-        super(ModularUI.id("sided_block_entity"));
-    }
-
     @Override
     public @NotNull IUIHolder<SidedPosGuiData> getGuiHolder(SidedPosGuiData data) {
         return Objects.requireNonNull(castUIHolder(data.getBlockEntity()), "Found BlockEntity is not a gui holder!");
@@ -72,13 +72,13 @@ public class SidedBlockEntityUIFactory extends AbstractUIFactory<SidedPosGuiData
     }
 
     @Override
-    public void writeGuiData(SidedPosGuiData guiData, FriendlyByteBuf buffer) {
+    public void writeGuiData(SidedPosGuiData guiData, RegistryFriendlyByteBuf buffer) {
         buffer.writeBlockPos(guiData.getBlockPos());
         buffer.writeByte(guiData.getSide().get3DDataValue());
     }
 
     @Override
-    public @NotNull SidedPosGuiData readGuiData(Player player, FriendlyByteBuf buffer) {
+    public @NotNull SidedPosGuiData readGuiData(Player player, RegistryFriendlyByteBuf buffer) {
         return new SidedPosGuiData(player, buffer.readBlockPos(), Direction.from3DDataValue(buffer.readByte()));
     }
 }

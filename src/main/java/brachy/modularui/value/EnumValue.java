@@ -11,19 +11,18 @@ import java.util.function.Supplier;
 
 public class EnumValue<T extends Enum<T>> implements IEnumValue<T>, IIntValue<T> {
 
-    public static <T extends Enum<T>> Dynamic<T> wrap(IEnumValue<T> val) {
-        return new Dynamic<>(val.getEnumClass(), val::getValue, val::setValue);
-    }
-
     @Getter
     protected final Class<T> enumClass;
     @Getter
     @Setter
     protected T value;
-
     public EnumValue(Class<T> enumClass, T value) {
         this.enumClass = enumClass;
         this.value = value;
+    }
+
+    public static <T extends Enum<T>> Dynamic<T> wrap(IEnumValue<T> val) {
+        return new Dynamic<>(val.getEnumClass(), val::getValue, val::setValue);
     }
 
     @Override

@@ -1,8 +1,8 @@
 package brachy.modularui.drawable;
 
-import brachy.modularui.GTRenderTypes;
 import brachy.modularui.ModularUI;
 import brachy.modularui.client.GuiSpriteManager;
+import brachy.modularui.client.ModularUIRenderTypes;
 import brachy.modularui.drawable.text.TextRenderer;
 import brachy.modularui.screen.RichTooltip;
 import brachy.modularui.screen.event.RichTooltipEvent;
@@ -36,22 +36,23 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RenderTooltipEvent;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.RenderTooltipEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4d;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
-import org.joml.Vector3d;
+import org.joml.Vector3f;
 
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -86,18 +87,14 @@ public class GuiDraw {
         VertexConsumer bufferbuilder = graphics.bufferSource().getBuffer(RenderType.guiOverlay());
 
         float x1 = x0 + w, y1 = y0 + h;
-        bufferbuilder.vertex(pose, x0, y0, 0.0f)
-                .color(Color.getRed(colorTL), Color.getGreen(colorTL), Color.getBlue(colorTL), Color.getAlpha(colorTL))
-                .endVertex();
-        bufferbuilder.vertex(pose, x0, y1, 0.0f)
-                .color(Color.getRed(colorBL), Color.getGreen(colorBL), Color.getBlue(colorBL), Color.getAlpha(colorBL))
-                .endVertex();
-        bufferbuilder.vertex(pose, x1, y1, 0.0f)
-                .color(Color.getRed(colorBR), Color.getGreen(colorBR), Color.getBlue(colorBR), Color.getAlpha(colorBR))
-                .endVertex();
-        bufferbuilder.vertex(pose, x1, y0, 0.0f)
-                .color(Color.getRed(colorTR), Color.getGreen(colorTR), Color.getBlue(colorTR), Color.getAlpha(colorTR))
-                .endVertex();
+        bufferbuilder.addVertex(pose, x0, y0, 0.0f)
+                .setColor(Color.getRed(colorTL), Color.getGreen(colorTL), Color.getBlue(colorTL), Color.getAlpha(colorTL));
+        bufferbuilder.addVertex(pose, x0, y1, 0.0f)
+                .setColor(Color.getRed(colorBL), Color.getGreen(colorBL), Color.getBlue(colorBL), Color.getAlpha(colorBL));
+        bufferbuilder.addVertex(pose, x1, y1, 0.0f)
+                .setColor(Color.getRed(colorBR), Color.getGreen(colorBR), Color.getBlue(colorBR), Color.getAlpha(colorBR));
+        bufferbuilder.addVertex(pose, x1, y0, 0.0f)
+                .setColor(Color.getRed(colorTR), Color.getGreen(colorTR), Color.getBlue(colorTR), Color.getAlpha(colorTR));
     }
 
     public static void drawRectRaw(VertexConsumer buffer, Matrix4f pose, float x0, float y0, float x1, float y1,
@@ -109,12 +106,12 @@ public class GuiDraw {
         drawRectRaw(buffer, pose, x0, y0, x1, y1, r, g, b, a);
     }
 
-    public static void drawRectRaw(VertexConsumer buffer, Matrix4f pose, float x0, float y0, float x1, float y1, int r,
-                                   int g, int b, int a) {
-        buffer.vertex(pose, x0, y0, 0.0f).color(r, g, b, a).endVertex();
-        buffer.vertex(pose, x0, y1, 0.0f).color(r, g, b, a).endVertex();
-        buffer.vertex(pose, x1, y1, 0.0f).color(r, g, b, a).endVertex();
-        buffer.vertex(pose, x1, y0, 0.0f).color(r, g, b, a).endVertex();
+    public static void drawRectRaw(VertexConsumer buffer, Matrix4f pose, float x0, float y0, float x1, float y1,
+                                   int r, int g, int b, int a) {
+        buffer.addVertex(pose, x0, y0, 0.0f).setColor(r, g, b, a);
+        buffer.addVertex(pose, x0, y1, 0.0f).setColor(r, g, b, a);
+        buffer.addVertex(pose, x1, y1, 0.0f).setColor(r, g, b, a);
+        buffer.addVertex(pose, x1, y0, 0.0f).setColor(r, g, b, a);
     }
 
     public static void drawCircle(GuiGraphics graphics, float x0, float y0, float diameter, int color, int segments) {
@@ -134,14 +131,13 @@ public class GuiDraw {
     public static void drawEllipse(GuiGraphics graphics, float x0, float y0, float w, float h,
                                    int centerColor, int outerColor, int segments) {
         Matrix4f pose = graphics.pose().last().pose();
-        VertexConsumer bufferbuilder = graphics.bufferSource().getBuffer(GTRenderTypes.guiOverlayTriangleFan());
+        VertexConsumer bufferbuilder = graphics.bufferSource().getBuffer(ModularUIRenderTypes.guiOverlayTriangleFan());
 
         float x_2 = x0 + w / 2f, y_2 = y0 + h / 2f;
         // start at center
-        bufferbuilder.vertex(pose, x_2, y_2, 0.0f)
-                .color(Color.getRed(centerColor), Color.getGreen(centerColor), Color.getBlue(centerColor),
-                        Color.getAlpha(centerColor))
-                .endVertex();
+        bufferbuilder.addVertex(pose, x_2, y_2, 0.0f)
+                .setColor(Color.getRed(centerColor), Color.getGreen(centerColor), Color.getBlue(centerColor),
+                        Color.getAlpha(centerColor));
         int a = Color.getAlpha(outerColor), r = Color.getRed(outerColor), g = Color.getGreen(outerColor),
                 b = Color.getBlue(outerColor);
         float incr = TWO_PI / segments;
@@ -149,13 +145,13 @@ public class GuiDraw {
             float angle = incr * i;
             float x = Mth.sin(angle) * (w / 2) + x_2;
             float y = Mth.cos(angle) * (h / 2) + y_2;
-            bufferbuilder.vertex(x, y, 0.0f).color(r, g, b, a).endVertex();
+            bufferbuilder.addVertex(x, y, 0.0f).setColor(r, g, b, a);
         }
         RenderSystem.disableBlend();
     }
 
-    public static void drawRoundedRect(GuiGraphics graphics, float x0, float y0, float w, float h,
-                                       int color, int cornerRadius, int segments) {
+    public static void drawRoundedRect(GuiGraphics graphics, float x0, float y0, float w, float h, int color,
+                                       int cornerRadius, int segments) {
         drawRoundedRect(graphics, x0, y0, w, h, color, color, color, color, cornerRadius, segments);
     }
 
@@ -165,8 +161,7 @@ public class GuiDraw {
     }
 
     public static void drawHorizontalGradientRoundedRect(GuiGraphics graphics, float x0, float y0, float w, float h,
-                                                         int colorLeft, int colorRight,
-                                                         int cornerRadius, int segments) {
+                                                         int colorLeft, int colorRight, int cornerRadius, int segments) {
         drawRoundedRect(graphics, x0, y0, w, h, colorLeft, colorRight, colorLeft, colorRight, cornerRadius, segments);
     }
 
@@ -174,72 +169,47 @@ public class GuiDraw {
                                        int colorTL, int colorTR, int colorBL, int colorBR,
                                        int cornerRadius, int segments) {
         Matrix4f pose = graphics.pose().last().pose();
-        VertexConsumer bufferbuilder = graphics.bufferSource().getBuffer(GTRenderTypes.guiOverlayTriangleFan());
+        VertexConsumer buffer = graphics.bufferSource().getBuffer(ModularUIRenderTypes.guiOverlayTriangleFan());
 
         float x1 = x0 + w, y1 = y0 + h;
         int color = Color.average(colorBL, colorBR, colorTR, colorTL);
         // start at center
-        bufferbuilder.vertex(pose, x0 + w / 2f, y0 + h / 2f, 0.0f)
-                .color(Color.getRed(color), Color.getGreen(color), Color.getBlue(color), Color.getAlpha(color))
-                .endVertex();
+        buffer.addVertex(pose, x0 + w / 2f, y0 + h / 2f, 0.0f).setColor(color);
         // left side
-        bufferbuilder.vertex(pose, x0, y0 + cornerRadius, 0.0f)
-                .color(Color.getRed(colorTL), Color.getGreen(colorTL), Color.getBlue(colorTL), Color.getAlpha(colorTL))
-                .endVertex();
-        bufferbuilder.vertex(pose, x0, y1 - cornerRadius, 0.0f)
-                .color(Color.getRed(colorBL), Color.getGreen(colorBL), Color.getBlue(colorBL), Color.getAlpha(colorBL))
-                .endVertex();
+        buffer.addVertex(pose, x0, y0 + cornerRadius, 0.0f).setColor(colorTL);
+        buffer.addVertex(pose, x0, y1 - cornerRadius, 0.0f)
+                .setColor(colorBL);
         // bottom left corner
         for (int i = 1; i <= segments; i++) {
             float x = x0 + cornerRadius - Mth.cos(HALF_PI / segments * i) * cornerRadius;
             float y = y1 - cornerRadius + Mth.sin(HALF_PI / segments * i) * cornerRadius;
-            bufferbuilder.vertex(pose, x, y, 0.0f)
-                    .color(Color.getRed(colorBL), Color.getGreen(colorBL), Color.getBlue(colorBL),
-                            Color.getAlpha(colorBL))
-                    .endVertex();
+            buffer.addVertex(x, y, 0.0f).setColor(colorBL);
         }
         // bottom side
-        bufferbuilder.vertex(pose, x1 - cornerRadius, y1, 0.0f)
-                .color(Color.getRed(colorBR), Color.getGreen(colorBR), Color.getBlue(colorBR), Color.getAlpha(colorBR))
-                .endVertex();
+        buffer.addVertex(pose, x1 - cornerRadius, y1, 0.0f).setColor(colorBR);
         // bottom right corner
         for (int i = 1; i <= segments; i++) {
             float x = x1 - cornerRadius + Mth.sin(HALF_PI / segments * i) * cornerRadius;
             float y = y1 - cornerRadius + Mth.cos(HALF_PI / segments * i) * cornerRadius;
-            bufferbuilder.vertex(pose, x, y, 0.0f)
-                    .color(Color.getRed(colorBR), Color.getGreen(colorBR), Color.getBlue(colorBR),
-                            Color.getAlpha(colorBR))
-                    .endVertex();
+            buffer.addVertex(pose, x, y, 0.0f).setColor(colorBR);
         }
         // right side
-        bufferbuilder.vertex(pose, x1, y0 + cornerRadius, 0.0f)
-                .color(Color.getRed(colorTR), Color.getGreen(colorTR), Color.getBlue(colorTR), Color.getAlpha(colorTR))
-                .endVertex();
+        buffer.addVertex(pose, x1, y0 + cornerRadius, 0.0f).setColor(colorTR);
         // top right corner
         for (int i = 1; i <= segments; i++) {
             float x = x1 - cornerRadius + Mth.cos(HALF_PI / segments * i) * cornerRadius;
             float y = y0 + cornerRadius - Mth.sin(HALF_PI / segments * i) * cornerRadius;
-            bufferbuilder.vertex(pose, x, y, 0.0f)
-                    .color(Color.getRed(colorTR), Color.getGreen(colorTR), Color.getBlue(colorTR),
-                            Color.getAlpha(colorTR))
-                    .endVertex();
+            buffer.addVertex(pose, x, y, 0.0f).setColor(colorTR);
         }
         // top side
-        bufferbuilder.vertex(pose, x0 + cornerRadius, y0, 0.0f)
-                .color(Color.getRed(colorTL), Color.getGreen(colorTL), Color.getBlue(colorTL), Color.getAlpha(colorTL))
-                .endVertex();
+        buffer.addVertex(pose, x0 + cornerRadius, y0, 0.0f).setColor(colorTL);
         // top left corner
         for (int i = 1; i <= segments; i++) {
             float x = x0 + cornerRadius - Mth.sin(HALF_PI / segments * i) * cornerRadius;
             float y = y0 + cornerRadius - Mth.cos(HALF_PI / segments * i) * cornerRadius;
-            bufferbuilder.vertex(pose, x, y, 0.0f)
-                    .color(Color.getRed(colorTL), Color.getGreen(colorTL), Color.getBlue(colorTL),
-                            Color.getAlpha(colorTL))
-                    .endVertex();
+            buffer.addVertex(pose, x, y, 0.0f).setColor(colorTL);
         }
-        bufferbuilder.vertex(pose, x0, y0 + cornerRadius, 0.0f)
-                .color(Color.getRed(colorTL), Color.getGreen(colorTL), Color.getBlue(colorTL), Color.getAlpha(colorTL))
-                .endVertex();
+        buffer.addVertex(pose, x0, y0 + cornerRadius, 0.0f).setColor(colorTL);
     }
 
     /**
@@ -257,7 +227,7 @@ public class GuiDraw {
      * If not, the same coordinates that were passed in.
      */
     public static RectangleF setupTexture(ResourceLocation location, float u0, float v0, float u1, float v1) {
-        TextureAtlasSprite sprite = GuiSpriteManager.getInstance()
+        TextureAtlasSprite sprite = Minecraft.getInstance().getGuiSprites()
                 .getSprite(GUI_TEXTURE_ID_CONVERTER.fileToId(location));
 
         // check if the atlas doesn't have this sprite, default to using the resloc as is if so
@@ -305,11 +275,9 @@ public class GuiDraw {
     public static void drawTexture(Matrix4f pose, float x, float y, int u, int v, float w, float h,
                                    int textureW, int textureH, float z) {
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.getBuilder();
-
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
         drawTexture(pose, buffer, x, y, u, v, w, h, textureW, textureH, z);
-        tesselator.end();
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
     }
 
     public static void drawTexture(Matrix4f pose, VertexConsumer buffer, float x, float y, int u, int v,
@@ -317,10 +285,10 @@ public class GuiDraw {
         float tw = 1F / textureW;
         float th = 1F / textureH;
 
-        buffer.vertex(pose, x, y + h, z).uv(u * tw, (v + h) * th).endVertex();
-        buffer.vertex(pose, x + w, y + h, z).uv((u + w) * tw, (v + h) * th).endVertex();
-        buffer.vertex(pose, x + w, y, z).uv((u + w) * tw, v * th).endVertex();
-        buffer.vertex(pose, x, y, z).uv(u * tw, v * th).endVertex();
+        buffer.addVertex(pose, x, y + h, z).setUv(u * tw, (v + h) * th);
+        buffer.addVertex(pose, x + w, y + h, z).setUv((u + w) * tw, (v + h) * th);
+        buffer.addVertex(pose, x + w, y, z).setUv((u + w) * tw, v * th);
+        buffer.addVertex(pose, x, y, z).setUv(u * tw, v * th);
     }
 
     public static void drawTexture(Matrix4f pose, float x, float y, int u, int v, float w, float h,
@@ -334,11 +302,9 @@ public class GuiDraw {
     public static void drawTexture(Matrix4f pose, float x, float y, int u, int v, float w, float h,
                                    int textureW, int textureH, int tu, int tv, float z) {
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.getBuilder();
-
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
         drawTexture(pose, buffer, x, y, u, v, w, h, textureW, textureH, tu, tv, z);
-        tesselator.end();
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
     }
 
     public static void drawTexture(Matrix4f pose, VertexConsumer buffer, float x, float y, int u, int v,
@@ -346,10 +312,10 @@ public class GuiDraw {
         float tw = 1F / textureW;
         float th = 1F / textureH;
 
-        buffer.vertex(pose, x, y + h, z).uv(u * tw, tv * th).endVertex();
-        buffer.vertex(pose, x + w, y + h, z).uv(tu * tw, tv * th).endVertex();
-        buffer.vertex(pose, x + w, y, z).uv(tu * tw, v * th).endVertex();
-        buffer.vertex(pose, x, y, z).uv(u * tw, v * th).endVertex();
+        buffer.addVertex(pose, x, y + h, z).setUv(u * tw, tv * th);
+        buffer.addVertex(pose, x + w, y + h, z).setUv(tu * tw, tv * th);
+        buffer.addVertex(pose, x + w, y, z).setUv(tu * tw, v * th);
+        buffer.addVertex(pose, x, y, z).setUv(u * tw, v * th);
     }
 
     public static void drawTexture(Matrix4f pose, ResourceLocation location, float x0, float y0, float x1, float y1,
@@ -379,18 +345,17 @@ public class GuiDraw {
                                    float u0, float v0, float u1, float v1, float z) {
         RenderSystem.disableDepthTest();
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.getBuilder();
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
         drawTexture(pose, buffer, x0, y0, x1, y1, u0, v0, u1, v1, z);
-        tesselator.end();
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
     }
 
     public static void drawTexture(Matrix4f pose, VertexConsumer buffer, float x0, float y0, float x1, float y1,
                                    float u0, float v0, float u1, float v1, float z) {
-        buffer.vertex(pose, x0, y1, z).uv(u0, v1).endVertex();
-        buffer.vertex(pose, x1, y1, z).uv(u1, v1).endVertex();
-        buffer.vertex(pose, x1, y0, z).uv(u1, v0).endVertex();
-        buffer.vertex(pose, x0, y0, z).uv(u0, v0).endVertex();
+        buffer.addVertex(pose, x0, y1, z).setUv(u0, v1);
+        buffer.addVertex(pose, x1, y1, z).setUv(u1, v1);
+        buffer.addVertex(pose, x1, y0, z).setUv(u1, v0);
+        buffer.addVertex(pose, x0, y0, z).setUv(u0, v0);
     }
 
     public static void drawTiledTexture(Matrix4f pose, ResourceLocation location, float x, float y, float w, float h,
@@ -418,9 +383,7 @@ public class GuiDraw {
 
         RenderSystem.disableDepthTest();
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.getBuilder();
-
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
         for (int i = 0, c = countX * countY; i < c; i++) {
             int ix = i % countX;
@@ -432,6 +395,8 @@ public class GuiDraw {
 
             drawTexture(pose, buffer, xx, yy, u, v, xw, yh, tw, th, z);
         }
+
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
     }
 
     public static void drawTiledTexture(Matrix4f pose, ResourceLocation location, float x, float y, float w, float h,
@@ -457,9 +422,7 @@ public class GuiDraw {
 
         RenderSystem.disableDepthTest();
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.getBuilder();
-
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
         for (int i = 0, c = countX * countY; i < c; i++) {
             int ix = i % countX;
@@ -479,7 +442,7 @@ public class GuiDraw {
             drawTexture(pose, buffer, xx, yy, xx + xw, yy + yh, u0, v0, uEnd, vEnd, z);
         }
 
-        tesselator.end();
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
     }
 
     /**
@@ -496,7 +459,7 @@ public class GuiDraw {
         entityRenderer.setRenderShadow(false);
 
         RenderSystem.runAsFancy(() -> {
-            entityRenderer.render(entity, 0.0D, 0.0D, 0.0D, 0.0f, Minecraft.getInstance().getPartialTick(),
+            entityRenderer.render(entity, 0.0d, 0.0d, 0.0d, 0.0f, 1.0f,
                     graphics.pose(), graphics.bufferSource(), LightTexture.FULL_BRIGHT);
         });
         graphics.flush();
@@ -536,7 +499,7 @@ public class GuiDraw {
     /**
      * Draws an entity which looks in the direction of the mouse like the player render in the player inventory does.
      * The code was copied from
-     * {@link net.minecraft.client.gui.screens.inventory.InventoryScreen#renderEntityInInventoryFollowsMouse(GuiGraphics, int, int, int, float, float, LivingEntity)
+     * {@link net.minecraft.client.gui.screens.inventory.InventoryScreen#renderEntityInInventoryFollowsMouse
      * InventoryScreen.renderEntityInInventoryFollowsMouse}.
      *
      * @param graphics the current {@link GuiGraphics} instance.
@@ -562,7 +525,7 @@ public class GuiDraw {
     /**
      * Draws an entity which looks toward a specific angle.
      * The code was copied from
-     * {@link net.minecraft.client.gui.screens.inventory.InventoryScreen#renderEntityInInventoryFollowsAngle(GuiGraphics, int, int, int, float, float, LivingEntity)
+     * {@link net.minecraft.client.gui.screens.inventory.InventoryScreen#renderEntityInInventoryFollowsAngle
      * InventoryScreen.renderEntityInInventoryFollowsAngle}.
      *
      * @param graphics the current {@link GuiGraphics} instance.
@@ -678,8 +641,8 @@ public class GuiDraw {
         graphics.pose().popPose();
     }
 
-    public static void drawFluidTexture(GuiGraphics graphics, FluidStack content, float x0, float y0,
-                                        float width, float height, float z) {
+    public static void drawFluidTexture(GuiGraphics graphics, FluidStack content,
+                                        float x0, float y0, float width, float height, float z) {
         if (content == null || content.isEmpty()) {
             return;
         }
@@ -699,8 +662,7 @@ public class GuiDraw {
 
     public static void drawStandardSlotAmountText(GuiContext context, int amount, String format, Area area,
                                                   float z) {
-        drawAmountText(context.getMuiContext(), amount, format, 0, 0, area.width, area.height, Alignment.BottomRight,
-                z);
+        drawAmountText(context.getMuiContext(), amount, format, 0, 0, area.width, area.height, Alignment.BottomRight, z);
     }
 
     public static void drawAmountText(ModularGuiContext context, int amount, String format,
@@ -715,8 +677,7 @@ public class GuiDraw {
     }
 
     public static void drawScaledAlignedTextInBox(ModularGuiContext context, String amountText,
-                                                  int x, int y, int width, int height,
-                                                  Alignment alignment) {
+                                                  int x, int y, int width, int height, Alignment alignment) {
         drawScaledAlignedTextInBox(context, amountText, x, y, width, height, alignment, 1f, 0.0f);
     }
 
@@ -795,7 +756,7 @@ public class GuiDraw {
         }
         float x0 = left, y0 = top, x1 = right, y1 = bottom, d = border;
 
-        var buffer = graphics.bufferSource().getBuffer(GTRenderTypes.guiTriangleStrip());
+        var buffer = graphics.bufferSource().getBuffer(ModularUIRenderTypes.guiTriangleStrip());
         var pose = graphics.pose().last().pose();
         pc(buffer, pose, x0, y0, color);
         pc(buffer, pose, x1 - d, y0 + d, color);
@@ -853,8 +814,7 @@ public class GuiDraw {
     }
 
     private static void pc(VertexConsumer buffer, Matrix4f pose, float x, float y, int c) {
-        buffer.vertex(pose, x, y, 0).color(Color.getRed(c), Color.getGreen(c), Color.getBlue(c), Color.getAlpha(c))
-                .endVertex();
+        buffer.addVertex(pose, x, y, 0).setColor(c);
     }
 
     /**
@@ -888,43 +848,41 @@ public class GuiDraw {
                 GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
 
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.getBuilder();
-
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
         float x1 = x + w, y1 = y + h;
 
         /* Draw opaque part */
-        buffer.vertex(pose, x1, y, 0).color(r1, g1, b1, a1).endVertex();
-        buffer.vertex(pose, x, y, 0).color(r1, g1, b1, a1).endVertex();
-        buffer.vertex(pose, x, y1, 0).color(r1, g1, b1, a1).endVertex();
-        buffer.vertex(pose, x1, y1, 0).color(r1, g1, b1, a1).endVertex();
+        buffer.addVertex(pose, x1, y, 0).setColor(r1, g1, b1, a1);
+        buffer.addVertex(pose, x, y, 0).setColor(r1, g1, b1, a1);
+        buffer.addVertex(pose, x, y1, 0).setColor(r1, g1, b1, a1);
+        buffer.addVertex(pose, x1, y1, 0).setColor(r1, g1, b1, a1);
 
         /* Draw top shadow */
-        buffer.vertex(pose, x1 + oX, y - oY, 0).color(r2, g2, b2, a2).endVertex();
-        buffer.vertex(pose, x - oX, y - oY, 0).color(r2, g2, b2, a2).endVertex();
-        buffer.vertex(pose, x, y, 0).color(r1, g1, b1, a1).endVertex();
-        buffer.vertex(pose, x1, y, 0).color(r1, g1, b1, a1).endVertex();
+        buffer.addVertex(pose, x1 + oX, y - oY, 0).setColor(r2, g2, b2, a2);
+        buffer.addVertex(pose, x - oX, y - oY, 0).setColor(r2, g2, b2, a2);
+        buffer.addVertex(pose, x, y, 0).setColor(r1, g1, b1, a1);
+        buffer.addVertex(pose, x1, y, 0).setColor(r1, g1, b1, a1);
 
         /* Draw bottom shadow */
-        buffer.vertex(pose, x1, y1, 0).color(r1, g1, b1, a1).endVertex();
-        buffer.vertex(pose, x, y1, 0).color(r1, g1, b1, a1).endVertex();
-        buffer.vertex(pose, x - oX, y1 + oY, 0).color(r2, g2, b2, a2).endVertex();
-        buffer.vertex(pose, x1 + oX, y1 + oY, 0).color(r2, g2, b2, a2).endVertex();
+        buffer.addVertex(pose, x1, y1, 0).setColor(r1, g1, b1, a1);
+        buffer.addVertex(pose, x, y1, 0).setColor(r1, g1, b1, a1);
+        buffer.addVertex(pose, x - oX, y1 + oY, 0).setColor(r2, g2, b2, a2);
+        buffer.addVertex(pose, x1 + oX, y1 + oY, 0).setColor(r2, g2, b2, a2);
 
         /* Draw left shadow */
-        buffer.vertex(pose, x, y, 0).color(r1, g1, b1, a1).endVertex();
-        buffer.vertex(pose, x - oX, y - oY, 0).color(r2, g2, b2, a2).endVertex();
-        buffer.vertex(pose, x - oX, y1 + oY, 0).color(r2, g2, b2, a2).endVertex();
-        buffer.vertex(pose, x, y1, 0).color(r1, g1, b1, a1).endVertex();
+        buffer.addVertex(pose, x, y, 0).setColor(r1, g1, b1, a1);
+        buffer.addVertex(pose, x - oX, y - oY, 0).setColor(r2, g2, b2, a2);
+        buffer.addVertex(pose, x - oX, y1 + oY, 0).setColor(r2, g2, b2, a2);
+        buffer.addVertex(pose, x, y1, 0).setColor(r1, g1, b1, a1);
 
         /* Draw right shadow */
-        buffer.vertex(pose, x1 + oX, y - oY, 0).color(r2, g2, b2, a2).endVertex();
-        buffer.vertex(pose, x1, y, 0).color(r1, g1, b1, a1).endVertex();
-        buffer.vertex(pose, x1, y1, 0).color(r1, g1, b1, a1).endVertex();
-        buffer.vertex(pose, x1 + oX, y1 + oY, 0).color(r2, g2, b2, a2).endVertex();
+        buffer.addVertex(pose, x1 + oX, y - oY, 0).setColor(r2, g2, b2, a2);
+        buffer.addVertex(pose, x1, y, 0).setColor(r1, g1, b1, a1);
+        buffer.addVertex(pose, x1, y1, 0).setColor(r1, g1, b1, a1);
+        buffer.addVertex(pose, x1 + oX, y1 + oY, 0).setColor(r2, g2, b2, a2);
 
-        tesselator.end();
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
         RenderSystem.disableBlend();
     }
 
@@ -942,13 +900,13 @@ public class GuiDraw {
         float g2 = Color.getGreenF(shadow);
         float b2 = Color.getBlueF(shadow);
 
-        VertexConsumer buffer = graphics.bufferSource().getBuffer(GTRenderTypes.guiOverlayTriangleFan());
-        buffer.vertex(pose, x, y, 0).color(r1, g1, b1, a1).endVertex();
+        VertexConsumer buffer = graphics.bufferSource().getBuffer(ModularUIRenderTypes.guiOverlayTriangleFan());
+        buffer.addVertex(pose, x, y, 0).setColor(r1, g1, b1, a1);
 
-        Vector3d pos = new Vector3d();
+        Vector3f pos = new Vector3f();
         for (int i = 0; i <= segments; i++) {
             float a = i / (float) segments * TWO_PI - HALF_PI;
-            circleVertex(buffer, poseD, pos, x, Mth.cos(a), y, Mth.sin(a), radius).color(r2, g2, b2, a2).endVertex();
+            circleVertex(buffer, pose, pos, x, Mth.cos(a), y, Mth.sin(a), radius).setColor(r2, g2, b2, a2);
         }
     }
 
@@ -959,7 +917,6 @@ public class GuiDraw {
             return;
         }
         Matrix4f pose = graphics.pose().last().pose();
-        Matrix4d poseD = new Matrix4d(pose);
 
         float a1 = Color.getAlphaF(opaque);
         float r1 = Color.getRedF(opaque);
@@ -970,14 +927,14 @@ public class GuiDraw {
         float g2 = Color.getGreenF(shadow);
         float b2 = Color.getBlueF(shadow);
 
-        VertexConsumer buffer = graphics.bufferSource().getBuffer(GTRenderTypes.guiOverlayTriangleFan());
+        VertexConsumer buffer = graphics.bufferSource().getBuffer(ModularUIRenderTypes.guiOverlayTriangleFan());
         /* Draw opaque base */
-        buffer.vertex(pose, x, y, 0).color(r1, g1, b1, a1).endVertex();
+        buffer.addVertex(pose, x, y, 0).setColor(r1, g1, b1, a1);
 
-        Vector3d pos = new Vector3d();
+        Vector3f pos = new Vector3f();
         for (int i = 0; i <= segments; i++) {
             float a = i / (float) segments * TWO_PI - HALF_PI;
-            circleVertex(buffer, poseD, pos, x, Mth.cos(a), y, Mth.sin(a), offset).color(r1, g1, b1, a1).endVertex();
+            circleVertex(buffer, pose, pos, x, Mth.cos(a), y, Mth.sin(a), offset).setColor(r1, g1, b1, a1);
         }
 
         /* Draw outer shadow */
@@ -992,34 +949,30 @@ public class GuiDraw {
             float sinA1 = Mth.sin(alpha1);
             float sinA2 = Mth.sin(alpha2);
 
-            circleVertex(buffer, poseD, pos, x, cosA2, y, sinA2, offset).color(r1, g1, b1, a1).endVertex();
-            circleVertex(buffer, poseD, pos, x, cosA1, y, sinA1, offset).color(r1, g1, b1, a1).endVertex();
-            circleVertex(buffer, poseD, pos, x, cosA1, y, sinA1, radius).color(r2, g2, b2, a2).endVertex();
-            circleVertex(buffer, poseD, pos, x, cosA2, y, sinA2, radius).color(r2, g2, b2, a2).endVertex();
+            circleVertex(buffer, pose, pos, x, cosA2, y, sinA2, offset).setColor(r1, g1, b1, a1);
+            circleVertex(buffer, pose, pos, x, cosA1, y, sinA1, offset).setColor(r1, g1, b1, a1);
+            circleVertex(buffer, pose, pos, x, cosA1, y, sinA1, radius).setColor(r2, g2, b2, a2);
+            circleVertex(buffer, pose, pos, x, cosA2, y, sinA2, radius).setColor(r2, g2, b2, a2);
         }
     }
 
-    private static VertexConsumer circleVertex(VertexConsumer buffer, Matrix4d pose, Vector3d pos,
+    private static VertexConsumer circleVertex(VertexConsumer buffer, Matrix4f pose, Vector3f pos,
                                                float x, float xOffset, float y, float yOffset, float mul) {
         pos.x = x - xOffset * mul;
         pos.y = y + yOffset * mul;
         pose.transformPosition(pos);
-        return buffer.vertex(pos.x, pos.y, pos.z);
+        return buffer.addVertex(pos.x, pos.y, pos.z);
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static void drawBorder(GuiGraphics graphics, float x, float y, float width, float height,
-                                  int color, float border) {
+    public static void drawBorder(GuiGraphics graphics, float x, float y, float width, float height, int color,
+                                  float border) {
         drawBorderLTRB(graphics, x, y, x + width, y + height, border, color, false);
-        // drawRect(graphics, x - border, y - border, width + 2 * border, border, color);
-        // drawRect(graphics, x - border, y + height, width + 2 * border, border, color);
-        // drawRect(graphics, x - border, y, border, height, color);
-        // drawRect(graphics, x + width, y, border, height, color);
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static void drawText(GuiGraphics graphics, String text, float x, float y, float scale,
-                                int color, boolean shadow) {
+    public static void drawText(GuiGraphics graphics, String text, float x, float y,
+                                float scale, int color, boolean shadow) {
         graphics.pose().pushPose();
         graphics.pose().scale(scale, scale, 0f);
         float sf = 1 / scale;
@@ -1063,7 +1016,7 @@ public class GuiDraw {
                     backgroundTop, borderColorStart, borderColorEnd, lines);
         }
 
-        MinecraftForge.EVENT_BUS.post(colorEvent);
+        NeoForge.EVENT_BUS.post(colorEvent);
         backgroundTop = colorEvent.getBackgroundStart();
         backgroundBottom = colorEvent.getBackgroundEnd();
         borderColorStart = colorEvent.getBorderStart();

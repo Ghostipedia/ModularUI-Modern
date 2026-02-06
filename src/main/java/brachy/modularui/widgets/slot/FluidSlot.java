@@ -1,6 +1,7 @@
 package brachy.modularui.widgets.slot;
 
 import brachy.modularui.api.ITheme;
+import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.IKey;
 import brachy.modularui.api.value.ISyncOrValue;
 import brachy.modularui.api.widget.Interactable;
@@ -11,30 +12,28 @@ import brachy.modularui.screen.RichTooltip;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.SlotTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
+import brachy.modularui.utils.LangUtil;
 import brachy.modularui.utils.MouseData;
 import brachy.modularui.value.sync.FluidSlotSyncHandler;
 import brachy.modularui.widgets.AbstractFluidDisplayWidget;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.material.Fluid;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidTank;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
-import net.minecraftforge.fml.ModList;
 
+import lombok.experimental.Accessors;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.DecimalFormat;
 
+@Accessors(fluent = true, chain = true)
 public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
         implements Interactable, GhostIngredientSlot<FluidStack>, IngredientProvider<FluidStack> {
 
@@ -62,7 +61,7 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
         IFluidTank fluidTank = getFluidTank();
         FluidStack fluid = this.syncHandler.getValue();
         if (fluid != null && !fluid.isEmpty()) {
-            tooltip.addLine(IKey.lang(fluid.getDisplayName())).spaceLine(2);
+            tooltip.addLine(IKey.lang(fluid.getHoverName())).spaceLine(2);
         }
         if (this.syncHandler.phantom()) {
             if (fluid != null) {
@@ -103,23 +102,8 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
             }
         }
         if (fluid != null && !fluid.isEmpty()) {
-            tooltip.add(getFluidModName(fluid));
+            tooltip.add(LangUtil.getFluidModName(fluid));
         }
-    }
-
-    private Component getFluidModName(FluidStack fluidStack) {
-        String modID = getFluidModID(fluidStack.getFluid());
-        var container = ModList.get().getModContainerById(modID);
-        if (container.isPresent()) {
-            return Component.literal(container.get().getModInfo().getDisplayName()).withStyle(ChatFormatting.BLUE,
-                    ChatFormatting.ITALIC);
-        }
-        return Component.literal(modID).withStyle(ChatFormatting.BLUE, ChatFormatting.ITALIC);
-    }
-
-    public static String getFluidModID(Fluid fluid) {
-        ResourceLocation modName = BuiltInRegistries.FLUID.getKey(fluid);
-        return modName.getNamespace();
     }
 
     public void addAdditionalFluidInfo(RichTooltip tooltip, FluidStack fluidStack) {}
@@ -165,8 +149,8 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
     }
 
     public int getSlotHoverColor() {
-        WidgetThemeEntry<SlotTheme> theme = getWidgetTheme(getPanel().getTheme(), SlotTheme.class);
-        return theme.theme().getSlotHoverColor();
+        WidgetThemeEntry<SlotTheme> theme = getWidgetTheme(getContext().getTheme(), SlotTheme.class);
+        return theme.getTheme().getSlotHoverColor();
     }
 
     @NotNull
@@ -177,8 +161,7 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
         }
         ItemStack cursorStack = Minecraft.getInstance().player.containerMenu.getCarried();
         if (this.syncHandler.phantom() ||
-                (!cursorStack.isEmpty() &&
-                        cursorStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM, null).isPresent())) {
+                (!cursorStack.isEmpty() && cursorStack.getCapability(Capabilities.FluidHandler.ITEM) != null)) {
             MouseData mouseData = MouseData.create(button);
             this.syncHandler.syncToServer(FluidSlotSyncHandler.SYNC_CLICK, mouseData::writeToPacket);
         }
@@ -186,12 +169,12 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
     }
 
     @Override
-    public boolean onMouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (this.syncHandler.phantom()) {
-            if ((delta > 0 && !this.syncHandler.canFillSlot()) || (delta < 0 && !this.syncHandler.canDrainSlot())) {
+            if ((scrollY > 0 && !this.syncHandler.canFillSlot()) || (scrollY < 0 && !this.syncHandler.canDrainSlot())) {
                 return false;
             }
-            MouseData mouseData = MouseData.create(delta > 0 ? 1 : -1);
+            MouseData mouseData = MouseData.create(scrollY > 0 ? 1 : -1);
             this.syncHandler.syncToServer(FluidSlotSyncHandler.SYNC_SCROLL, mouseData::writeToPacket);
             return true;
         }
@@ -228,6 +211,19 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
         return this.syncHandler == null ? EMPTY : this.syncHandler.fluidTank();
     }
 
+    /**
+     * Set the offset in x and y (on both sides) at which the fluid should be rendered.
+     * Default is 1 for both.
+     *
+     * @param x x offset
+     * @param y y offset
+     */
+    @ApiStatus.ScheduledForRemoval(inVersion = "3.2.0")
+    @Deprecated
+    public FluidSlot contentOffset(int x, int y) {
+        return contentPaddingLeft(x).contentPaddingTop(y);
+    }
+
     public FluidSlot displayAmount(boolean displayAmount) {
         this.displayAmount = displayAmount;
         return this;
@@ -239,6 +235,15 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
     public FluidSlot alwaysShowFull(boolean alwaysShowFull) {
         this.alwaysShowFull = alwaysShowFull;
         return this;
+    }
+
+    /**
+     * @param overlayTexture texture that is rendered on top of the fluid
+     */
+    @ApiStatus.ScheduledForRemoval(inVersion = "3.2.0")
+    @Deprecated
+    public FluidSlot overlayTexture(@Nullable IDrawable overlayTexture) {
+        return overlay(overlayTexture);
     }
 
     public FluidSlot syncHandler(IFluidTank fluidTank) {

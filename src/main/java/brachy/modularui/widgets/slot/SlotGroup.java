@@ -1,7 +1,5 @@
 package brachy.modularui.widgets.slot;
 
-import brachy.modularui.value.sync.PanelSyncManager;
-
 import net.minecraft.world.inventory.Slot;
 
 import lombok.Getter;
@@ -18,7 +16,7 @@ import java.util.List;
  * A slot group is a group of slots that can be sorted (via Inventory BogoSorter)
  * and be shift clicked into. The slot group must exist on server and client side.
  * Slot groups must be registered via
- * {@link PanelSyncManager#registerSlotGroup(String, int, boolean)}
+ * {@link brachy.modularui.value.sync.PanelSyncManager#registerSlotGroup(String, int, boolean)}
  * or overloads of the method (except it's a singleton).
  */
 @Accessors(chain = true)
@@ -36,22 +34,10 @@ public class SlotGroup {
     private final int shiftClickPriority;
     @Getter
     private final boolean allowShiftTransfer;
-    @Setter
-    private boolean allowSorting = true;
     @Getter
     private final boolean singleton;
-
-    /**
-     * Creates a slot group that is only a single slot. Singleton groups don't need to be registered.
-     * This exists only exists so that single slots can accept items from shift clicks.
-     *
-     * @param name               the name of the group
-     * @param shiftClickPriority determines in which group a shift clicked item should be inserted first
-     * @return a new singleton slot group
-     */
-    public static SlotGroup singleton(String name, int shiftClickPriority) {
-        return new SlotGroup(name, 1, shiftClickPriority, true, true);
-    }
+    @Setter
+    private boolean allowSorting = true;
 
     public SlotGroup(String name, int rowSize) {
         this(name, rowSize, true);
@@ -81,6 +67,18 @@ public class SlotGroup {
         this.singleton = singleton;
     }
 
+    /**
+     * Creates a slot group that is only a single slot. Singleton groups don't need to be registered.
+     * This exists only exists so that single slots can accept items from shift clicks.
+     *
+     * @param name               the name of the group
+     * @param shiftClickPriority determines in which group a shift clicked item should be inserted first
+     * @return a new singleton slot group
+     */
+    public static SlotGroup singleton(String name, int shiftClickPriority) {
+        return new SlotGroup(name, 1, shiftClickPriority, true, true);
+    }
+
     @ApiStatus.Internal
     void addSlot(Slot slot) {
         this.slots.add(slot);
@@ -100,10 +98,10 @@ public class SlotGroup {
     }
 
     public Slot getFirstSlotForSorting() {
-        return this.slots.isEmpty() ? null : this.slots.get(0);
+        return this.slots.isEmpty() ? null : this.slots.getFirst();
     }
 
-    public boolean isAllowSorting() {
+    public boolean allowsSorting() {
         return this.slots.size() > 1 && this.allowSorting;
     }
 }

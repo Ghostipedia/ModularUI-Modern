@@ -9,14 +9,6 @@ import net.minecraft.network.FriendlyByteBuf;
  */
 public interface IByteBufSerializer<T> {
 
-    /**
-     * Writes the object to the buffer.
-     *
-     * @param buffer buffer to write to
-     * @param value  object to write
-     */
-    void serialize(FriendlyByteBuf buffer, T value);
-
     static <T> IByteBufSerializer<T> wrapNullSafe(IByteBufSerializer<T> serializer) {
         return (buffer, value) -> {
             buffer.writeBoolean(value == null);
@@ -25,4 +17,12 @@ public interface IByteBufSerializer<T> {
             }
         };
     }
+
+    /**
+     * Writes the object to the buffer.
+     *
+     * @param buffer buffer to write to
+     * @param value  object to write
+     */
+    void serialize(FriendlyByteBuf buffer, T value);
 }

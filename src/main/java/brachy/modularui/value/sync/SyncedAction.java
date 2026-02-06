@@ -2,7 +2,7 @@ package brachy.modularui.value.sync;
 
 import brachy.modularui.api.ISyncedAction;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +21,7 @@ public class SyncedAction {
         this.executeServer = executeServer;
     }
 
-    public boolean invoke(boolean client, @NotNull FriendlyByteBuf packet) {
+    public boolean invoke(boolean client, @NotNull RegistryFriendlyByteBuf packet) {
         if (isExecute(client)) {
             this.action.invoke(packet);
             return true;

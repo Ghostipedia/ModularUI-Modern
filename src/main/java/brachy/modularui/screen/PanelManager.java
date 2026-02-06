@@ -4,12 +4,13 @@ import brachy.modularui.ModularUI;
 import brachy.modularui.api.IPanelHandler;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.viewport.LocatedWidget;
-import brachy.modularui.utils.ObjectList;
 import brachy.modularui.utils.ReverseIterable;
 import brachy.modularui.widget.WidgetTree;
 import brachy.modularui.widget.wrapper.WidgetWrapper;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import lombok.Getter;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +38,7 @@ public class PanelManager {
     /**
      * List of all open panels from top to bottom.
      */
-    private final ObjectList<ModularPanel> panels = ObjectList.create();
+    private final ObjectList<ModularPanel> panels = new ObjectArrayList<>();
     // a clone of the list to avoid CMEs
     private final List<ModularPanel> panelsClone = new ArrayList<>();
     private final List<ModularPanel> panelsView = Collections.unmodifiableList(this.panelsClone);
@@ -45,7 +46,7 @@ public class PanelManager {
     private final List<WidgetWrapper> panelWrappers = new ArrayList<>();
     private final List<WidgetWrapper> panelWrappersView = Collections.unmodifiableList(this.panelWrappers);
     private final ReverseIterable<WidgetWrapper> reversePanelWrappers = new ReverseIterable<>(this.panelWrappersView);
-    private final ObjectList<ModularPanel> disposal = ObjectList.create(DISPOSAL_CAPACITY);
+    private final ObjectList<ModularPanel> disposal = new ObjectArrayList<>(DISPOSAL_CAPACITY);
     private final Map<String, IPanelHandler> panelHandlerMap = new Object2ObjectOpenHashMap<>();
     private boolean cantDisposeNow = false;
     private boolean dirty = false;
@@ -137,7 +138,7 @@ public class PanelManager {
         this.dirty = true;
         panel.onOpen(this.screen);
         if (resize) {
-            WidgetTree.resizeInternal(panel.resizer(), true);
+            WidgetTree.resizeInternal(panel, true);
         }
     }
 
@@ -248,7 +249,7 @@ public class PanelManager {
         if (panel.isOpen()) panel.onClose();
         if (!this.disposal.contains(panel)) {
             if (this.disposal.size() == DISPOSAL_CAPACITY) {
-                this.disposal.remove(0).dispose();
+                this.disposal.removeFirst().dispose();
             }
             this.disposal.add(panel);
         }

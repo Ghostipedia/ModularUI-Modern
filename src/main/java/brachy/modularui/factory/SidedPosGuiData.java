@@ -10,11 +10,10 @@ import org.jetbrains.annotations.NotNull;
 /**
  * See {@link GuiData} for an explanation for what this is for.
  */
-@Getter
 public class SidedPosGuiData extends PosGuiData {
 
-    @NotNull
-    private final Direction side;
+    @Getter
+    private final @NotNull Direction side;
 
     public SidedPosGuiData(@NotNull Player player, BlockPos pos, @NotNull Direction side) {
         super(player, pos);

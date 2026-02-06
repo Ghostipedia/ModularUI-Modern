@@ -9,14 +9,12 @@ import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.Alignment;
 import brachy.modularui.utils.FormattingUtil;
-import brachy.modularui.utils.MathUtil;
 import brachy.modularui.utils.math.SIPrefix;
 import brachy.modularui.widget.Widget;
 import brachy.modularui.widget.sizer.Box;
 
-import net.minecraftforge.fluids.FluidStack;
-
 import lombok.Getter;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,7 +49,7 @@ public abstract class AbstractFluidDisplayWidget<W extends AbstractFluidDisplayW
         int h = getArea().height - this.contentPadding.vertical();
         float c = getCapacity();
         if (c > 0 && fluid.getAmount() > 0) {
-            int newH = (int) MathUtil.rescaleLinear(fluid.getAmount(), 0, c, 1, h);
+            int newH = (int) MathHelper.rescaleLinear(fluid.getAmount(), 0, c, 1, h);
             if (!this.flipLighterThanAir || !fluid.getFluid().getFluidType().isLighterThanAir()) y += h - newH;
             h = newH;
         }

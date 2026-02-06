@@ -28,14 +28,14 @@ import org.jetbrains.annotations.NotNull;
 @Accessors(chain = true)
 public class SliderWidget extends Widget<SliderWidget> implements Interactable {
 
+    private final Unit sliderWidth = new Unit(), sliderHeight = new Unit();
+    private final Area sliderArea = new Area();
     private IDoubleValue<?> doubleValue;
     private IDrawable stopperDrawable = new Rectangle().color(Color.withAlpha(Color.WHITE.main, 0.4f));
-    private IDrawable handleDrawable = GuiTextures.BUTTON_CLEAN;
+    private IDrawable handleDrawable = GuiTextures.MC_BUTTON;
     private GuiAxis axis = GuiAxis.X;
     private DoubleList stopper;
     private int stopperWidth = 2, stopperHeight = 4;
-    private final Unit sliderWidth = new Unit(), sliderHeight = new Unit();
-    private final Area sliderArea = new Area();
     @Getter
     private double min, max;
     private double each = 0;
@@ -89,12 +89,12 @@ public class SliderWidget extends Widget<SliderWidget> implements Interactable {
                     pos -= this.stopperWidth / 2;
                     int crossAxisPos = (int) (getArea().height / 2D - this.stopperHeight / 2D);
                     this.stopperDrawable.draw(context, pos, crossAxisPos, this.stopperWidth, this.stopperHeight,
-                            WidgetTheme.getDefault().theme());
+                            WidgetTheme.getDefault().getTheme());
                 } else {
                     pos -= this.stopperHeight / 2;
                     int crossAxisPos = (int) (getArea().width / 2D - this.stopperWidth / 2D);
                     this.stopperDrawable.draw(context, crossAxisPos, pos, this.stopperWidth, this.stopperHeight,
-                            WidgetTheme.getDefault().theme());
+                            WidgetTheme.getDefault().getTheme());
                 }
             }
         }
@@ -103,7 +103,7 @@ public class SliderWidget extends Widget<SliderWidget> implements Interactable {
     @Override
     public void draw(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {
         if (this.handleDrawable != null) {
-            this.handleDrawable.draw(context, this.sliderArea, getPanel().getTheme().getButtonTheme().theme());
+            this.handleDrawable.draw(context, this.sliderArea, context.getTheme().getButtonTheme().getTheme());
         }
     }
 

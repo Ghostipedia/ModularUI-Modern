@@ -7,14 +7,14 @@ import brachy.modularui.utils.Stencil;
 import net.minecraft.client.gui.GuiGraphics;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.items.wrapper.EmptyHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.wrapper.EmptyItemHandler;
 
 import org.jetbrains.annotations.ApiStatus;
 
 public class RecipeScreenRenderingUtil {
 
-    public static final IItemHandlerModifiable EMPTY_ITEM_HANDLER = new EmptyHandler();
+    public static final IItemHandlerModifiable EMPTY_ITEM_HANDLER = new EmptyItemHandler();
 
     @ApiStatus.Internal
     public static void drawScreenBackground(GuiGraphics guiGraphics, ModularScreen screen,

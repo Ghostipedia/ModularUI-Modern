@@ -9,8 +9,8 @@ import brachy.modularui.utils.Color;
 import brachy.modularui.utils.Interpolations;
 import brachy.modularui.utils.serialization.json.JsonHelper;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.google.gson.JsonObject;
 import lombok.Setter;

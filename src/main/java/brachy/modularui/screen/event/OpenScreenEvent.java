@@ -1,9 +1,10 @@
-package brachy.modularui.screen;
+package brachy.modularui.screen.event;
 
 import brachy.modularui.api.IMuiScreen;
+import brachy.modularui.screen.ModularScreen;
 
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;

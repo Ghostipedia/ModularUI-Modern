@@ -3,19 +3,16 @@ package brachy.modularui;
 import brachy.modularui.screen.RichTooltip;
 
 import net.minecraft.ChatFormatting;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
-import net.minecraftforge.common.ForgeConfigSpec.DoubleValue;
-import net.minecraftforge.common.ForgeConfigSpec.EnumValue;
-import net.minecraftforge.common.ForgeConfigSpec.IntValue;
+
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec.*;
 
 import java.util.Objects;
 
 public class ModularUIConfig {
 
-    private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-    public static final ForgeConfigSpec CONFIG;
+    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    public static final ModConfigSpec CONFIG;
 
     static {
         BUILDER.push("ui");
@@ -49,12 +46,12 @@ public class ModularUIConfig {
     public static final BooleanValue ENABLE_TEST_GUIS = BUILDER
             .comment("Enables a test block, test item with a test gui and opening a gui by right clicking a diamond.")
             .translation("config.modularui.enableTestGuis")
-            .worldRestart() //.gameRestart()
+            .gameRestart()
             .define("enableTestGuis", ModularUI.isDev());
     public static final BooleanValue ENABLE_TEST_OVERLAYS = BUILDER
             .comment("Enables a test overlay shown on title screen and watermark shown on every GuiContainer.")
             .translation("config.modularui.enableTestOverlays")
-            .worldRestart() //.gameRestart()
+            .gameRestart()
             .define("enableTestOverlays", false);
     public static final BooleanValue REPLACE_VANILLA_TOOLTIPS = BUILDER
             .comment("If true, vanilla tooltip will be replaced with MUI's RichTooltip")
@@ -126,44 +123,43 @@ public class ModularUIConfig {
             .define("showParentOutline", true);
 
     static {
-        BUILDER.pop();
         CONFIG = BUILDER.build();
     }
 
     public static int defaultScrollSpeed() {
-        return DEFAULT_SCROLL_SPEED.get();
+        return DEFAULT_SCROLL_SPEED.getAsInt();
     }
 
     public static boolean smoothProgressBars() {
-        return SMOOTH_PROGRESS_BARS.get();
+        return SMOOTH_PROGRESS_BARS.getAsBoolean();
     }
 
-    public static int animationTime() {
-        return ANIMATION_TIME.get();
+    public static boolean isSmoothProgressBars() {
+        return SMOOTH_PROGRESS_BARS.getAsBoolean();
     }
 
-    public static RichTooltip.Pos tooltipPos() {
+    public static RichTooltip.Pos getTooltipPos() {
         return TOOLTIP_POS.get();
     }
 
     public static boolean escRestoresLastText() {
-        return ESC_RESTORES_LAST_TEXT.get();
+        return ESC_RESTORES_LAST_TEXT.getAsBoolean();
     }
 
     public static boolean useDarkThemeByDefault() {
-        return USE_DARK_THEME_BY_DEFAULT.get();
+        return USE_DARK_THEME_BY_DEFAULT.getAsBoolean();
     }
 
     public static boolean enableTestGuis() {
-        return ENABLE_TEST_GUIS.get();
+        return ENABLE_TEST_GUIS.getAsBoolean();
     }
 
     public static boolean enableTestOverlays() {
-        return ENABLE_TEST_OVERLAYS.get();
+        return ENABLE_TEST_OVERLAYS.getAsBoolean();
     }
 
     public static boolean replaceVanillaTooltips() {
-        return REPLACE_VANILLA_TOOLTIPS.get();
+        return REPLACE_VANILLA_TOOLTIPS.getAsBoolean();
     }
 
     private static String lastValue = null;
@@ -188,7 +184,7 @@ public class ModularUIConfig {
         private Dev() {}
 
         public static boolean debugUI() {
-            return DEBUG_UI.get();
+            return DEBUG_UI.getAsBoolean();
         }
 
         public static int textColor() {
@@ -208,47 +204,47 @@ public class ModularUIConfig {
         }
 
         public static boolean showHovered() {
-            return SHOW_HOVERED.get();
+            return SHOW_HOVERED.getAsBoolean();
         }
 
         public static boolean showPos() {
-            return SHOW_POS.get();
+            return SHOW_POS.getAsBoolean();
         }
 
         public static boolean showSize() {
-            return SHOW_SIZE.get();
+            return SHOW_SIZE.getAsBoolean();
         }
 
         public static boolean showWidgetTheme() {
-            return SHOW_WIDGET_THEME.get();
+            return SHOW_WIDGET_THEME.getAsBoolean();
         }
 
         public static boolean showExtra() {
-            return SHOW_EXTRA.get();
+            return SHOW_EXTRA.getAsBoolean();
         }
 
         public static boolean showOutline() {
-            return SHOW_OUTLINE.get();
+            return SHOW_OUTLINE.getAsBoolean();
         }
 
         public static boolean showParent() {
-            return SHOW_PARENT.get();
+            return SHOW_PARENT.getAsBoolean();
         }
 
         public static boolean showParentPos() {
-            return SHOW_PARENT_POS.get();
+            return SHOW_PARENT_POS.getAsBoolean();
         }
 
         public static boolean showParentSize() {
-            return SHOW_PARENT_SIZE.get();
+            return SHOW_PARENT_SIZE.getAsBoolean();
         }
 
         public static boolean showParentWidgetTheme() {
-            return SHOW_PARENT_WIDGET_THEME.get();
+            return SHOW_PARENT_WIDGET_THEME.getAsBoolean();
         }
 
         public static boolean showParentOutline() {
-            return SHOW_PARENT_OUTLINE.get();
+            return SHOW_PARENT_OUTLINE.getAsBoolean();
         }
     }
 }

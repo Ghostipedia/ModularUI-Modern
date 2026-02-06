@@ -29,9 +29,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class GTMatrixUtils {
+public class MatrixUtils {
 
-    @SuppressWarnings("UnstableApiUsage")
     private static final ImmutableMap<Direction, Vector3fc> directionAxises = Util.make(() -> {
         ImmutableMap.Builder<Direction, Vector3fc> map = ImmutableMap.builderWithExpectedSize(6);
         for (Direction dir : Direction.values()) {
@@ -181,7 +180,7 @@ public class GTMatrixUtils {
      * @see Matrix4f#lookAt(Vector3fc, Vector3fc, Vector3fc)
      */
     public static Matrix4f lookAt(Vector3fc eyePos, Vector3fc target) {
-        return new Matrix4f().lookAt(eyePos, target, MathUtil.UNIT_Y);
+        return new Matrix4f().lookAt(eyePos, target, MathHelper.UNIT_Y);
     }
 
     /**
@@ -203,8 +202,19 @@ public class GTMatrixUtils {
      * @param target the point to look at
      */
     public static void lookAt(PoseStack.Pose pose, Vector3fc eyePos, Vector3fc target) {
-        pose.pose().lookAt(eyePos, target, MathUtil.UNIT_Y);
-        pose.normal().lookAlong(target, MathUtil.UNIT_Y);
+        lookAt(pose.pose(), eyePos, target);
+        pose.normal().lookAlong(target, MathHelper.UNIT_Y);
+    }
+
+    /**
+     * Make the pose stack's topmost transformation look at a point
+     *
+     * @param matrix the pose stack to modify
+     * @param eyePos the position of the camera
+     * @param target the point to look at
+     */
+    public static void lookAt(Matrix4f matrix, Vector3fc eyePos, Vector3fc target) {
+        matrix.lookAt(eyePos, target, MathHelper.UNIT_Y);
     }
 
     /**

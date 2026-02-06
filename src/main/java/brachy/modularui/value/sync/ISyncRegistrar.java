@@ -7,9 +7,9 @@ import brachy.modularui.widgets.slot.PlayerSlotGroup;
 import brachy.modularui.widgets.slot.SlotGroup;
 
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.items.wrapper.PlayerMainInvWrapper;
 
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,6 +17,10 @@ import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 public interface ISyncRegistrar<S extends ISyncRegistrar<S>> {
+
+    static String makeSyncKey(String name, int id) {
+        return name + ":" + id;
+    }
 
     boolean hasSyncHandler(SyncHandler syncHandler);
 
@@ -103,8 +107,8 @@ public interface ISyncRegistrar<S extends ISyncRegistrar<S>> {
         return registerSyncedAction(mapKey, true, true, action);
     }
 
-    default S registerSyncedAction(String mapKey, Side side, ISyncedAction action) {
-        return registerSyncedAction(mapKey, side.isClient(), side.isServer(), action);
+    default S registerSyncedAction(String mapKey, Dist side, ISyncedAction action) {
+        return registerSyncedAction(mapKey, side.isClient(), side.isDedicatedServer(), action);
     }
 
     default S registerClientSyncedAction(String mapKey, ISyncedAction action) {
@@ -178,8 +182,4 @@ public interface ISyncRegistrar<S extends ISyncRegistrar<S>> {
     }
 
     SlotGroup getSlotGroup(String name);
-
-    static String makeSyncKey(String name, int id) {
-        return name + ":" + id;
-    }
 }

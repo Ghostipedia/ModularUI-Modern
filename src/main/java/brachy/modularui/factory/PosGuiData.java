@@ -12,9 +12,9 @@ import org.jetbrains.annotations.NotNull;
 /**
  * See {@link GuiData} for an explanation for what this is for.
  */
-@Getter
 public class PosGuiData extends GuiData {
 
+    @Getter
     private final BlockPos blockPos;
 
     public PosGuiData(@NotNull Player player, BlockPos blockPos) {

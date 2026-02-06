@@ -41,15 +41,16 @@ import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ContainerScreenEvent;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ContainerScreenEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
@@ -65,7 +66,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 @ApiStatus.Internal
-@Mod.EventBusSubscriber(modid = ModularUI.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = ModularUI.MOD_ID, value = Dist.CLIENT)
 public class ClientScreenHandler {
 
     @Getter
@@ -187,12 +188,12 @@ public class ClientScreenHandler {
     // before JEI
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onScreenMouseScrolled(ScreenEvent.MouseScrolled.Pre event) {
-        double w = event.getScrollDelta();
-        if (w == 0) return;
-        defaultContext.updateMouseWheel(w);
-        if (validateGui(event.getScreen())) currentScreen.getContext().updateMouseWheel(w);
+        double wx = event.getScrollDeltaX(), wy = event.getScrollDeltaY();
+        if (wx == 0) return;
+        defaultContext.updateMouseWheel(wx, wy);
+        if (validateGui(event.getScreen())) currentScreen.getContext().updateMouseWheel(wx, wy);
 
-        if (doAction(currentScreen, ms -> ms.mouseScrolled(event.getMouseX(), event.getMouseY(), w))) {
+        if (doAction(currentScreen, ms -> ms.mouseScrolled(event.getMouseX(), event.getMouseY(), wx, wy))) {
             event.setCanceled(true);
         }
     }
@@ -228,22 +229,23 @@ public class ClientScreenHandler {
     }
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) {
-            OverlayStack.onTick();
-            defaultContext.tick();
-            if (validateGui()) {
-                currentScreen.onUpdate();
-            }
-            ticks++;
+    public static void onClientTick(ClientTickEvent.Post event) {
+        OverlayStack.onTick();
+        defaultContext.tick();
+        if (validateGui()) {
+            currentScreen.onUpdate();
         }
+        ticks++;
     }
 
     @SubscribeEvent
-    public static void onRenderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
-            GL11.glEnable(GL11.GL_STENCIL_TEST);
-        }
+    public static void onRenderTickPre(RenderFrameEvent.Pre event) {
+        GL11.glEnable(GL11.GL_STENCIL_TEST);
+        Stencil.reset();
+    }
+
+    @SubscribeEvent
+    public static void onRenderTickPost(RenderFrameEvent.Post event) {
         Stencil.reset();
     }
 
@@ -364,8 +366,7 @@ public class ClientScreenHandler {
     }
 
     public static void dragSlot(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        ModularGuiContext ctx = currentScreen.getContext();
-        getMCScreen().mouseDragged(ctx.getMouseX(), ctx.getMouseY(), button, dragX, dragY);
+        getMCScreen().mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     public static void clickSlot(ModularScreen ms, Slot slot) {
@@ -378,11 +379,11 @@ public class ClientScreenHandler {
                 // remove buttons to make sure they are not clicked
                 acc.setChildren(Collections.emptyList());
                 // set clicked slot to make sure the container clicks the desired slot
-                clickableScreen.gtceu$setClickedSlot(slot);
+                clickableScreen.mui$setClickedSlot(slot);
                 screen.mouseClicked(ctx.getMouseX(), ctx.getMouseY(), ctx.getMouseButton());
             } finally {
                 // undo modifications
-                clickableScreen.gtceu$setClickedSlot(null);
+                clickableScreen.mui$setClickedSlot(null);
                 acc.setChildren(buttonList);
             }
         }
@@ -410,12 +411,13 @@ public class ClientScreenHandler {
             guiGraphics.fillGradient(0, 0, screen.width, screen.height,
                     Color.withAlpha(color, (int) (startAlpha * alpha)),
                     Color.withAlpha(color, (int) (endAlpha * alpha)));
-            MinecraftForge.EVENT_BUS.post(new ScreenEvent.BackgroundRendered(screen, guiGraphics));
+            // noinspection removal,UnstableApiUsage
+            NeoForge.EVENT_BUS.post(new ScreenEvent.BackgroundRendered(screen, guiGraphics));
         }
     }
 
-    public static void drawScreen(GuiGraphics graphics, ModularScreen muiScreen, Screen mcScreen, int mouseX,
-                                  int mouseY, float partialTicks) {
+    public static void drawScreen(GuiGraphics graphics, ModularScreen muiScreen, Screen mcScreen,
+                                  int mouseX, int mouseY, float partialTicks) {
         if (mcScreen instanceof AbstractContainerScreen<?> container) {
             drawContainer(graphics, muiScreen, container, mouseX, mouseY, partialTicks);
         } else {
@@ -423,8 +425,8 @@ public class ClientScreenHandler {
         }
     }
 
-    public static void drawScreenInternal(GuiGraphics graphics, ModularScreen muiScreen, Screen mcScreen, int mouseX,
-                                          int mouseY, float partialTicks) {
+    public static void drawScreenInternal(GuiGraphics graphics, ModularScreen muiScreen, Screen mcScreen,
+                                          int mouseX, int mouseY, float partialTicks) {
         Stencil.reset();
         muiScreen.getContext().getStencil().push(muiScreen.getScreenArea());
         muiScreen.render(graphics, mouseX, mouseY, partialTicks);
@@ -444,7 +446,7 @@ public class ClientScreenHandler {
 
         Stencil.reset();
         muiScreen.getContext().getStencil().push(muiScreen.getScreenArea());
-        mcScreen.renderBackground(graphics);
+        mcScreen.renderBackground(graphics, mouseX, mouseY, partialTicks);
         int x = mcScreen.getGuiLeft();
         int y = mcScreen.getGuiTop();
 
@@ -468,7 +470,8 @@ public class ClientScreenHandler {
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         graphics.pose().pushPose();
         graphics.pose().translate(x, y, 0);
-        MinecraftForge.EVENT_BUS.post(new ContainerScreenEvent.Render.Foreground(mcScreen, graphics, mouseX, mouseY));
+        // noinspection UnstableApiUsage
+        NeoForge.EVENT_BUS.post(new ContainerScreenEvent.Render.Foreground(mcScreen, graphics, mouseX, mouseY));
 
         AbstractContainerMenu menu = mcScreen.getMenu();
         ItemStack draggingItem = acc.getDraggingItem().isEmpty() ? menu.getCarried() : acc.getDraggingItem();

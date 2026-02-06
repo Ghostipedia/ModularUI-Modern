@@ -9,14 +9,55 @@ import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Interpolation;
 
 import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class ScrollData {
+
+    public static final int DEFAULT_THICKNESS = -1;
+    @Getter
+    private final GuiAxis axis;
+    @Getter
+    private final boolean axisStart;
+    private final int thickness;
+    private final Animator scrollAnimator = new Animator()
+            .duration(500)
+            .curve(Interpolation.QUAD_OUT);
+    @Getter
+    protected boolean dragging;
+    protected int clickOffset;
+    private int fallbackThickness = -1;
+    @Getter
+    @Setter
+    private int scrollSpeed = 30;
+    /**
+     * Determines if scrolling of widgets below should still be canceled if this scroll view
+     * has hit the end and is currently not scrolling.
+     * Most of the time this should be true
+     *
+     * @return true if scrolling should be canceled even when this view hit an edge
+     */
+    @Getter
+    @Setter
+    private boolean cancelScrollEdge = true;
+    private IDrawable scrollbar;
+
+    @Getter
+    @Setter
+    private int scrollSize;
+    @Getter
+    private int scroll;
+    @Getter
+    private int animatingTo = 0;
+    protected ScrollData(GuiAxis axis, boolean axisStart, int thickness) {
+        this.axis = axis;
+        this.axisStart = axisStart;
+        this.thickness = thickness > 0 ? Math.max(2, thickness) : -1;
+    }
 
     /**
      * Creates scroll data which handles scrolling and scroll bar. Scrollbar is 4 pixels thick
@@ -51,50 +92,6 @@ public abstract class ScrollData {
     public static ScrollData of(GuiAxis axis, boolean axisStart, int thickness) {
         if (axis.isHorizontal()) return new HorizontalScrollData(axisStart, thickness);
         return new VerticalScrollData(axisStart, thickness);
-    }
-
-    public static final int DEFAULT_THICKNESS = -1;
-
-    @Getter
-    private final GuiAxis axis;
-    @Getter
-    private final boolean axisStart;
-    private final int thickness;
-    private int fallbackThickness = -1;
-    @Getter
-    @Setter
-    private int scrollSpeed = 30;
-    /**
-     * Determines if scrolling of widgets below should still be canceled if this scroll view
-     * has hit the end and is currently not scrolling.
-     * Most of the time this should be true
-     *
-     * @return true if scrolling should be canceled even when this view hit an edge
-     */
-    @Getter
-    @Setter
-    private boolean cancelScrollEdge = true;
-    private IDrawable scrollbar;
-
-    @Getter
-    @Setter
-    private int scrollSize;
-    @Getter
-    private int scroll;
-    @Getter
-    protected boolean dragging;
-    protected int clickOffset;
-
-    @Getter
-    private int animatingTo = 0;
-    private final Animator scrollAnimator = new Animator()
-            .duration(500)
-            .curve(Interpolation.QUAD_OUT);
-
-    protected ScrollData(GuiAxis axis, boolean axisStart, int thickness) {
-        this.axis = axis;
-        this.axisStart = axisStart;
-        this.thickness = thickness > 0 ? Math.max(2, thickness) : -1;
     }
 
     public int getThickness() {

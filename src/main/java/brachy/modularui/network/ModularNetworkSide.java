@@ -1,7 +1,8 @@
 package brachy.modularui.network;
 
 import brachy.modularui.ModularUI;
-import brachy.modularui.network.packets.CloseAllGuiPacket;
+import brachy.modularui.api.IPacketWriter;
+import brachy.modularui.network.packets.CloseAllGuisPacket;
 import brachy.modularui.network.packets.CloseGuiPacket;
 import brachy.modularui.network.packets.ReopenGuiPacket;
 import brachy.modularui.network.packets.SyncHandlerPacket;
@@ -9,10 +10,11 @@ import brachy.modularui.screen.ModularContainerMenu;
 import brachy.modularui.value.sync.ModularSyncManager;
 import brachy.modularui.value.sync.SyncHandler;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.PlayerContainerEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 
 import it.unimi.dsi.fastutil.ints.Int2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
@@ -31,7 +33,7 @@ public abstract class ModularNetworkSide {
         this.client = client;
     }
 
-    abstract void sendPacket(NetworkHandler.INetPacket packet, Player player);
+    abstract void sendPacket(CustomPacketPayload packet, Player player);
 
     void activateInternal(int networkId, ModularSyncManager manager) {
         if (activeScreens.containsKey(networkId))
@@ -62,36 +64,37 @@ public abstract class ModularNetworkSide {
         }
         activeScreens.clear();
         inverseActiveScreens.clear();
-        if (sync) sendPacket(new CloseAllGuiPacket(), player);
+        if (sync) sendPacket(new CloseAllGuisPacket(), player);
     }
 
     @ApiStatus.Internal
     public void receivePacket(SyncHandlerPacket packet) {
-        ModularSyncManager msm = activeScreens.get(packet.networkId);
+        ModularSyncManager msm = activeScreens.get(packet.networkId());
         if (msm == null) return; // silently discard packets for inactive screens
         try {
-            int id = packet.action ? 0 : packet.packet.readVarInt();
-            msm.receiveWidgetUpdate(packet.panel, packet.key, packet.action, id, packet.packet);
+            int id = packet.action() ? 0 : packet.packet().readVarInt();
+            msm.receiveWidgetUpdate(packet.panel(), packet.key(), packet.action(), id, packet.packet());
         } catch (IndexOutOfBoundsException e) {
-            ModularUI.LOGGER.error("Failed to read packet for sync handler {} in panel {}", packet.key, packet.panel);
+            ModularUI.LOGGER.error("Failed to read packet for sync handler {} in panel {}", packet.key(), packet.panel());
             ModularUI.LOGGER.catching(e);
         }
     }
 
     @ApiStatus.Internal
-    public void sendSyncHandlerPacket(String panel, SyncHandler syncHandler, FriendlyByteBuf buffer, Player player) {
+    public void sendSyncHandlerPacket(String panel, SyncHandler syncHandler,
+                                      IPacketWriter<? super RegistryFriendlyByteBuf> writer, Player player) {
         ModularSyncManager msm = syncHandler.getSyncManager().getModularSyncManager();
         if (!inverseActiveScreens.containsKey(msm)) return;
         int id = inverseActiveScreens.getInt(msm);
-        sendPacket(new SyncHandlerPacket(id, panel, syncHandler.getKey(), false, buffer), player);
+        sendPacket(new SyncHandlerPacket(id, panel, syncHandler.getKey(), false, writer), player);
     }
 
     @ApiStatus.Internal
-    public void sendActionPacket(ModularSyncManager msm, String panel, String key, FriendlyByteBuf buffer,
-                                 Player player) {
+    public void sendActionPacket(ModularSyncManager msm, String panel, String key,
+                                 IPacketWriter<? super RegistryFriendlyByteBuf> writer, Player player) {
         if (!inverseActiveScreens.containsKey(msm)) return;
         int id = inverseActiveScreens.getInt(msm);
-        sendPacket(new SyncHandlerPacket(id, panel, key, true, buffer), player);
+        sendPacket(new SyncHandlerPacket(id, panel, key, true, writer), player);
     }
 
     @ApiStatus.Internal
@@ -122,7 +125,7 @@ public abstract class ModularNetworkSide {
             closeContainer(player);
             player.containerMenu = msm.getMenu();
             msm.onOpen();
-            MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(player, msm.getMenu()));
+            NeoForge.EVENT_BUS.post(new PlayerContainerEvent.Open(player, msm.getMenu()));
         }
         if (sync) sendPacket(new ReopenGuiPacket(inverseActiveScreens.getInt(msm)), player);
     }

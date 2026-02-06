@@ -1,40 +1,40 @@
 package brachy.modularui.network.packets;
 
+import brachy.modularui.ModularUI;
 import brachy.modularui.api.MCHelper;
 import brachy.modularui.network.ModularNetwork;
-import brachy.modularui.network.NetworkHandler;
 
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import io.netty.buffer.ByteBuf;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-@NoArgsConstructor
-@AllArgsConstructor
-public class CloseGuiPacket implements NetworkHandler.INetPacket {
+public record CloseGuiPacket(int networkId, boolean dispose) implements CustomPacketPayload {
 
-    private int networkId;
-    private boolean dispose;
+    // @formatter:off
+    public static final ResourceLocation ID = ModularUI.id("close_gui");
+    public static final Type<CloseGuiPacket> TYPE = new Type<>(ID);
+    public static final StreamCodec<ByteBuf, CloseGuiPacket> CODEC = StreamCodec.composite(
+            ByteBufCodecs.VAR_INT, CloseGuiPacket::networkId,
+            ByteBufCodecs.BOOL, CloseGuiPacket::dispose,
+            CloseGuiPacket::new
+    );
+    // @formatter:on
 
-    public CloseGuiPacket(FriendlyByteBuf buffer) {
-        this.networkId = buffer.readVarInt();
-        this.dispose = buffer.readBoolean();
-    }
-
-    @Override
-    public void encode(FriendlyByteBuf buffer) {
-        buffer.writeVarInt(this.networkId);
-        buffer.writeBoolean(this.dispose);
-    }
-
-    @Override
-    public void execute(NetworkEvent.Context handler) {
-        if (handler.getDirection() == NetworkDirection.PLAY_TO_CLIENT) {
+    public void execute(IPayloadContext context) {
+        if (context.flow() == PacketFlow.CLIENTBOUND) {
             ModularNetwork.CLIENT.closeContainer(this.networkId, this.dispose, MCHelper.getPlayer(), false);
         } else {
-            ModularNetwork.SERVER.closeContainer(this.networkId, this.dispose, handler.getSender(), false);
+            ModularNetwork.SERVER.closeContainer(this.networkId, this.dispose, context.player(), false);
         }
+    }
+
+    @Override
+    public Type<CloseGuiPacket> type() {
+        return TYPE;
     }
 }

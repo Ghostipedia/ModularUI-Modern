@@ -2,7 +2,7 @@ package brachy.modularui.integration.recipeviewer.entry.fluid;
 
 import brachy.modularui.integration.recipeviewer.entry.EntryList;
 
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.List;
 

@@ -20,21 +20,6 @@ public class DelegatingWidget extends AbstractWidget implements IDelegatingWidge
         resizer(new StandardResizer(this));
     }
 
-    protected void setDelegate(IWidget delegate) {
-        if (!this.delegate.isEmpty()) {
-            this.delegate.get().dispose();
-            this.delegate.remove();
-        }
-        if (delegate != null) {
-            this.delegate.set(delegate);
-            if (isValid()) {
-                initialise(getParent(), true);
-                delegate.scheduleResize();
-            }
-            onChangeDelegate(delegate);
-        }
-    }
-
     protected void onChangeDelegate(IWidget delegate) {}
 
     @Override
@@ -104,5 +89,20 @@ public class DelegatingWidget extends AbstractWidget implements IDelegatingWidge
     @Override
     public IWidget getDelegate() {
         return delegate.getOrNull();
+    }
+
+    protected void setDelegate(IWidget delegate) {
+        if (!this.delegate.isEmpty()) {
+            this.delegate.get().dispose();
+            this.delegate.remove();
+        }
+        if (delegate != null) {
+            this.delegate.set(delegate);
+            if (isValid()) {
+                initialise(getParent(), true);
+                delegate.scheduleResize();
+            }
+            onChangeDelegate(delegate);
+        }
     }
 }

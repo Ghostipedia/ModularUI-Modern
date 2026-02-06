@@ -7,6 +7,10 @@ import java.util.function.Supplier;
 
 public final class Memoizer {
 
+    private Memoizer() {
+        throw new AssertionError();
+    }
+
     /**
      * This method doesn't return a thread-safe memoization of the delegate.
      * <p>
@@ -55,9 +59,5 @@ public final class Memoizer {
      */
     public static <T> MemoizedSupplier<T> memoize(Supplier<T> delegate, long timeToLive) {
         return new MemoizedSupplier<>(delegate, timeToLive);
-    }
-
-    private Memoizer() {
-        throw new AssertionError();
     }
 }

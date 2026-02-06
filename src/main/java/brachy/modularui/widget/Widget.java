@@ -4,29 +4,32 @@ import brachy.modularui.api.ITheme;
 import brachy.modularui.api.IThemeApi;
 import brachy.modularui.api.IUIHolder;
 import brachy.modularui.api.drawable.IDrawable;
+import brachy.modularui.api.layout.IResizeable;
 import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.value.ISyncOrValue;
 import brachy.modularui.api.value.IValue;
 import brachy.modularui.api.widget.IDragResizeable;
 import brachy.modularui.api.widget.IGuiAction;
+import brachy.modularui.api.widget.INotifyEnabled;
 import brachy.modularui.api.widget.IPositioned;
 import brachy.modularui.api.widget.ISynced;
 import brachy.modularui.api.widget.ITooltip;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.factory.GuiData;
+import brachy.modularui.screen.ModularPanel;
+import brachy.modularui.screen.ModularScreen;
 import brachy.modularui.screen.RichTooltip;
-import brachy.modularui.screen.UISettings;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.theme.WidgetThemeKey;
 import brachy.modularui.value.sync.ISyncRegistrar;
 import brachy.modularui.value.sync.ModularSyncManager;
-import brachy.modularui.value.sync.PanelSyncManager;
 import brachy.modularui.value.sync.SyncHandler;
 import brachy.modularui.value.sync.ValueSyncHandler;
-import brachy.modularui.widget.sizer.StandardResizer;
-import brachy.modularui.widgets.slot.ItemSlot;
+import brachy.modularui.widget.sizer.Area;
+import brachy.modularui.widget.sizer.Flex;
+import brachy.modularui.widget.sizer.IUnResizeable;
 
 import lombok.Getter;
 import org.jetbrains.annotations.ApiStatus;
@@ -51,13 +54,52 @@ import java.util.function.Predicate;
  *
  * @param <W> the type of this widget. This is used for proper return types in builder like methodsY
  */
-public class Widget<W extends Widget<W>> extends AbstractWidget implements IPositioned<W>, ITooltip<W>, ISynced<W> {
+public class Widget<W extends Widget<W>> implements IWidget, IPositioned<W>, ITooltip<W>, ISynced<W> {
 
-    // other
+    /**
+     * Returns the area of this widget. This contains information such as position, size, relative position to parent,
+     * padding and margin.
+     * Even tho this is a mutable object, you should refrain from modifying the values.
+     */
     @Getter
-    private boolean excludeAreaInRecipeViewer = false;
+    private final Area area = new Area();
+    /**
+     * Returns the flex of this widget. This is responsible for calculating size, pos and relative pos.
+     * Originally this was intended to be modular for custom flex class. May come back to this in the future.
+     * Same as {@link #flex()}.
+     */
+    @Getter
+    private final Flex flex = new Flex(this);
+    // other
+    @Nullable
+    @Getter
+    private String name;
+    /**
+     * Returns if this widget is currently enabled. Disabled widgets (and all its children) are not rendered and can't
+     * be interacted with.
+     */
+    @Getter
+    private boolean enabled = true;
+    private int timeHovered = -1;
+    // gui context
+    private int timeBelowMouse = -1;
+    @Getter
+    private boolean recipeViewerExclusionArea = false;
+    /**
+     * Returns if this widget is currently part of an open panel. Only if this is true information about parent, panel
+     * and gui context can
+     * be obtained.
+     */
+    @Getter
+    private boolean valid = false;
+    private IWidget parent = null;
     // sizing
+    private ModularPanel panel = null;
+    private ModularGuiContext context = null;
+    private IResizeable resizer = this.flex;
+
     private BiConsumer<W, IViewportStack> transform;
+    private boolean requiresResize = false;
     // syncing
     /**
      * Returns the value handler of this widget. Value handlers can provide and update any kind of objects like numbers
@@ -71,14 +113,12 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     private String syncKey;
     /**
      * This is intended to only be used when building the main panel in methods like
-     * {@link IUIHolder#buildUI(GuiData, PanelSyncManager, UISettings)}
+     * {@link IUIHolder#buildUI(GuiData, brachy.modularui.value.sync.PanelSyncManager, brachy.modularui.screen.UISettings)}
      * since it's called on server and client. Otherwise, this will not work.
      */
     @Nullable
     private SyncHandler syncHandler;
     // rendering
-    @Nullable
-    private final IDrawable shadow = null;
     /**
      * The current set background. This is not an accurate representation of what is actually being displayed currently.
      * Usually background is handled by the theme, which is when this is null.
@@ -119,33 +159,65 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     @Nullable
     private Consumer<W> onUpdateListener;
 
-    public Widget() {
-        resizer(new StandardResizer(this));
-    }
-
     // -----------------
     // === Lifecycle ===
     // -----------------
 
+    /**
+     * Called when a panel is opened. Use {@link #onInit()} and {@link #afterInit()} for custom logic.
+     *
+     * @param parent the parent this element belongs to
+     * @param late   true if this is called some time after the widget tree of the parent has been initialised
+     */
+    @ApiStatus.Internal
     @Override
-    void onInitInternal(boolean late) {
-        if (this.guiActionListeners != null) {
-            for (IGuiAction action : this.guiActionListeners) {
-                getContext().getScreen().registerGuiActionListener(action);
+    public void initialise(@NotNull IWidget parent, boolean late) {
+        this.timeHovered = -1;
+        this.timeBelowMouse = -1;
+        if (!(this instanceof ModularPanel)) {
+            this.parent = parent;
+            this.panel = parent.getPanel();
+            this.context = parent.getContext();
+            getArea().z(parent.getArea().z() + 1);
+            if (this.guiActionListeners != null) {
+                for (IGuiAction action : this.guiActionListeners) {
+                    this.context.getScreen().registerGuiActionListener(action);
+                }
             }
         }
-
         if (this.value != null && this.syncKey != null) {
             throw new IllegalStateException(
                     "Widget has a value and a sync key for a synced value. This is not allowed!");
         }
+        this.valid = true;
         if (!getScreen().isClientOnly()) {
             initialiseSyncHandler(getScreen().getSyncManager(), late);
         }
-        if (isExcludeAreaInRecipeViewer()) {
+        if (isRecipeViewerExclusionArea()) {
             getContext().getRecipeViewerSettings().addExclusionArea(this);
         }
+        onInit();
+        if (hasChildren()) {
+            for (IWidget child : getChildren()) {
+                child.initialise(this, false);
+            }
+        }
+        afterInit();
+        onUpdate();
+        this.requiresResize = false;
     }
+
+    /**
+     * Called after this widget is initialised and before the children are initialised.
+     */
+    @ApiStatus.OverrideOnly
+    public void onInit() {}
+
+    /**
+     * Called after this widget is initialised and after the children are initialised.
+     */
+    @ApiStatus.OverrideOnly
+    public void afterInit() {}
 
     /**
      * Retrieves, verifies and initialises a linked sync handler.
@@ -161,7 +233,9 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
             }
         }
         if (handler != null) setSyncOrValue(handler);
-        if (this.syncHandler instanceof ValueSyncHandler<?> valueSyncHandler &&
+        else this.syncHandler = null;
+
+        if (this.syncHandler instanceof ValueSyncHandler<?, ?> valueSyncHandler &&
                 valueSyncHandler.getChangeListener() == null) {
             valueSyncHandler.setChangeListener(this::markTooltipDirty);
         }
@@ -177,14 +251,26 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
         if (isValid()) {
             if (this.guiActionListeners != null) {
                 for (IGuiAction action : this.guiActionListeners) {
-                    getScreen().removeGuiActionListener(action);
+                    this.context.getScreen().removeGuiActionListener(action);
                 }
             }
-            if (isExcludeAreaInRecipeViewer()) {
+            if (isRecipeViewerExclusionArea()) {
                 getContext().getRecipeViewerSettings().removeExclusionArea(this);
             }
         }
-        super.dispose();
+        if (hasChildren()) {
+            for (IWidget child : getChildren()) {
+                child.dispose();
+            }
+        }
+        if (!(this instanceof ModularPanel)) {
+            this.panel = null;
+            this.parent = null;
+            this.context = null;
+        }
+        this.timeHovered = -1;
+        this.timeBelowMouse = -1;
+        this.valid = false;
     }
 
     // -----------------
@@ -202,11 +288,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
      */
     @Override
     public void drawBackground(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {
-        if (this.shadow != null) {
-            this.shadow.drawAtZero(context, getArea().width, getArea().height,
-                    getActiveWidgetTheme(widgetTheme, isHovering()));
-        }
-        IDrawable bg = getCurrentBackground(getPanel().getTheme(), widgetTheme);
+        IDrawable bg = getCurrentBackground(context.getTheme(), widgetTheme);
         if (bg != null) {
             bg.drawAtZero(context, getArea().width, getArea().height, getActiveWidgetTheme(widgetTheme, isHovering()));
         }
@@ -215,7 +297,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     /**
      * Called between {@link IWidget#drawBackground(ModularGuiContext, WidgetThemeEntry)} and
      * {@link IWidget#drawOverlay(ModularGuiContext, WidgetThemeEntry)}.
-     * Custom visuals should be drawn here. For example the {@link ItemSlot
+     * Custom visuals should be drawn here. For example the {@link brachy.modularui.widgets.slot.ItemSlot
      * ItemSlot} draws its item
      * here. If a parent of this widget is disabled, this widget will not be drawn.
      *
@@ -236,7 +318,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
      */
     @Override
     public void drawOverlay(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {
-        IDrawable bg = getCurrentOverlay(getPanel().getTheme(), widgetTheme);
+        IDrawable bg = getCurrentOverlay(context.getTheme(), widgetTheme);
         if (bg != null) {
             bg.drawAtZeroPadded(context, getArea(), getActiveWidgetTheme(widgetTheme, isHovering()));
         }
@@ -320,6 +402,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
      * {@link ITooltip#tooltipDynamic(Consumer)}.
      * It will invalidate the current tooltip and be caused to rebuild.
      */
+    @Override
     public void markTooltipDirty() {
         if (this.tooltip != null) {
             this.tooltip.markDirty();
@@ -370,13 +453,13 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     @ApiStatus.NonExtendable
     public final <T extends WidgetTheme> WidgetThemeEntry<T> getWidgetTheme(ITheme theme, Class<T> expectedType) {
         WidgetThemeEntry<?> entry = getWidgetTheme(theme);
-        if (entry.key().isOfType(expectedType)) {
+        if (entry.getKey().isOfType(expectedType)) {
             return (WidgetThemeEntry<T>) entry;
         }
         throw new IllegalStateException(String.format(
                 "Got widget theme with invalid type in widget '%s'. Got type '%s'" +
                         ", but expected type '%s'!",
-                this, entry.key().getWidgetThemeType().getSimpleName(), expectedType.getSimpleName()));
+                this, entry.getKey().getWidgetThemeType().getSimpleName(), expectedType.getSimpleName()));
     }
 
     /**
@@ -412,7 +495,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
      * <p>
      * Following argument special cases should be considered:
      * <ul>
-     * <li>{@code null} will fallback to {@link WidgetThemeEntry#hoverTheme()}</li>
+     * <li>{@code null} will fallback to {@link WidgetThemeEntry#getHoverTheme()}</li>
      * <li>{@link IDrawable#EMPTY} will make the hover background invisible</li>
      * <li>{@link IDrawable#NONE} will use the normal background instead (which is also achieved using
      * {@link #disableHoverBackground()})</li>
@@ -506,7 +589,8 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     @MustBeInvokedByOverriders
     @Override
     public void onUpdate() {
-        super.onUpdate();
+        if (isHovering()) this.timeHovered++;
+        if (isBelowMouse()) this.timeBelowMouse++;
         if (this.onUpdateListener != null) {
             this.onUpdateListener.accept(getThis());
         }
@@ -531,7 +615,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
         }
         this.guiActionListeners.add(action);
         if (isValid()) {
-            getScreen().registerGuiActionListener(action);
+            this.context.getScreen().registerGuiActionListener(action);
         }
         return getThis();
     }
@@ -587,17 +671,71 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
 
     @Override
     public int getDefaultWidth() {
-        return isValid() ? getWidgetTheme(getPanel().getTheme()).theme().getDefaultWidth() : 18;
+        return isValid() ? getWidgetTheme(getContext().getTheme()).getTheme().getDefaultWidth() : 18;
     }
 
     @Override
     public int getDefaultHeight() {
-        return isValid() ? getWidgetTheme(getPanel().getTheme()).theme().getDefaultHeight() : 18;
+        return isValid() ? getWidgetTheme(getContext().getTheme()).getTheme().getDefaultHeight() : 18;
+    }
+
+    @Override
+    public void scheduleResize() {
+        this.requiresResize = true;
+    }
+
+    @Override
+    public boolean requiresResize() {
+        return this.requiresResize;
+    }
+
+    @MustBeInvokedByOverriders
+    @Override
+    public void onResized() {
+        this.requiresResize = false;
+    }
+
+    /**
+     * Returns the flex of this widget. This is responsible for calculating size, pos and relative pos.
+     * Originally this was intended to be modular for custom flex class. May come back to this in the future.
+     * Same as {@link #getFlex()}.
+     *
+     * @return flex of this widget
+     */
+    @Override
+    public Flex flex() {
+        return getFlex();
+    }
+
+    /**
+     * Returns the resizer of this widget. This is actually the field responsible for resizing this widget.
+     * Within MUI this is always the same as {@link #flex()}. Custom resizer have not been tested.
+     * The relevance of separating flex and resizer is left to be investigated in the future.
+     *
+     * @return the resizer of this widget
+     */
+    @NotNull
+    @Override
+    public IResizeable resizer() {
+        return this.resizer;
+    }
+
+    /**
+     * Sets the resizer of this widget, which is responsible for resizing this widget.
+     * Within MUI this setter is never used. Custom resizer have not been tested.
+     * The relevance of separating flex and resizer is left to be investigated in the future.
+     *
+     * @param resizer resizer
+     */
+    @ApiStatus.Experimental
+    @Override
+    public void resizer(IResizeable resizer) {
+        this.resizer = resizer != null ? resizer : IUnResizeable.INSTANCE;
     }
 
     @Override
     public void transform(IViewportStack stack) {
-        super.transform(stack);
+        IWidget.super.transform(stack);
         if (this.transform != null) {
             this.transform.accept(getThis(), stack);
         }
@@ -606,6 +744,72 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     public W transform(BiConsumer<W, IViewportStack> transform) {
         this.transform = transform;
         return getThis();
+    }
+
+    // -------------------
+    // === Gui context ===
+    // -------------------
+
+    /**
+     * Returns the screen of the panel of this widget is being opened in.
+     *
+     * @return the screen of this widget
+     * @throws IllegalStateException if {@link #isValid()} returns false
+     */
+    @Override
+    public ModularScreen getScreen() {
+        return getPanel().getScreen();
+    }
+
+    /**
+     * Returns the panel of this widget is being opened in.
+     *
+     * @return the screen of this widget
+     * @throws IllegalStateException if {@link #isValid()} returns false
+     */
+    @Override
+    public @NotNull ModularPanel getPanel() {
+        if (!isValid()) {
+            throw new IllegalStateException(this + " is not in a valid state!");
+        }
+        return this.panel;
+    }
+
+    /**
+     * Returns the parent of this widget. If this is a {@link ModularPanel} this will always return null contrary to the
+     * annotation.
+     *
+     * @return the screen of this widget
+     * @throws IllegalStateException if {@link #isValid()} returns false
+     */
+    @Override
+    public @NotNull IWidget getParent() {
+        if (!isValid()) {
+            throw new IllegalStateException(this + " is not in a valid state!");
+        }
+        return this.parent;
+    }
+
+    /**
+     * Returns the gui context of the screen this widget is part of.
+     *
+     * @return the screen of this widget
+     * @throws IllegalStateException if {@link #isValid()} returns false
+     */
+    @Override
+    public ModularGuiContext getContext() {
+        if (!isValid()) {
+            throw new IllegalStateException(this + " is not in a valid state!");
+        }
+        return this.context;
+    }
+
+    /**
+     * Used to set the gui context on panels internally.
+     */
+    @ApiStatus.Internal
+    protected final void setContext(ModularGuiContext context) {
+        this.context = context;
     }
 
     // ---------------
@@ -635,7 +839,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
 
     /**
      * Sets a sync handler id. A sync handler with the same id must have been registered to the appropriate
-     * {@link PanelSyncManager PanelSyncManager} for this to work.
+     * {@link brachy.modularui.value.sync.PanelSyncManager PanelSyncManager} for this to work.
      * This method is preferred over setting a sync handler directly since this does not require the widget to be
      * defined on both sides.
      *
@@ -649,22 +853,37 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
         return getThis();
     }
 
+    @Override
+    public void setEnabled(boolean enabled) {
+        if (this.enabled != enabled) {
+            this.enabled = enabled;
+            if (this.isValid() && getParent() instanceof INotifyEnabled notifyEnabled) {
+                notifyEnabled.onChildChangeEnabled(this, enabled);
+            }
+        }
+    }
+
+    /**
+     * Used for widgets to set a sync or value handler.
+     */
     @MustBeInvokedByOverriders
     protected void setSyncOrValue(@NotNull ISyncOrValue syncOrValue) {
         if (!syncOrValue.isSyncHandler() && !syncOrValue.isValueHandler()) return;
         checkValidSyncOrValue(syncOrValue);
+        if (syncOrValue instanceof SyncHandler syncHandler1) this.syncHandler = syncHandler1;
+        if (syncOrValue instanceof IValue<?> value1) this.value = value1;
     }
 
     // -------------
     // === Other ===
     // -------------
 
-    public W excludeAreaInRecipeViewer() {
-        return excludeAreaInRecipeViewer(true);
+    public W recipeViewerExclusionArea() {
+        return recipeViewerExclusionArea(true);
     }
 
-    public W excludeAreaInRecipeViewer(boolean val) {
-        this.excludeAreaInRecipeViewer = val;
+    public W recipeViewerExclusionArea(boolean value) {
+        this.recipeViewerExclusionArea = value;
         if (isValid()) {
             getContext().getRecipeViewerSettings().addExclusionArea(this);
         }
@@ -680,6 +899,48 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     public W disabled() {
         setEnabled(false);
         return getThis();
+    }
+
+    @MustBeInvokedByOverriders
+    @Override
+    public void onMouseStartHover() {
+        this.timeHovered = 0;
+    }
+
+    @MustBeInvokedByOverriders
+    @Override
+    public void onMouseEndHover() {
+        this.timeHovered = -1;
+    }
+
+    @MustBeInvokedByOverriders
+    @Override
+    public void onMouseEnterArea() {
+        this.timeBelowMouse = 0;
+    }
+
+    @MustBeInvokedByOverriders
+    @Override
+    public void onMouseLeaveArea() {
+        this.timeBelowMouse = -1;
+    }
+
+    @Override
+    public boolean isHoveringFor(int ticks) {
+        return timeHovered >= ticks;
+    }
+
+    @Override
+    public boolean isBelowMouseFor(int ticks) {
+        return timeBelowMouse >= ticks;
+    }
+
+    public int getTicksHovered() {
+        return timeHovered;
+    }
+
+    public int getTicksBelowMouse() {
+        return timeBelowMouse;
     }
 
     @Override
@@ -698,7 +959,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
      * @return this
      */
     public W name(String name) {
-        setName(name);
+        this.name = name;
         return getThis();
     }
 
@@ -711,5 +972,25 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     @Override
     public W getThis() {
         return (W) this;
+    }
+
+    /**
+     * This is only used in {@link #toString()}.
+     *
+     * @return the simple class name or other fitting name
+     */
+    protected String getTypeName() {
+        return getClass().getSimpleName();
+    }
+
+    /**
+     * @return the simple class plus the debug name, if set
+     */
+    @Override
+    public String toString() {
+        if (getName() != null) {
+            return getTypeName() + "#" + getName();
+        }
+        return getTypeName();
     }
 }

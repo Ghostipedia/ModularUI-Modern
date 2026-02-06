@@ -19,8 +19,8 @@ import brachy.modularui.widgets.TextWidget;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
@@ -164,16 +164,11 @@ public interface IKey extends IDrawable, IJsonSerializable<IKey> {
     /**
      * Creates a dynamic text key.
      *
-     * @param supp string supplier
+     * @param supplier string supplier
      * @return dynamic text key
      */
-    static IKey dynamic(@NotNull Supplier<@NotNull Component> supp) {
-        // DO NOT PULL OUT INTO A LOCAL VAR IT WILL BREAK THE SUPPLIER
-        if (supp.get() instanceof MutableComponent) {
-            return dynamicKey(() -> IKey.lang(supp.get()));
-        } else {
-            return dynamicKey(() -> IKey.lang(supp.get().copy()));
-        }
+    static IKey dynamic(@NotNull Supplier<@NotNull Component> supplier) {
+        return dynamicKey(() -> IKey.lang(supplier.get()));
     }
 
     /**

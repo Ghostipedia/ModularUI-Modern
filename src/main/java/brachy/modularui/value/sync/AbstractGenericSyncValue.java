@@ -2,8 +2,7 @@ package brachy.modularui.value.sync;
 
 import brachy.modularui.ModularUI;
 
-import net.minecraft.network.FriendlyByteBuf;
-
+import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,7 +10,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public abstract class AbstractGenericSyncValue<T> extends ValueSyncHandler<T> {
+public abstract class AbstractGenericSyncValue<B extends ByteBuf, T> extends ValueSyncHandler<B, T> {
 
     private final Class<T> type;
     private final Supplier<T> getter;
@@ -22,10 +21,8 @@ public abstract class AbstractGenericSyncValue<T> extends ValueSyncHandler<T> {
         this.getter = Objects.requireNonNull(getter);
         this.setter = setter;
         this.cache = getter.get();
-        if (type == null) {
-            if (this.cache == null) {
-                throw new IllegalArgumentException("If the value class is not give, then the getter must return a non null value!");
-            }
+        if (type == null && this.cache != null) {
+            // noinspection unchecked
             type = (Class<T>) this.cache.getClass();
         }
         this.type = type;
@@ -46,10 +43,8 @@ public abstract class AbstractGenericSyncValue<T> extends ValueSyncHandler<T> {
             this.setter = serverSetter != null ? serverSetter : clientSetter;
         }
         this.cache = this.getter.get();
-        if (type == null) {
-            if (this.cache == null) {
-                throw new IllegalArgumentException("If the value class is not give, then the getter must return a non null value!");
-            }
+        if (type == null && this.cache != null) {
+            // noinspection unchecked
             type = (Class<T>) this.cache.getClass();
         }
         this.type = type;
@@ -59,9 +54,9 @@ public abstract class AbstractGenericSyncValue<T> extends ValueSyncHandler<T> {
 
     protected abstract boolean areEqual(T a, T b);
 
-    protected abstract void serialize(FriendlyByteBuf buffer, T value);
+    protected abstract void serialize(B buffer, T value);
 
-    protected abstract T deserialize(FriendlyByteBuf buffer);
+    protected abstract T deserialize(B buffer);
 
     @Override
     public T getValue() {
@@ -96,18 +91,27 @@ public abstract class AbstractGenericSyncValue<T> extends ValueSyncHandler<T> {
     }
 
     @Override
-    public void write(FriendlyByteBuf buffer) {
+    public void write(B buffer) {
         serialize(buffer, this.cache);
     }
 
     @Override
-    public void read(FriendlyByteBuf buffer) {
+    public void read(B buffer) {
         setValue(deserialize(buffer), true, false);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Class<T> getValueType() {
-        return type;
+        if (this.type != null) return type;
+        if (this.cache != null) {
+            return (Class<T>) this.cache.getClass();
+        }
+        T t = this.getter.get();
+        if (t != null) {
+            return (Class<T>) t.getClass();
+        }
+        return null;
     }
 
     @Override
@@ -120,7 +124,7 @@ public abstract class AbstractGenericSyncValue<T> extends ValueSyncHandler<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public <V> AbstractGenericSyncValue<V> cast() {
-        return (AbstractGenericSyncValue<V>) this;
+    public <V> AbstractGenericSyncValue<B, V> cast() {
+        return (AbstractGenericSyncValue<B, V>) this;
     }
 }

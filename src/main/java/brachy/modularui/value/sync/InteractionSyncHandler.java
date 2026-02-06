@@ -5,7 +5,7 @@ import brachy.modularui.api.value.sync.IServerMouseAction;
 import brachy.modularui.utils.KeyboardData;
 import brachy.modularui.utils.MouseData;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
 public class InteractionSyncHandler extends SyncHandler {
 
@@ -18,10 +18,10 @@ public class InteractionSyncHandler extends SyncHandler {
     private IServerKeyboardAction keyTapped;
 
     @Override
-    public void readOnClient(int id, FriendlyByteBuf buf) {}
+    public void readOnClient(int id, RegistryFriendlyByteBuf buf) {}
 
     @Override
-    public void readOnServer(int id, FriendlyByteBuf buf) {
+    public void readOnServer(int id, RegistryFriendlyByteBuf buf) {
         if (id < 10) {
             MouseData mouseData = MouseData.readPacket(buf);
             switch (id) {

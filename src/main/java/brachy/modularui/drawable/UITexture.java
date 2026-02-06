@@ -12,13 +12,15 @@ import brachy.modularui.widget.sizer.Area;
 
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.Accessors;
+import lombok.experimental.Tolerate;
 import org.jetbrains.annotations.Nullable;
 
 @Accessors(fluent = true, chain = true)
@@ -85,12 +87,11 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
     public UITexture(ResourceLocation location, float u0, float v0, float u1, float v1, @Nullable ColorType colorType,
                      boolean nonOpaque) {
         this.colorType = colorType;
-        boolean png = !location.getPath().endsWith(".png");
-        boolean textures = !location.getPath().startsWith("textures/");
+        boolean png = !location.getPath().endsWith(PNG_SUFFIX);
+        boolean textures = !location.getPath().startsWith(TEXTURES_PREFIX);
         if (png || textures) {
-            String path = location.getPath();
-            path = png ? (textures ? TEXTURES_PREFIX + path + PNG_SUFFIX : path + PNG_SUFFIX) : TEXTURES_PREFIX + path;
-            location = new ResourceLocation(location.getNamespace(), path);
+            location = location.withPath(
+                    path -> png ? (textures ? TEXTURES_PREFIX + path + PNG_SUFFIX : path + PNG_SUFFIX) : TEXTURES_PREFIX + path);
         }
         this.location = location;
         this.u0 = u0;
@@ -98,6 +99,15 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         this.u1 = u1;
         this.v1 = v1;
         this.nonOpaque = nonOpaque;
+    }
+
+    // only for usage in GuiTextures
+    static UITexture fullImageIcon(String path) {
+        return fullImageIcon(path, null);
+    }
+
+    static UITexture fullImageIcon(String path, ColorType colorType) {
+        return fullImage(ModularUI.MOD_ID, path, colorType);
     }
 
     public static Builder builder() {
@@ -109,11 +119,11 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
     }
 
     public static UITexture fullImage(String location) {
-        return fullImage(new ResourceLocation(location), null);
+        return fullImage(ResourceLocation.parse(location), null);
     }
 
     public static UITexture fullImage(String mod, String location) {
-        return fullImage(new ResourceLocation(mod, location), null);
+        return fullImage(ResourceLocation.fromNamespaceAndPath(mod, location), null);
     }
 
     public static UITexture fullImage(ResourceLocation location, ColorType colorType) {
@@ -121,11 +131,11 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
     }
 
     public static UITexture fullImage(String location, ColorType colorType) {
-        return fullImage(new ResourceLocation(location), colorType);
+        return fullImage(ResourceLocation.parse(location), colorType);
     }
 
     public static UITexture fullImage(String mod, String location, ColorType colorType) {
-        return fullImage(new ResourceLocation(mod, location), colorType);
+        return fullImage(ResourceLocation.fromNamespaceAndPath(mod, location), colorType);
     }
 
     public UITexture getSubArea(Area bounds) {
@@ -233,9 +243,11 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         } else if (JsonHelper.getBoolean(json, false, "canApplyTheme")) {
             builder.canApplyTheme();
         }
-        UITexture uiTexture = builder.build();
-        uiTexture.colorOverride = JsonHelper.getColor(json, 0, "colorOverride");
-        return uiTexture;
+        int colorOverride = JsonHelper.getColor(json, 0, "colorOverride");
+        if (colorOverride != 0) {
+            builder.colorOverride(colorOverride);
+        }
+        return builder.build();
     }
 
     @Override
@@ -251,7 +263,6 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         json.addProperty("u1", this.u1);
         json.addProperty("v1", this.v1);
         if (this.colorType != null) json.addProperty("colorType", this.colorType.getName());
-        json.addProperty("colorOverride", this.colorOverride);
         return true;
     }
 
@@ -275,41 +286,65 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
     /**
      * A builder class to help create image textures.
      */
+    @Accessors(chain = true, fluent = true)
     public static class Builder {
 
+        /**
+         * location of the image to draw
+         */
+        @Setter
         private ResourceLocation location;
         private int iw = defaultImageWidth, ih = defaultImageHeight;
         private int x, y, w, h;
         private float u0 = 0, v0 = 0, u1 = 1, v1 = 1;
         private Mode mode = Mode.FULL;
         private int bl = 0, bt = 0, br = 0, bb = 0;
-        private String name;
-        private boolean tiled = false;
-        private ColorType colorType = null;
-        private boolean nonOpaque = false;
-
         /**
-         * @param loc location of the image to draw
+         * Registers the texture with a name, so it can be used in json without creating the texture again.
+         * By default, theme color is applicable.
          */
-        public Builder location(ResourceLocation loc) {
-            this.location = loc;
-            return this;
-        }
+        @Setter
+        private String name;
+        @Setter
+        private boolean tiled = false;
+        /**
+         * Sets a function which defines how theme color is applied to this texture. Null means no color will be applied.
+         * <il>
+         * <li>Background textures should use {@link ColorType#DEFAULT} or {@link #defaultColorType()}</li>
+         * <li>White icons (only has a shape and some grey shading) should use {@link ColorType#ICON} or
+         * {@link #iconColorType()}</li>
+         * <li>Text should use {@link ColorType#TEXT} or {@link #textColorType()}</li>
+         * <li>Everything else (f.e. colored icons and overlays) should use null</li>
+         * </il>
+         */
+        @Setter
+        private @Nullable ColorType colorType = null;
+        /**
+         * Sets this texture as at least partially transparent, will not disable glBlend when drawing.
+         */
+        @Setter
+        private boolean nonOpaque = false;
+        /**
+         * Sets this texture's color override. It'll replace the theme color when drawn.
+         */
+        @Setter
+        private int colorOverride = 0;
 
         /**
          * @param mod  mod location of the image to draw
          * @param path path of the image to draw
          */
         public Builder location(String mod, String path) {
-            this.location = new ResourceLocation(mod, path);
+            this.location = ResourceLocation.fromNamespaceAndPath(mod, path);
             return this;
         }
 
         /**
          * @param path path of the image to draw in minecraft asset folder
          */
+        @Tolerate
         public Builder location(String path) {
-            this.location = new ResourceLocation(path);
+            this.location = ResourceLocation.parse(path);
             return this;
         }
 
@@ -451,25 +486,6 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         }
 
         /**
-         * Sets a function which defines how theme color is applied to this texture. Null means no color will be
-         * applied.
-         * <il>
-         * <li>Background textures should use {@link ColorType#DEFAULT} or {@link #defaultColorType()}</li>
-         * <li>White icons (only has a shape and some grey shading) should use {@link ColorType#ICON} or
-         * {@link #iconColorType()}</li>
-         * <li>Text should use {@link ColorType#TEXT} or {@link #textColorType()}</li>
-         * <li>Everything else (f.e. colored icons and overlays) should use null</li>
-         * </il>
-         *
-         * @param colorType function which defines how theme color is applied to this texture
-         * @return this
-         */
-        public Builder colorType(@Nullable ColorType colorType) {
-            this.colorType = colorType;
-            return this;
-        }
-
-        /**
          * Sets this texture to use default theme color.
          * Usually used for background textures (grey shaded).
          *
@@ -503,17 +519,6 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         }
 
         /**
-         * Registers the texture with a name, so it can be used in json without creating the texture again.
-         * By default, theme color is applicable.
-         *
-         * @param name texture name
-         */
-        public Builder name(String name) {
-            this.name = name;
-            return this;
-        }
-
-        /**
          * Sets this texture as at least partially transparent, will not disable glBlend when drawing.
          */
         public Builder nonOpaque() {
@@ -528,6 +533,7 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
          */
         public UITexture build() {
             UITexture texture = create();
+            texture.colorOverride = this.colorOverride;
             if (this.name == null) {
                 String[] p = texture.location.getPath().split("/");
                 p = p[p.length - 1].split("\\.");
@@ -561,8 +567,9 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
                 this.mode = Mode.RELATIVE;
             }
             if (this.mode == Mode.RELATIVE) {
-                if (this.u0 < 0 || this.v0 < 0 || this.u1 > 1 || this.v1 > 1)
+                if (this.u0 < 0 || this.v0 < 0 || this.u1 > 1 || this.v1 > 1) {
                     throw new IllegalArgumentException("UV values must be 0 - 1");
+                }
                 if (this.bl > 0 || this.bt > 0 || this.br > 0 || this.bb > 0) {
                     return new AdaptableUITexture(this.location, this.u0, this.v0, this.u1, this.v1, this.colorType,
                             this.nonOpaque, this.iw, this.ih, this.bl, this.bt, this.br, this.bb, this.tiled);

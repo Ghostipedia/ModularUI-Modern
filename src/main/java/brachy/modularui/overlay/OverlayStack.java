@@ -5,20 +5,19 @@ import brachy.modularui.api.IMuiScreen;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.ClientScreenHandler;
 import brachy.modularui.screen.ModularScreen;
-import brachy.modularui.screen.OpenScreenEvent;
+import brachy.modularui.screen.event.OpenScreenEvent;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.neoforged.neoforge.common.NeoForge;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraftforge.common.MinecraftForge;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -125,7 +124,7 @@ public class OverlayStack {
         closeAll();
         if (newScreen != null) {
             OpenScreenEvent event = new OpenScreenEvent(newScreen);
-            MinecraftForge.EVENT_BUS.post(event);
+            NeoForge.EVENT_BUS.post(event);
             for (ModularScreen overlay : event.getOverlays()) {
                 overlay.constructOverlay(newScreen);
                 open(overlay);

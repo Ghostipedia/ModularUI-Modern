@@ -15,13 +15,11 @@ import java.util.function.Supplier;
 public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?>> extends SyncHandler
         implements IDynamicSyncNotifiable {
 
+    private final S linkedValue;
     private IWidgetProvider<S> widgetProvider;
     private Consumer<IWidget> onWidgetUpdate;
-
     private boolean updateQueued;
     private IWidget lastRejectedWidget;
-
-    private final S linkedValue;
 
     public DynamicLinkedSyncHandler(S linkedValue) {
         this.linkedValue = linkedValue;

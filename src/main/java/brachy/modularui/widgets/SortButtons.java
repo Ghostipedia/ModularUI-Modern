@@ -1,5 +1,6 @@
 package brachy.modularui.widgets;
 
+import brachy.modularui.ModularUI;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.drawable.UITexture;
@@ -11,40 +12,48 @@ import brachy.modularui.widgets.slot.SlotGroup;
 import net.minecraft.world.inventory.Slot;
 
 import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import lombok.experimental.Tolerate;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
 
+@Accessors(fluent = true, chain = true)
 public class SortButtons extends Widget<SortButtons> {
 
     public static final UITexture HOVER_SORT_OVERLAY;
     public static final UITexture HOVER_SETTINGS_OVERLAY;
 
     static {
-        // if (ModularUI.isClientSide() /*&& ModularUI.Mods.BOGOSORTER.isLoaded()*/) {
-        // HOVER_SORT_OVERLAY = ButtonHandler.BUTTON_SORT.withColorOverride(16777120);
-        // HOVER_SETTINGS_OVERLAY = ButtonHandler.BUTTON_SETTINGS.withColorOverride(16777120);
-        // } else {
-        // any non null value
-        HOVER_SORT_OVERLAY = GuiTextures.BLOCK;
-        HOVER_SETTINGS_OVERLAY = GuiTextures.BLOCK;
-        // }
+        // TODO bogosort doesn't exist (yet), pick some other sorting mod to add compat for
+        if (ModularUI.isClientSide() && false /* ModularUI.Mods.BOGOSORTER.isLoaded() */) {
+            // HOVER_SORT_OVERLAY = ButtonHandler.BUTTON_SORT.withColorOverride(0xFFFFA0);
+            // HOVER_SETTINGS_OVERLAY = ButtonHandler.BUTTON_SETTINGS.withColorOverride(0xFFFFA0);
+        } else {
+            // any non null value
+            HOVER_SORT_OVERLAY = GuiTextures.BLOCK;
+            HOVER_SETTINGS_OVERLAY = GuiTextures.BLOCK;
+        }
     }
 
-    @Getter
-    private String slotGroupName;
-    @Getter
-    private SlotGroup slotGroup;
-
-    private boolean horizontal = true;
     private final ButtonWidget<?> sortButton = new ButtonWidget<>();
     private final ButtonWidget<?> settingsButton = new ButtonWidget<>();
     @Getter
     private final @NotNull List<IWidget> children = Arrays.asList(sortButton, settingsButton);
+    @Getter
+    @Setter
+    private String slotGroupName;
+    @Getter
+    @Setter
+    private SlotGroup slotGroup;
+    @Setter
+    private boolean horizontal = true;
 
     public SortButtons() {
-        if (false /* && ModularUI.Mods.BOGOSORTER.isLoaded() */) {
+        // TODO bogosort doesn't exist (yet), pick some other sorting mod to add compat for
+        if (ModularUI.isClientSide() && false /* && ModularUI.Mods.BOGOSORTER.isLoaded() */) {
             this.sortButton.size(10).pos(0, 0)
                     // .background(ButtonHandler.BUTTON_BACKGROUND)
                     // .overlay(ButtonHandler.BUTTON_SORT)
@@ -83,19 +92,19 @@ public class SortButtons extends Widget<SortButtons> {
         for (IWidget child : sgw.getChildren()) {
             if (child instanceof ItemSlot itemSlot) {
                 SlotGroup sg = itemSlot.getSlot().getSlotGroup();
-                if (sg != null && sg.isAllowSorting()) return sg;
+                if (sg != null && sg.allowsSorting()) return sg;
             }
         }
         return null;
     }
 
     public SlotGroupWidget findSlotGroupParent() {
-        SlotGroupWidget sgw = WidgetTree.findParent(this, SlotGroupWidget.class);
-        if (sgw == null) {
+        SlotGroupWidget parent = WidgetTree.findParent(this, SlotGroupWidget.class);
+        if (parent == null) {
             throw new IllegalArgumentException(
-                    "If the sort buttons don't have a SlotGroupWidget above itself in the widget tree, then it needs a slot group or name specified. Both were not found.");
+                    "If the sort buttons widget doesn't have a SlotGroupWidget above itself in the widget tree, then it needs a slot group or name specified. Neither was found.");
         }
-        return sgw;
+        return parent;
     }
 
     @Override
@@ -130,13 +139,9 @@ public class SortButtons extends Widget<SortButtons> {
         return false; // return super.isEnabled() && false; ModularUI.isSortModLoaded();
     }
 
+    @Tolerate
     public SortButtons slotGroup(String slotGroupName) {
         this.slotGroupName = slotGroupName;
-        return this;
-    }
-
-    public SortButtons slotGroup(SlotGroup slotGroup) {
-        this.slotGroup = slotGroup;
         return this;
     }
 

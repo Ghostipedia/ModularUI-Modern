@@ -1,7 +1,5 @@
 package brachy.modularui.integration.recipeviewer.entry.item;
 
-import lombok.Getter;
-
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
@@ -9,14 +7,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
-public record ItemStackList(@Getter List<ItemStack> getStacks) implements ItemEntryList {
+public record ItemStackList(List<ItemStack> stacks) implements ItemEntryList {
 
     public ItemStackList() {
         this(new ArrayList<>());
     }
 
-    public ItemStackList(List<ItemStack> getStacks) {
-        this.getStacks = new ArrayList<>(getStacks);
+    public ItemStackList(List<ItemStack> stacks) {
+        this.stacks = new ArrayList<>(stacks);
     }
 
     public static ItemStackList of(ItemStack stack) {
@@ -32,19 +30,24 @@ public record ItemStackList(@Getter List<ItemStack> getStacks) implements ItemEn
     }
 
     public void add(ItemStack stack) {
-        getStacks.add(stack);
+        stacks.add(stack);
     }
 
     public void addAll(Collection<ItemStack> list) {
-        getStacks.addAll(list);
+        stacks.addAll(list);
     }
 
     @Override
     public boolean isEmpty() {
-        return getStacks.isEmpty();
+        return stacks.isEmpty();
+    }
+
+    @Override
+    public List<ItemStack> getStacks() {
+        return stacks;
     }
 
     public Stream<ItemStack> stream() {
-        return getStacks.stream();
+        return stacks.stream();
     }
 }

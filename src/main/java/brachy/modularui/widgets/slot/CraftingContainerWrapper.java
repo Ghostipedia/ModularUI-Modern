@@ -7,10 +7,9 @@ import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.items.ItemHandlerHelper;
 
 import lombok.Getter;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -46,11 +45,11 @@ public class CraftingContainerWrapper extends TransientCraftingContainer {
     }
 
     private NonNullList<ItemStack> getBackingList() {
-        return ((TransientCraftingContainerAccessor) this).gtceu$getActualItems();
+        return ((TransientCraftingContainerAccessor) this).mui$getActualItems();
     }
 
     public AbstractContainerMenu getMenu() {
-        return ((TransientCraftingContainerAccessor) this).getMenu();
+        return ((TransientCraftingContainerAccessor) this).mui$getMenu();
     }
 
     private void updateSnapshot(int index, ItemStack stack) {
@@ -68,7 +67,7 @@ public class CraftingContainerWrapper extends TransientCraftingContainer {
                 this.delegate.insertItem(slot + this.startIndex, ItemStack.EMPTY, true);
             }
             if (stack.isEmpty() != current.isEmpty() ||
-                    (!stack.isEmpty() && !ItemHandlerHelper.canItemStacksStack(stack, current))) {
+                    (!stack.isEmpty() && !ItemStack.isSameItemSameComponents(stack, current))) {
                 setItem(slot, current);
                 updateSnapshot(slot, current);
                 notify = true;

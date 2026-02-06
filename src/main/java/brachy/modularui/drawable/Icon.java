@@ -10,8 +10,8 @@ import brachy.modularui.utils.Alignment;
 import brachy.modularui.utils.serialization.json.JsonHelper;
 import brachy.modularui.widget.sizer.Box;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.google.gson.JsonObject;
 import lombok.Getter;

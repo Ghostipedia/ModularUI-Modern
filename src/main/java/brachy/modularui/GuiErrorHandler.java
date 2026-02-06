@@ -1,12 +1,11 @@
 package brachy.modularui;
 
-import brachy.modularui.api.widget.IWidget;
-
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import brachy.modularui.api.widget.IGuiElement;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import lombok.Getter;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +26,7 @@ public class GuiErrorHandler {
         this.errors.clear();
     }
 
-    void pushError(IWidget reference, GuiError.Type type, String msg) {
+    void pushError(IGuiElement reference, GuiError.Type type, String msg) {
         GuiError error = new GuiError(msg, reference, type);
         if (this.errorSet.add(error)) {
             ModularUI.LOGGER.log(error.getLevel(), error);

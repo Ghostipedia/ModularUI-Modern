@@ -1,17 +1,21 @@
 package brachy.modularui.test;
 
-import brachy.modularui.ModularUI;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+
 import brachy.modularui.api.IPanelHandler;
 import brachy.modularui.api.IUIHolder;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.IKey;
 import brachy.modularui.drawable.GuiDraw;
-import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.drawable.Rectangle;
 import brachy.modularui.factory.PlayerInventoryGuiData;
 import brachy.modularui.factory.inventory.InventoryTypes;
 import brachy.modularui.screen.ModularPanel;
-import brachy.modularui.screen.ModularScreen;
 import brachy.modularui.screen.UISettings;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.utils.Alignment;
@@ -29,32 +33,16 @@ import brachy.modularui.widgets.layout.Flow;
 import brachy.modularui.widgets.slot.ItemSlot;
 import brachy.modularui.widgets.slot.ModularSlot;
 
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.items.ItemStackHandler;
+import com.mojang.blaze3d.vertex.*;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.type.capability.ICurioItem;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER;
 
 public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInventoryGuiData<?>> {
 
@@ -64,20 +52,13 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
     }
 
     @Override
-    public ModularScreen createScreen(PlayerInventoryGuiData<?> data, ModularPanel mainPanel) {
-        return new ModularScreen(ModularUI.MOD_ID, mainPanel);
-    }
-
-    @Override
     public ModularPanel buildUI(PlayerInventoryGuiData<?> data, PanelSyncManager syncManager, UISettings settings) {
-        var cap = data.getUsedItemStack().getCapability(ITEM_HANDLER);
-        if (!cap.isPresent() || cap.resolve().isEmpty()) return null;
-        IItemHandler itemHandler = cap.resolve().get();
-        syncManager.registerSlotGroup("mixer_items", 2);
+        IItemHandler itemHandler = data.getUsedItemStack().getCapability(Capabilities.ItemHandler.ITEM);
         if (!(itemHandler instanceof IItemHandlerModifiable ihm)) return null;
 
+        syncManager.registerSlotGroup("mixer_items", 2);
         // if the player slot is the slot with this item, then disallow any interaction
-        // if the item is not in the player inventory (curio for example), then this items slot is not on the screen,
+        // if the item is not in the player inventory (bauble for example), then this items slot is not on the screen,
         // and we don't need to limit accessibility
         if (data.getInventoryType() == InventoryTypes.PLAYER) {
             syncManager.bindPlayerInventory(data.getPlayer(), (inv, index) -> index == data.getSlotIndex() ?
@@ -86,22 +67,21 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
         }
         ModularPanel panel = ModularPanel.defaultPanel("knapping_gui").resizeableOnDrag(true);
         panel.child(new Column().margin(7)
-                        .child(new ParentWidget<>().widthRel(1f).expanded()
-                                .child(SlotGroupWidget.builder()
-                                        .row("I I")
-                                        .row("  I")
-                                        .row("   ")
-                                        .row(" I ")
-                                        .key('I', index -> new ItemSlot().slot(SyncHandlers.itemSlot(ihm, index)
-                                                .ignoreMaxStackSize(true)
-                                                .slotGroup("mixer_items")
-                                                // do not allow putting items which can hold other items into the item
-                                                // some mods don't do this on their backpacks, so it won't catch those cases
-                                                .filter(stack -> !stack.getCapability(ITEM_HANDLER).isPresent())))
-                                        .build()
-                                        .align(Alignment.TopLeft)))
-                        .child(SlotGroupWidget.playerInventory(false)))
-                .child(GuiTextures.ANIMATED_TEXTURE_TEST.asWidget().size(32).align(Alignment.TopRight).margin(7));
+                .child(new ParentWidget<>().widthRel(1f).expanded()
+                        .child(SlotGroupWidget.builder()
+                                .row("I I")
+                                .row("  I")
+                                .row("   ")
+                                .row(" I ")
+                                .key('I', index -> new ItemSlot().slot(SyncHandlers.itemSlot(ihm, index)
+                                        .ignoreMaxStackSize(true)
+                                        .slotGroup("mixer_items")
+                                        // do not allow putting items which can hold other items into the item
+                                        // some mods don't do this on their backpacks, so it won't catch those cases
+                                        .filter(stack -> stack.getCapability(Capabilities.ItemHandler.ITEM) != null)))
+                                .build()
+                                .align(Alignment.TopLeft)))
+                .child(SlotGroupWidget.playerInventory(false)));
 
         return panel;
     }
@@ -132,19 +112,18 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
         IDrawable correctedGradient = (context1, x, y, width, height, widgetTheme) -> {
             int points = 500;
             Tesselator tesselator = Tesselator.getInstance();
-            BufferBuilder buffer = tesselator.getBuilder();
+            BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
 
-            buffer.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
             float x0 = x;
             float w = (float) width / points;
             for (int i = 0; i < points; i++) {
                 int color = Color.lerp(color1.getColor(), color2.getColor(), (float) i / points);
                 int r = Color.getRed(color), g = Color.getGreen(color), b = Color.getBlue(color), a = 0xFF;
-                buffer.vertex(x0, y, 0).color(r, g, b, a).endVertex();
-                buffer.vertex(x0, y + height, 0).color(r, g, b, a).endVertex();
+                buffer.addVertex(x0, y, 0).setColor(r, g, b, a);
+                buffer.addVertex(x0, y + height, 0).setColor(r, g, b, a);
                 x0 += w;
             }
-            tesselator.end();
+            BufferUploader.drawWithShader(buffer.buildOrThrow());
         };
 
         ModularPanel panel = new ModularPanel("colors").width(300).coverChildrenHeight().padding(7);
@@ -196,20 +175,22 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
                         .child(correctedGradient.asWidget().widthRel(1f).height(10)));
     }
 
-    @Override
-    public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        return new ICapabilityProvider() {
-
-            @Override
-            public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-                if (cap == ITEM_HANDLER) {
-                    var handler = new ItemStackHandler(4);
-                    return LazyOptional.of(() -> handler).cast();
-                }
-                return LazyOptional.empty();
-            }
-        };
-    }
+    /*
+     * @Override
+     * public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
+     * return new ICapabilityProvider() {
+     *
+     * @Override
+     * public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+     * if (cap == ITEM_HANDLER) {
+     * var handler = new ItemStackHandler(4);
+     * return LazyOptional.of(() -> handler).cast();
+     * }
+     * return LazyOptional.empty();
+     * }
+     * };
+     * }
+     */
 
     @Override
     public boolean canEquip(SlotContext slotContext, ItemStack stack) {

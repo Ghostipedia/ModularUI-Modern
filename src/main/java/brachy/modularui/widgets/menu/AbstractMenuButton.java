@@ -30,6 +30,7 @@ import java.util.function.Predicate;
 public abstract class AbstractMenuButton<W extends AbstractMenuButton<W>> extends Widget<W>
         implements IMenuPart, Interactable {
 
+    private final String panelName;
     /**
      * The general direction where the menu will be opened. This is just a shortcut to standard resizer calls.
      * If this is null you can customize the position yourself.
@@ -41,7 +42,6 @@ public abstract class AbstractMenuButton<W extends AbstractMenuButton<W>> extend
      * all widgets in the menus tree are no longer hovered.
      */
     protected boolean openOnHover = true;
-
     /**
      * The current menu widget. The menu will be created with {@link #createMenu()} if the menu is null when it's
      * needed. If the method
@@ -56,7 +56,6 @@ public abstract class AbstractMenuButton<W extends AbstractMenuButton<W>> extend
     private boolean open;
     private boolean softOpen; // state, soft means opened by hovering
     private IPanelHandler panelHandler;
-    private final String panelName;
 
     /**
      * @param panelName the name for the panel that may be created when opening the menu

@@ -7,12 +7,17 @@
     "client": [
         "client.AbstractContainerScreenAccessor",
         "client.AbstractContainerScreenMixin",
+        "client.AbstractWidgetMixin",
+        "client.GuiGraphicsMixin",
         "client.MinecraftMixin",
         "client.ScreenAccessor",
         "client.StringSplitterAccessor"
     ],
     "mixins": [
+        "ReloadableServerResourcesMixin",
+        "ServerPlayerAccessor",
         "TransientCraftingContainerAccessor",
+        "WorldLoaderMixin",
         "client.AbstractContainerMenuAccessor",
         "client.SlotAccessor"
     ],

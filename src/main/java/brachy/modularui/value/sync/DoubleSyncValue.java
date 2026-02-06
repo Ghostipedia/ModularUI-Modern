@@ -5,8 +5,7 @@ import brachy.modularui.api.value.sync.IDoubleSyncValue;
 import brachy.modularui.api.value.sync.IFloatSyncValue;
 import brachy.modularui.api.value.sync.IStringSyncValue;
 
-import net.minecraft.network.FriendlyByteBuf;
-
+import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,8 +14,9 @@ import java.util.Objects;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 
-public class DoubleSyncValue extends ValueSyncHandler<Double>
-        implements IDoubleSyncValue<Double>, IFloatSyncValue<Double>, IStringSyncValue<Double> {
+public class DoubleSyncValue extends ValueSyncHandler<ByteBuf, Double>
+        implements IDoubleSyncValue<ByteBuf, Double>, IFloatSyncValue<ByteBuf, Double>,
+        IStringSyncValue<ByteBuf, Double> {
 
     private final DoubleSupplier getter;
     private final DoubleConsumer setter;
@@ -94,12 +94,12 @@ public class DoubleSyncValue extends ValueSyncHandler<Double>
     }
 
     @Override
-    public void write(FriendlyByteBuf buffer) {
+    public void write(ByteBuf buffer) {
         buffer.writeDouble(getDoubleValue());
     }
 
     @Override
-    public void read(FriendlyByteBuf buffer) {
+    public void read(ByteBuf buffer) {
         setDoubleValue(buffer.readDouble(), true, false);
     }
 

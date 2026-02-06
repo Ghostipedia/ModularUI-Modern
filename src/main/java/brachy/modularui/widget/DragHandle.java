@@ -1,8 +1,8 @@
 package brachy.modularui.widget;
 
-import brachy.modularui.api.layout.IViewport;
 import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.widget.IDraggable;
+import brachy.modularui.api.widget.IGuiElement;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.DraggablePanelWrapper;
 import brachy.modularui.screen.ModularPanel;
@@ -14,7 +14,7 @@ import net.minecraft.client.gui.GuiGraphics;
 
 import org.jetbrains.annotations.Nullable;
 
-public class DragHandle extends Widget<DragHandle> implements IDraggable, IViewport {
+public class DragHandle extends Widget<DragHandle> implements IDraggable {
 
     private IDraggable parentDraggable;
 
@@ -60,7 +60,7 @@ public class DragHandle extends Widget<DragHandle> implements IDraggable, IViewp
     }
 
     @Override
-    public boolean canDropHere(int x, int y, @Nullable IWidget widget) {
+    public boolean canDropHere(int x, int y, @Nullable IGuiElement widget) {
         return this.parentDraggable != null && this.parentDraggable.canDropHere(x, y, widget);
     }
 
@@ -89,26 +89,22 @@ public class DragHandle extends Widget<DragHandle> implements IDraggable, IViewp
 
     @Override
     public void transformChildren(IViewportStack stack) {
-        if (this.parentDraggable instanceof IViewport viewport) {
-            viewport.transformChildren(stack);
+        if (this.parentDraggable != null) {
+            this.parentDraggable.transformChildren(stack);
         }
     }
 
     @Override
     public void getWidgetsAt(IViewportStack stack, HoveredWidgetList widgets, int x, int y) {
-        if (this.parentDraggable instanceof IViewport viewport) {
-            viewport.getWidgetsAt(stack, widgets, x, y);
-        } else {
-            IViewport.super.getWidgetsAt(stack, widgets, x, y);
+        if (this.parentDraggable != null) {
+            this.parentDraggable.getWidgetsAt(stack, widgets, x, y);
         }
     }
 
     @Override
     public void getSelfAt(IViewportStack stack, HoveredWidgetList widgets, int x, int y) {
-        if (this.parentDraggable instanceof IViewport viewport) {
-            viewport.getSelfAt(stack, widgets, x, y);
-        } else {
-            IViewport.super.getSelfAt(stack, widgets, x, y);
+        if (this.parentDraggable != null) {
+            this.parentDraggable.getSelfAt(stack, widgets, x, y);
         }
     }
 }

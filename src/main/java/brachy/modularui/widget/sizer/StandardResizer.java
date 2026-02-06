@@ -101,6 +101,11 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
     }
 
     @Override
+    public void setLayoutDone(boolean done) {
+        this.layoutResized = done;
+    }
+
+    @Override
     public boolean canRelayout(boolean isParentLayout) {
         return isParentLayout && (this.x.canRelayout() || this.y.canRelayout());
     }
@@ -111,8 +116,18 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
     }
 
     @Override
+    public void setXMarginPaddingApplied(boolean b) {
+        this.x.setMarginPaddingApplied(b);
+    }
+
+    @Override
     public boolean isYMarginPaddingApplied() {
         return this.y.isMarginPaddingApplied();
+    }
+
+    @Override
+    public void setYMarginPaddingApplied(boolean b) {
+        this.y.setMarginPaddingApplied(b);
     }
 
     @Override
@@ -360,11 +375,6 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
     }
 
     @Override
-    public void setLayoutDone(boolean done) {
-        this.layoutResized = done;
-    }
-
-    @Override
     public void setXAxisResized(boolean pos, boolean size) {
         this.x.setResized(pos, size);
     }
@@ -372,16 +382,6 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
     @Override
     public void setYAxisResized(boolean pos, boolean size) {
         this.y.setResized(pos, size);
-    }
-
-    @Override
-    public void setXMarginPaddingApplied(boolean b) {
-        this.x.setMarginPaddingApplied(b);
-    }
-
-    @Override
-    public void setYMarginPaddingApplied(boolean b) {
-        this.y.setMarginPaddingApplied(b);
     }
 
     @Override

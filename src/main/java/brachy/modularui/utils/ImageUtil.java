@@ -8,10 +8,10 @@ import net.minecraft.server.packs.resources.Resource;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ImageUtil {
@@ -19,70 +19,40 @@ public class ImageUtil {
     private static final List<ImageType> TYPES = new ArrayList<>();
     private static final byte[] buffer = new byte[256];
 
-    public static final long ERROR_NO_RESOURCE = -1;
-    public static final long ERROR_NO_IMAGE_TYPE = -2;
-    public static final long ERROR_IO_EXCEPTION = -3;
-    public static final long ERROR_PNG = -4;
-    public static final long ERROR_JPEG_1 = -5;
-    public static final long ERROR_JPEG_2 = -6;
-
-    private static final String[] ERROR_MSG = {
-            "Resource not found",
-            "Unsupported file type",
-            "Failed to parse image with unknown cause",
-            "PNG file ended too early",
-            "JPEG started again within itself",
-            "JPEG ended too early"
-    };
-
-    public static Resource getResource(ResourceLocation resLoc) {
-        try {
-            return Minecraft.getInstance().getResourceManager().getResourceOrThrow(resLoc);
-        } catch (FileNotFoundException e) {
-            return null;
-        }
+    public static Resource getResource(ResourceLocation resLoc) throws IOException {
+        return Minecraft.getInstance().getResourceManager().getResourceOrThrow(resLoc);
     }
 
     /**
      * Parses the image size from a resource. The returned packed size can be unpacked with {@link #getWidth(long)} and
-     * {@link #getHeight(long)}. If it failed a negative value is returned. Negative values can be translated into an
-     * error
-     * message using {@link #getError(long)}.
+     * {@link #getHeight(long)}.
      *
      * @param resLoc resource location of the image
      * @return packed size or negative error value
+     * @throws IOException if the input stream is not a valid image file
      */
-    public static long readImageSize(ResourceLocation resLoc) {
+    public static long readImageSize(ResourceLocation resLoc) throws IOException {
         Resource res = getResource(resLoc);
-        return res == null ? ERROR_NO_RESOURCE : readImageSize(res);
-    }
-
-    public static String getError(long size) {
-        return size < 0 ? ERROR_MSG[(int) (-size - 1)] : null;
+        return readImageSize(res);
     }
 
     /**
      * Parses the image size from a resource. The returned packed size can be unpacked with {@link #getWidth(long)} and
-     * {@link #getHeight(long)}. If it failed a negative value is returned. Negative values can be translated into an
-     * error
-     * message using {@link #getError(long)}. A resource can be obtained with {@link #getResource(ResourceLocation)}.
+     * {@link #getHeight(long)}.
      *
      * @param resource resource to read image size from
      * @return packed size or negative error value
+     * @throws IOException if the input stream is not a valid image file
      */
-    public static long readImageSize(Resource resource) {
+    public static long readImageSize(Resource resource) throws IOException {
         try (InputStream inputStream = resource.open()) {
             return readImageSize(inputStream);
-        } catch (IOException e) {
-            return ERROR_IO_EXCEPTION;
         }
     }
 
     /**
      * Parses the image size from the input stream. The returned packed size can be unpacked with
-     * {@link #getWidth(long)} and
-     * {@link #getHeight(long)}. If it failed a negative value is returned or an exception is thrown.
-     * Negative values can be translated into an error message using {@link #getError(long)}.
+     * {@link #getWidth(long)} and {@link #getHeight(long)}.
      *
      * @param inputStream bytes to read from
      * @return packed size or negative error value
@@ -90,7 +60,11 @@ public class ImageUtil {
      */
     public static long readImageSize(InputStream inputStream) throws IOException {
         ImageType type = parseImageType(inputStream);
-        return type == null ? ERROR_NO_IMAGE_TYPE : type.parse(inputStream);
+        if (type != null) {
+            return type.parse(inputStream);
+        } else {
+            throw new IOException("Unsupported file type");
+        }
     }
 
     public static long packSize(int width, int height) {
@@ -106,9 +80,11 @@ public class ImageUtil {
     }
 
     public static boolean testImageSize(ResourceLocation resLoc, int width, int height) {
-        long size = ImageUtil.readImageSize(resLoc);
-        if (size < 0) {
-            ModularUI.LOGGER.error("{} for location '{}'", getError(size), resLoc);
+        long size;
+        try {
+            size = ImageUtil.readImageSize(resLoc);
+        } catch (IOException e) {
+            ModularUI.LOGGER.error("{} for location '{}'", e.getMessage(), resLoc, e);
             return false;
         }
         int w = ImageUtil.getWidth(size);
@@ -123,6 +99,9 @@ public class ImageUtil {
     }
 
     private static ImageType parseImageType(InputStream inputStream) throws IOException {
+        // clear the buffer before parsing as to not leak the last call's value
+        Arrays.fill(buffer, (byte) 0);
+
         if (TYPES.isEmpty()) initImageTypes();
         int bytesRead = 0;
         for (ImageType type : TYPES) {
@@ -192,11 +171,6 @@ public class ImageUtil {
         return (inputStream.read() & 0xFF) | ((inputStream.read() & 0xFF) << 8);
     }
 
-    private interface SizeParser {
-
-        long parse(InputStream inputStream) throws IOException;
-    }
-
     private enum ImageType implements SizeParser {
 
         PNG(8, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A) {
@@ -204,7 +178,7 @@ public class ImageUtil {
             public long parse(InputStream inputStream) throws IOException {
                 DataInput dataInput = getDataInput(inputStream);
                 int skipped = dataInput.skipBytes(8); // IHDR length (4), IHDR type (4)
-                if (skipped != 8) return ERROR_PNG;
+                if (skipped != 8) throw new IOException("PNG file ended too early");
                 return packSize(dataInput.readInt(), dataInput.readInt()); // width and height
             }
         },
@@ -234,8 +208,8 @@ public class ImageUtil {
                         return packSize(width, height);
                     }
 
-                    if (marker == 0xFFD8) return ERROR_JPEG_1;
-                    if (marker == 0xFFD9) return ERROR_JPEG_2;
+                    if (marker == 0xFFD8) throw new IOException("JPEG started again within itself");
+                    if (marker == 0xFFD9) throw new IOException("JPEG ended too early");
                     if (marker >= 0xFFD0 && marker <= 0xFFD7 || marker == 0xFF01) continue; // no payload
 
                     // read length of payload and skip it
@@ -260,5 +234,10 @@ public class ImageUtil {
             this.signatureLength = signatureLength;
             this.signatureStart = toBytes(signatureStart);
         }
+    }
+
+    private interface SizeParser {
+
+        long parse(InputStream inputStream) throws IOException;
     }
 }

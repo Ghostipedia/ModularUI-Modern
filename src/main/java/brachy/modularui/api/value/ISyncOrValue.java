@@ -7,9 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * An interface that is implemented on {@link IValue} and {@link SyncHandler
- * SyncHandler} for easier
- * validation and setters.
+ * An interface that is implemented on {@link IValue} and {@link SyncHandler} for easier validation and setters.
  */
 @ApiStatus.NonExtendable
 public interface ISyncOrValue {

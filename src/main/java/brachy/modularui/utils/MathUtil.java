@@ -43,6 +43,9 @@ public class MathUtil {
             .stripTrailingZeros(true)
             .build()
             .withAdditionalOperators(Pair.of("%", new PostfixPercentOperator()));
+    public static final Vector3fc UNIT_X = new Vector3f(1f, 0f, 0f);
+    public static final Vector3fc UNIT_Y = new Vector3f(0f, 1f, 0f);
+    public static final Vector3fc UNIT_Z = new Vector3f(0f, 0f, 1f);
 
     public static ParseResult parseExpression(String expression) {
         return parseExpression(expression, Double.NaN, false);
@@ -71,10 +74,6 @@ public class MathUtil {
             return ParseResult.failure(exception);
         }
     }
-
-    public static final Vector3fc UNIT_X = new Vector3f(1f, 0f, 0f);
-    public static final Vector3fc UNIT_Y = new Vector3f(0f, 1f, 0f);
-    public static final Vector3fc UNIT_Z = new Vector3f(0f, 0f, 1f);
 
     public static int lerpInt(double delta, int start, int end) {
         return start + Mth.floor(delta * (end - start));

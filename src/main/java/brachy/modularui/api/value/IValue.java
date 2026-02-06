@@ -23,6 +23,7 @@ public interface IValue<T> extends ISyncOrValue {
 
     Class<T> getValueType();
 
+    @Override
     default boolean isValueOfType(Class<?> type) {
         return type.isAssignableFrom(getValueType());
     }

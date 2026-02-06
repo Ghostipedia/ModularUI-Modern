@@ -342,8 +342,7 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
 
     /**
      * Returns the currently hovered element of this rich text or {@code null} if none is hovered.
-     * Note that this method assumes, that the {@link IViewportStack
-     * IViewportStack}
+     * Note that this method assumes, that the {@link IViewportStack}
      * is transformed to 0,0 of this {@link IDrawable}.
      *
      * @param context the viewport stack with transformation to this widget

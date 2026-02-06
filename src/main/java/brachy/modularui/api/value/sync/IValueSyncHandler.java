@@ -2,14 +2,14 @@ package brachy.modularui.api.value.sync;
 
 import brachy.modularui.api.value.IValue;
 
-import net.minecraft.network.FriendlyByteBuf;
+import io.netty.buffer.ByteBuf;
 
 /**
  * A helper interface for syncing an object value.
  *
  * @param <T> object value type
  */
-public interface IValueSyncHandler<T> extends IValue<T> {
+public interface IValueSyncHandler<B extends ByteBuf, T> extends IValue<T> {
 
     /**
      * Updates the current value and the source and syncs it to client/server.
@@ -65,12 +65,12 @@ public interface IValueSyncHandler<T> extends IValue<T> {
      *
      * @param buffer buffer to write to
      */
-    void write(FriendlyByteBuf buffer);
+    void write(B buffer);
 
     /**
      * Reads a value from the buffer and sets the current value
      *
      * @param buffer buffer to read from
      */
-    void read(FriendlyByteBuf buffer);
+    void read(B buffer);
 }

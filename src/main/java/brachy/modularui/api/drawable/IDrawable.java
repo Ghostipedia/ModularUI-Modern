@@ -11,8 +11,8 @@ import brachy.modularui.utils.Color;
 import brachy.modularui.widget.Widget;
 import brachy.modularui.widget.sizer.Area;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import org.jetbrains.annotations.Nullable;
 

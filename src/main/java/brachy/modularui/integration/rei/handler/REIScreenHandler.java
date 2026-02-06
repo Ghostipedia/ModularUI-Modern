@@ -31,12 +31,7 @@ public class REIScreenHandler<T extends Screen & IMuiScreen> extends RecipeViewe
         implements DraggableStackProvider<T>, ExclusionZonesProvider<T> {
 
     private static final Map<Class<?>, REIScreenHandler<?>> CACHE = new Reference2ReferenceOpenHashMap<>();
-
-    @SuppressWarnings("unchecked")
-    public static <T extends Screen & IMuiScreen> REIScreenHandler<T> of(Class<T> clazz) {
-        return (REIScreenHandler<T>) CACHE.computeIfAbsent(clazz, clz -> new REIScreenHandler<>((Class<T>) clz));
-    }
-
+    protected static DraggableStack currentIngredient = null;
     protected final Class<T> clazz;
 
     @Getter
@@ -51,14 +46,23 @@ public class REIScreenHandler<T extends Screen & IMuiScreen> extends RecipeViewe
         this.overlayDecider = new MUIOverlayDecider(this.clazz);
     }
 
-    public void register(ScreenRegistry registry) {
-        registry.registerDraggableStackProvider(this);
-        registry.registerDraggableStackVisitor(this.getDraggableVisitor());
-        registry.registerDecider(this.getOverlayDecider());
+    @SuppressWarnings("unchecked")
+    public static <T extends Screen & IMuiScreen> REIScreenHandler<T> of(Class<T> clazz) {
+        return (REIScreenHandler<T>) CACHE.computeIfAbsent(clazz, clz -> new REIScreenHandler<>((Class<T>) clz));
     }
 
     public static <T extends Screen & IMuiScreen> void register(Class<T> clazz, ScreenRegistry registry) {
         of(clazz).register(registry);
+    }
+
+    protected static me.shedaniel.math.Rectangle asREIRect(Rectangle rect) {
+        return new me.shedaniel.math.Rectangle(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+    }
+
+    public void register(ScreenRegistry registry) {
+        registry.registerDraggableStackProvider(this);
+        registry.registerDraggableStackVisitor(this.getDraggableVisitor());
+        registry.registerDecider(this.getOverlayDecider());
     }
 
     @Override
@@ -121,12 +125,6 @@ public class REIScreenHandler<T extends Screen & IMuiScreen> extends RecipeViewe
                 .map(REIScreenHandler::asREIRect)
                 .toList();
     }
-
-    protected static me.shedaniel.math.Rectangle asREIRect(Rectangle rect) {
-        return new me.shedaniel.math.Rectangle(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
-    }
-
-    protected static DraggableStack currentIngredient = null;
 
     @Override
     public void setSearchFocused(boolean focused) {

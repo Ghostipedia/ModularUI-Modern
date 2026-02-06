@@ -6,10 +6,8 @@ import brachy.modularui.api.drawable.IKey;
 import brachy.modularui.api.drawable.ITextLine;
 import brachy.modularui.api.value.IStringValue;
 import brachy.modularui.api.value.ISyncOrValue;
-import brachy.modularui.api.widget.ITooltip;
 import brachy.modularui.screen.RichTooltip;
 import brachy.modularui.screen.viewport.ModularGuiContext;
-import brachy.modularui.utils.MathUtil;
 import brachy.modularui.utils.math.ParseResult;
 import brachy.modularui.value.StringValue;
 import brachy.modularui.value.sync.ValueSyncHandler;
@@ -46,13 +44,13 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
     private boolean tooltipOverride = false;
 
     public double parse(String num) {
-        ParseResult result = MathUtil.parseExpression(num, this.defaultNumber, true);
+        ParseResult result = MathHelper.parseExpression(num, this.defaultNumber, true);
+        double value = result.getResult();
         if (result.isFailure()) {
-            this.mathFailMessage = result.getErrorMessage();
+            this.mathFailMessage = result.getError();
             ModularUI.LOGGER.error("Math expression error in {}: {}", this, this.mathFailMessage);
-            return defaultNumber;
         }
-        return result.getResult().getNumberValue().doubleValue();
+        return value;
     }
 
     public IStringValue<?> createMathFailMessageValue() {
@@ -82,7 +80,7 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
     protected void setSyncOrValue(@NotNull ISyncOrValue syncOrValue) {
         super.setSyncOrValue(syncOrValue);
         this.stringValue = syncOrValue.castNullable(IStringValue.class);
-        if (syncOrValue instanceof ValueSyncHandler<?> valueSyncHandler) {
+        if (syncOrValue instanceof ValueSyncHandler<?, ?> valueSyncHandler) {
             valueSyncHandler.setChangeListener(() -> {
                 markTooltipDirty();
                 setText(this.stringValue.getValue().toString());
@@ -208,7 +206,7 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
     }
 
     public TextFieldWidget setNumbersLong(LongSupplier min, LongSupplier max) {
-        return setNumbersLong(val -> MathUtil.clamp(val, min.getAsLong(), max.getAsLong()));
+        return setNumbersLong(val -> Mth.clamp(val, min.getAsLong(), max.getAsLong()));
     }
 
     public TextFieldWidget setNumbersDouble(DoubleSupplier min, DoubleSupplier max) {
@@ -237,7 +235,7 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
      * Normally, Tooltips on text field widgets are used to display the contents of the widget when the scrollbar is
      * active
      * This value is an override, that allows the methods provided by
-     * {@link ITooltip} to be used
+     * {@link brachy.modularui.api.widget.ITooltip} to be used
      * Every method that adds a tooltip from ITooltip is overridden to enable the tooltipOverride
      *
      * @param value - sets the tooltip override on or off

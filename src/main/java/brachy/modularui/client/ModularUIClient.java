@@ -1,30 +1,48 @@
 package brachy.modularui.client;
 
 import brachy.modularui.ModularUI;
-import brachy.modularui.ModularUIMenuTypes;
+import brachy.modularui.animation.AnimatorManager;
+import brachy.modularui.drawable.DrawableSerialization;
+import brachy.modularui.factory.inventory.InventoryTypes;
 import brachy.modularui.screen.ContainerScreenWrapper;
 import brachy.modularui.screen.ModularContainerMenu;
 
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import com.mojang.blaze3d.systems.RenderSystem;
 
-@Mod.EventBusSubscriber(modid = ModularUI.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
+import it.unimi.dsi.fastutil.floats.FloatUnaryOperator;
+import lombok.Getter;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+
+@Mod(value = ModularUI.MOD_ID, dist = Dist.CLIENT)
 public class ModularUIClient {
 
-    @SubscribeEvent
-    public static void registerScreens(FMLClientSetupEvent event) {
-        //noinspection deprecation,RedundantCast
-        event.enqueueWork(() -> MenuScreens.register(ModularUIMenuTypes.MODULAR_CONTAINER.get(),
-                (MenuScreens.ScreenConstructor<ModularContainerMenu, ContainerScreenWrapper>) ContainerScreenWrapper::new));
+    @Getter
+    private static final DeltaTracker.Timer timer60Fps = new DeltaTracker.Timer(60f, 0, FloatUnaryOperator.identity());
+
+    public ModularUIClient(IEventBus modEventBus, ModContainer modContainer) {
+        modEventBus.register(this);
+
+        if (!ModularUI.isDataGen()) {
+            CursorHandler.init();
+            AnimatorManager.init();
+            // enable stencil bits, must call on render thread
+            RenderSystem.recordRenderCall(() -> Minecraft.getInstance().getMainRenderTarget().enableStencil());
+
+            DrawableSerialization.init();
+            InventoryTypes.init();
+        }
     }
 
     @SubscribeEvent
-    public static void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
-        event.registerReloadListener(new GuiSpriteManager(Minecraft.getInstance().textureManager));
+    public void registerScreens(final RegisterMenuScreensEvent event) {
+        event.<ModularContainerMenu, ContainerScreenWrapper>register(ModularUI.MODULAR_CONTAINER.get(),
+                ContainerScreenWrapper::new);
     }
 }

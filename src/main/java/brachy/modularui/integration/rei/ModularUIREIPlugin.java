@@ -1,6 +1,5 @@
 package brachy.modularui.integration.rei;
 
-import brachy.modularui.integration.rei.handler.REIScreenHandler;
 import brachy.modularui.screen.ContainerScreenWrapper;
 import brachy.modularui.screen.ScreenWrapper;
 
@@ -21,6 +20,5 @@ public class ModularUIREIPlugin implements REIClientPlugin {
     @Override
     public void registerScreens(ScreenRegistry registry) {
         REIScreenHandler.register(ScreenWrapper.class, registry);
-        REIScreenHandler.register(ContainerScreenWrapper.class, registry);
     }
 }

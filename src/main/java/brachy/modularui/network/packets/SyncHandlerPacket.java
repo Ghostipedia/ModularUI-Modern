@@ -1,51 +1,82 @@
 package brachy.modularui.network.packets;
 
+import brachy.modularui.ModularUI;
+import brachy.modularui.api.IPacketWriter;
 import brachy.modularui.network.ModularNetwork;
-import brachy.modularui.network.NetworkHandler;
-import brachy.modularui.utils.NetworkUtils;
+import brachy.modularui.network.NetworkUtils;
 
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import org.jetbrains.annotations.ApiStatus;
+import io.netty.buffer.Unpooled;
+import net.neoforged.neoforge.network.connection.ConnectionType;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.Nullable;
 
-@NoArgsConstructor
-@AllArgsConstructor
-@ApiStatus.Internal
-public class SyncHandlerPacket implements NetworkHandler.INetPacket {
+public record SyncHandlerPacket(int networkId, String panel, String key, boolean action,
+                                @Nullable("Nullable on the sending side") RegistryFriendlyByteBuf packet,
+                                @Nullable("Nullable on the receiving side") IPacketWriter<? super RegistryFriendlyByteBuf> packetWriter)
+        implements CustomPacketPayload {
 
-    public int networkId;
-    public String panel;
-    public String key;
-    public boolean action;
-    public FriendlyByteBuf packet;
+    public static final ResourceLocation ID = ModularUI.id("sync_message");
+    public static final Type<SyncHandlerPacket> TYPE = new Type<>(ID);
+    public static final StreamCodec<RegistryFriendlyByteBuf, SyncHandlerPacket> CODEC = StreamCodec
+            .ofMember(SyncHandlerPacket::encode, SyncHandlerPacket::decode);
 
-    @Override
-    public void encode(FriendlyByteBuf buf) {
+    public SyncHandlerPacket(int networkId, String panel, String key, boolean action,
+                             IPacketWriter<? super RegistryFriendlyByteBuf> packetWriter) {
+        this(networkId, panel, key, action, null, packetWriter);
+    }
+
+    public SyncHandlerPacket(int networkId, String panel, String key, boolean action, RegistryFriendlyByteBuf packet) {
+        this(networkId, panel, key, action, packet, null);
+    }
+
+    public static SyncHandlerPacket decode(RegistryFriendlyByteBuf buf) {
+        int networkId = buf.readVarInt();
+        String panel = NetworkUtils.readStringSafe(buf);
+        String key = NetworkUtils.readStringSafe(buf);
+        boolean action = buf.readBoolean();
+        RegistryFriendlyByteBuf packet = RegistryFriendlyByteBuf.decorator(buf.registryAccess(), buf.getConnectionType())
+                .apply(NetworkUtils.readFriendlyByteBuf(buf));
+
+        return new SyncHandlerPacket(networkId, panel, key, action, packet);
+    }
+
+    public void encode(RegistryFriendlyByteBuf buf) {
         buf.writeVarInt(this.networkId);
-        NetworkUtils.writeStringSafe(buf, this.panel, 256, true);
-        NetworkUtils.writeStringSafe(buf, this.key, 256, true);
+        NetworkUtils.writeStringSafe(buf, this.panel);
+        NetworkUtils.writeStringSafe(buf, this.key, 64, true);
         buf.writeBoolean(this.action);
-        NetworkUtils.writeByteBuf(buf, this.packet);
+        NetworkUtils.writeByteBuf(buf, processPacketWriter(buf.registryAccess(), buf.getConnectionType()));
     }
 
-    public SyncHandlerPacket(FriendlyByteBuf buf) {
-        this.networkId = buf.readVarInt();
-        this.panel = NetworkUtils.readStringSafe(buf);
-        this.key = NetworkUtils.readStringSafe(buf);
-        this.action = buf.readBoolean();
-        this.packet = NetworkUtils.readFriendlyByteBuf(buf);
+    private RegistryFriendlyByteBuf processPacketWriter(RegistryAccess registryAccess, ConnectionType connectionType) {
+        if (this.packet != null) {
+            return packet;
+        } else {
+            RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), registryAccess, connectionType);
+            if (this.packetWriter != null) {
+                this.packetWriter.write(buffer);
+            }
+            return buffer;
+        }
     }
 
-    @Override
-    public void execute(NetworkEvent.Context handler) {
-        if (handler.getDirection() == NetworkDirection.PLAY_TO_CLIENT) {
+    public void execute(IPayloadContext context) {
+        if (context.flow() == PacketFlow.CLIENTBOUND) {
             ModularNetwork.CLIENT.receivePacket(this);
         } else {
             ModularNetwork.SERVER.receivePacket(this);
         }
+    }
+
+    @Override
+    public Type<SyncHandlerPacket> type() {
+        return TYPE;
     }
 }

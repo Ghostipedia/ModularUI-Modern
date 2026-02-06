@@ -67,15 +67,11 @@ public class JeiContainerHandler<T extends ModularContainerMenu> implements IUni
 
         @Override
         public Type getType() {
-            if (muiError instanceof RecipeTransferError.Internal) {
-                return Type.INTERNAL;
-            } else if (muiError instanceof RecipeTransferError.UserFacing) {
-                return Type.USER_FACING;
-            } else if (muiError instanceof RecipeTransferError.Cosmetic) {
-                return Type.COSMETIC;
-            } else {
-                throw new IllegalStateException("Recipe transfer error %s is not an internal, user facing or cosmetic error".formatted(muiError));
-            }
+            return switch (muiError) {
+                case RecipeTransferError.Internal internal -> Type.INTERNAL;
+                case RecipeTransferError.UserFacing userFacing -> Type.USER_FACING;
+                case RecipeTransferError.Cosmetic cosmetic -> Type.COSMETIC;
+            };
         }
 
         @Override

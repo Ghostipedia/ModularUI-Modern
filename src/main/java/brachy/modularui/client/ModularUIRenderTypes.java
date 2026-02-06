@@ -1,4 +1,4 @@
-package brachy.modularui;
+package brachy.modularui.client;
 
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
@@ -6,21 +6,10 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.function.Function;
 
-@OnlyIn(Dist.CLIENT)
-public class GTRenderTypes extends RenderType {
-
-    private static final RenderType LIGHT_RING = RenderType.create("light_ring",
-            DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLE_STRIP, 256, false, false,
-            CompositeState.builder()
-                    .setCullState(NO_CULL)
-                    .setShaderState(RenderStateShard.POSITION_COLOR_SHADER)
-                    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-                    .createCompositeState(false));
+public class ModularUIRenderTypes extends RenderType {
 
     private static final Function<ResourceLocation, RenderType> GUI_TEXTURE = Util.memoize((texture) -> {
         return create("gui_texture", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS,
@@ -58,13 +47,9 @@ public class GTRenderTypes extends RenderType {
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .createCompositeState(false));
 
-    private GTRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize,
-                          boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
-        super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
-    }
-
-    public static RenderType getLightRing() {
-        return LIGHT_RING;
+    private ModularUIRenderTypes() {
+        super("", VertexFormat.builder().build(), VertexFormat.Mode.QUADS, 0, false, false, () -> {}, () -> {});
+        throw new IllegalStateException("Do not instantiate MuiRenderTypes directly!");
     }
 
     public static RenderType guiTexture(ResourceLocation texture) {

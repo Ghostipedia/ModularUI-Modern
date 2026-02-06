@@ -15,6 +15,7 @@ import brachy.modularui.widget.Widget;
 
 import net.minecraft.util.Mth;
 
+import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,6 +26,7 @@ public class ProgressWidget extends Widget<ProgressWidget> {
 
     private final UITexture[] fullTexture = new UITexture[4];
     private UITexture emptyTexture;
+    @Setter
     private Direction direction = Direction.RIGHT;
     private int imageSize = -1;
 
@@ -124,7 +126,7 @@ public class ProgressWidget extends Widget<ProgressWidget> {
     }
 
     public float getProgressUV(float uv) {
-        if (ModularUIConfig.smoothProgressBars()) {
+        if (ModularUIConfig.isSmoothProgressBars()) {
             return uv;
         }
         return (float) (Math.floor(uv * this.imageSize) / this.imageSize);
@@ -203,11 +205,6 @@ public class ProgressWidget extends Widget<ProgressWidget> {
      */
     public ProgressWidget texture(UITexture texture, int imageSize) {
         return texture(texture.getSubArea(0, 0, 1, 0.5f), texture.getSubArea(0, 0.5f, 1, 1), imageSize);
-    }
-
-    public ProgressWidget direction(Direction direction) {
-        this.direction = direction;
-        return this;
     }
 
     public ProgressWidget label(IDrawable label, int width, int height) {

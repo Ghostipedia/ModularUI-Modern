@@ -9,11 +9,12 @@ import brachy.modularui.screen.UISettings;
 import brachy.modularui.value.sync.PanelSyncManager;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -103,7 +104,7 @@ public interface UIFactory<D extends GuiData> {
      * @param buffer  buffer
      */
     @ApiStatus.OverrideOnly
-    void writeGuiData(D guiData, FriendlyByteBuf buffer);
+    void writeGuiData(D guiData, RegistryFriendlyByteBuf buffer);
 
     /**
      * Reads and creates the gui data from the buffer.
@@ -114,5 +115,5 @@ public interface UIFactory<D extends GuiData> {
      */
     @NotNull
     @ApiStatus.OverrideOnly
-    D readGuiData(Player player, FriendlyByteBuf buffer);
+    D readGuiData(Player player, RegistryFriendlyByteBuf buffer);
 }

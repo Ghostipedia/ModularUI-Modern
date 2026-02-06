@@ -15,6 +15,7 @@ import java.util.function.Consumer;
 public class NetworkUtils {
 
     public static final Consumer<FriendlyByteBuf> EMPTY_PACKET = buffer -> {};
+    private static final int MAX_ENCODED = getMaxEncodedUtfLength(Short.MAX_VALUE);
 
     public static boolean isClient(Player player) {
         if (player == null) return ModularUI.isClientThread();
@@ -46,8 +47,6 @@ public class NetworkUtils {
     public static void writeStringSafe(FriendlyByteBuf buffer, @Nullable String string, int maxBytes) {
         writeStringSafe(buffer, string, maxBytes, false);
     }
-
-    private static final int MAX_ENCODED = getMaxEncodedUtfLength(Short.MAX_VALUE);
 
     public static void writeStringSafe(FriendlyByteBuf buffer, @Nullable String string, int maxBytes, boolean crash) {
         if (string == null) {

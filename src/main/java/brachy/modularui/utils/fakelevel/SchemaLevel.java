@@ -3,6 +3,8 @@ package brachy.modularui.utils.fakelevel;
 import brachy.modularui.ModularUI;
 import brachy.modularui.schema.ISchema;
 import brachy.modularui.utils.BlockPosUtil;
+import brachy.modularui.utils.RegistryAccessContainer;
+import brachy.modularui.utils.sides.SidedAccessHelper;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.Minecraft;
@@ -18,10 +20,12 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.profiling.InactiveProfiler;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.TickRateManager;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.item.alchemy.PotionBrewing;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -30,7 +34,6 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkSource;
 import net.minecraft.world.level.chunk.DataLayer;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
@@ -41,6 +44,7 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.lighting.LightEngine;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Scoreboard;
@@ -51,7 +55,6 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import lombok.Getter;
 import lombok.Setter;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3fc;
 
@@ -66,16 +69,12 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @MethodsReturnNonnullByDefault
 public class SchemaLevel extends Level implements ISchema {
 
+    public static final SchemaLevel INSTANCE = new SchemaLevel();
     private static final ResourceKey<Level> LEVEL_ID = ResourceKey.create(Registries.DIMENSION,
             ModularUI.id("fake_level"));
-
     private final TransientEntitySectionManager<Entity> entityStorage = new TransientEntitySectionManager<>(
             Entity.class, new EntityCallbacks());
-
     private final LongSet filledBlocks = new LongOpenHashSet();
-    @Getter
-    @Setter
-    private BiPredicate<BlockPos, BlockState> renderFilter = (pos, state) -> true;
     /**
      * Sections for which we prepared lighting.
      */
@@ -83,17 +82,19 @@ public class SchemaLevel extends Level implements ISchema {
     private final BlockPos.MutableBlockPos min = new BlockPos.MutableBlockPos();
     private final BlockPos.MutableBlockPos max = new BlockPos.MutableBlockPos();
 
+    private final TickRateManager tickRateManager = new TickRateManager();
     @Getter
     private final Scoreboard scoreboard = new Scoreboard();
     @Getter
-    private final ChunkSource chunkSource = new DummyChunkSource(this);
+    private final DummyChunkSource chunkSource = new DummyChunkSource(this);
     private final Holder<Biome> biome;
     private final DataLayer defaultDataLayer;
-
-    public static final SchemaLevel INSTANCE = new SchemaLevel();
+    @Getter
+    @Setter
+    private BiPredicate<BlockPos, BlockState> renderFilter = (pos, state) -> true;
 
     public SchemaLevel() {
-        this(ModularUI.builtinRegistry());
+        this(RegistryAccessContainer.current());
     }
 
     public SchemaLevel(RegistryAccess registryAccess) {
@@ -172,7 +173,7 @@ public class SchemaLevel extends Level implements ISchema {
     }
 
     @Override
-    public @NotNull Iterator<Map.Entry<BlockPos, BlockState>> iterator() {
+    public Iterator<Map.Entry<BlockPos, BlockState>> iterator() {
         return getFilledBlocks()
                 .map(pos -> Map.entry(pos, this.getBlockState(pos)))
                 .iterator();
@@ -184,6 +185,26 @@ public class SchemaLevel extends Level implements ISchema {
 
     protected void addFilledBlock(BlockPos pos) {
         filledBlocks.add(pos.asLong());
+    }
+
+    public Iterable<Entity> getAllEntities() {
+        return this.getEntities().getAll();
+    }
+
+    public void addEntity(Entity entity) {
+        // no event hook here tyvm
+        // if (NeoForge.EVENT_BUS.post(new EntityJoinLevelEvent(entity, this)).isCanceled()) return;
+        this.removeEntity(entity.getId(), Entity.RemovalReason.DISCARDED);
+        this.entityStorage.addEntity(entity);
+        entity.onAddedToLevel();
+    }
+
+    public void removeEntity(int entityId, Entity.RemovalReason reason) {
+        Entity entity = this.getEntities().get(entityId);
+        if (entity != null) {
+            entity.setRemoved(reason);
+            entity.onClientRemoval();
+        }
     }
 
     @Override
@@ -214,9 +235,54 @@ public class SchemaLevel extends Level implements ISchema {
     }
 
     @Override
+    public TickRateManager tickRateManager() {
+        return this.tickRateManager;
+    }
+
+    @Override
+    public @Nullable MapItemSavedData getMapData(MapId mapId) {
+        return null;
+    }
+
+    @Override
+    public void setMapData(MapId mapId, MapItemSavedData mapData) {}
+
+    @Override
+    public MapId getFreeMapId() {
+        return new MapId(0);
+    }
+
+    @Override
     protected LevelEntityGetter<Entity> getEntities() {
         return entityStorage.getEntityGetter();
     }
+
+    @Override
+    public boolean addFreshEntity(Entity entity) {
+        this.addEntity(entity);
+        return true;
+    }
+
+    @Override
+    public PotionBrewing potionBrewing() {
+        return PotionBrewing.EMPTY;
+    }
+
+    @Override
+    public float getDayTimeFraction() {
+        return 0;
+    }
+
+    @Override
+    public void setDayTimeFraction(float dayTimeFraction) {}
+
+    @Override
+    public float getDayTimePerTick() {
+        return 0;
+    }
+
+    @Override
+    public void setDayTimePerTick(float dayTimePerTick) {}
 
     @Override
     public void playSeededSound(@Nullable Player player, double x, double y, double z, Holder<SoundEvent> sound,
@@ -245,28 +311,11 @@ public class SchemaLevel extends Level implements ISchema {
     }
 
     @Override
-    public @Nullable MapItemSavedData getMapData(String mapName) {
-        return null;
-    }
-
-    @Override
-    public void setMapData(String mapName, MapItemSavedData data) {}
-
-    @Override
-    public int getFreeMapId() {
-        return 0;
-    }
-
-    @Override
     public void destroyBlockProgress(int breakerId, BlockPos pos, int progress) {}
 
     @Override
     public RecipeManager getRecipeManager() {
-        if (ModularUI.isClientThread()) {
-            return ClientCallWrapper.getClientRecipeManager();
-        } else {
-            return ModularUI.getMinecraftServer().getRecipeManager();
-        }
+        return SidedAccessHelper.getRecipeManager();
     }
 
     @Override
@@ -283,10 +332,10 @@ public class SchemaLevel extends Level implements ISchema {
     public void levelEvent(@Nullable Player player, int type, BlockPos pos, int data) {}
 
     @Override
-    public void gameEvent(GameEvent event, Vec3 position, GameEvent.Context context) {}
+    public void gameEvent(Holder<GameEvent> gameEvent, Vec3 pos, GameEvent.Context context) {}
 
     @Override
-    public float getShade(@NotNull Direction direction, boolean shade) {
+    public float getShade(Direction direction, boolean shade) {
         if (!shade) {
             return 1.0f;
         } else {

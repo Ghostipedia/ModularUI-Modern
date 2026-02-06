@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 import static net.minecraft.util.Mth.HALF_PI;
 
@@ -80,8 +81,8 @@ public class Camera {
         return setLookAtAndAngle(this.lookAt, radius, yaw, pitch);
     }
 
-    public Camera setLookAtAndAngle(Vector3f lookAt, float radius, float yaw, float pitch) {
-        return setLookAtAndAngle(lookAt.x, lookAt.y, lookAt.z, radius, yaw, pitch);
+    public Camera setLookAtAndAngle(Vector3fc lookAt, float radius, float yaw, float pitch) {
+        return setLookAtAndAngle(lookAt.x(), lookAt.y(), lookAt.z(), radius, yaw, pitch);
     }
 
     public Camera setLookAtAndAngle(Vec3i lookAt, float radius, float yaw, float pitch) {
@@ -99,6 +100,10 @@ public class Camera {
         v.normalize().mul(dist);
         this.pos.set(v.add(lookAtX, lookAtY, lookAtZ));
         return this;
+    }
+
+    public Camera setPosAndAngle(Vector3fc lookAt, float dist, float yaw, float pitch) {
+        return setPosAndAngle(lookAt.x(), lookAt.y(), lookAt.z(), dist, yaw, pitch);
     }
 
     public Camera setPosAndAngle(float posX, float posY, float posZ, float dist, float yaw, float pitch) {

@@ -13,9 +13,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
-import dev.emi.emi.api.forge.ForgeEmiStack;
+import dev.emi.emi.api.neoforge.NeoForgeEmiStack;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
@@ -43,7 +43,7 @@ public class EmiStackConverter {
                 return null;
             }
             ItemStack itemStack = new ItemStack(key, MathUtil.saturatedCast(stack.getAmount()));
-            itemStack.setTag(stack.getNbt());
+            itemStack.applyComponents(stack.getComponentChanges());
             return itemStack;
         }
 
@@ -76,11 +76,11 @@ public class EmiStackConverter {
             if (key == null || key == Fluids.EMPTY) {
                 return null;
             }
-            return new FluidStack(key, MathUtil.saturatedCast(stack.getAmount()), stack.getNbt());
+            return new FluidStack(key.builtInRegistryHolder(), MathUtil.saturatedCast(stack.getAmount()), stack.getComponentChanges());
         }
 
         private static EmiIngredient toEMIIngredient(Stream<FluidStack> stream) {
-            return EmiIngredient.of(stream.map(ForgeEmiStack::of).toList());
+            return EmiIngredient.of(stream.map(NeoForgeEmiStack::of).toList());
         }
 
         @Override
@@ -95,7 +95,7 @@ public class EmiStackConverter {
                 return EmiIngredient.of(tagList.getEntries().stream()
                         .map(FluidTagList.FluidTagEntry::stacks)
                         .map(stream -> toEMIIngredient(stream))
-                        .collect(Collectors.toList()), tagList.getEntries().get(0).amount()).setChance(chance);
+                        .collect(Collectors.toList()), tagList.getEntries().getFirst().amount()).setChance(chance);
             }
             return EmiStack.EMPTY;
         }

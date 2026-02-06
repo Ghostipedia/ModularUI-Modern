@@ -64,6 +64,10 @@ public class TextFieldHandler {
         return this.mainCursorStart ? this.cursorEnd : this.cursor;
     }
 
+    public void setOffsetCursor(Point cursor) {
+        setOffsetCursor(cursor.y, cursor.x);
+    }
+
     public Point getStartCursor() {
         if (!hasTextMarked()) {
             return this.cursor;
@@ -122,10 +126,6 @@ public class TextFieldHandler {
         if (applyToOffset) {
             setOffsetCursor(linePos, charPos);
         }
-    }
-
-    public void setOffsetCursor(Point cursor) {
-        setOffsetCursor(cursor.y, cursor.x);
     }
 
     public void setMainCursor(Point cursor, boolean animate) {

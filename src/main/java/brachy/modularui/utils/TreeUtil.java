@@ -24,8 +24,6 @@ import java.util.stream.Stream;
 
 public class TreeUtil {
 
-    public static boolean allowUnicode = true;
-
     private static final String U_T = "✓";
     private static final String U_F = "✘";
     private static final String T = "T";
@@ -36,7 +34,7 @@ public class TreeUtil {
     private static final String PIPE = "|";
     private static final String PIPE_MID = "+";
     private static final String PIPE_END = "-";
-
+    public static boolean allowUnicode = true;
     public static final NodeInfo<ResizeNode> RESIZE_NODE_INFO_FULLY_RESIZED = (root, node, builder) -> builder
             .append("Fully resized: ")
             .append(str(node.isFullyCalculated(node.hasParent() && node.getParent().isLayout())));
@@ -490,20 +488,6 @@ public class TreeUtil {
 
     public interface NodeInfo<T extends ITreeNode<T>> {
 
-        void addInfo(T root, T widget, StringBuilder builder);
-
-        default NodeInfo<T> combine(NodeInfo<T> other, String joiner) {
-            return (root, widget, builder) -> {
-                addInfo(root, widget, builder);
-                builder.append(joiner);
-                other.addInfo(root, widget, builder);
-            };
-        }
-
-        default NodeInfo<T> combine(NodeInfo<T> other) {
-            return combine(other, " | ");
-        }
-
         @SafeVarargs
         static <T extends ITreeNode<T>> NodeInfo<T> of(String joiner, NodeInfo<T>... infos) {
             return (root, widget, builder) -> {
@@ -520,6 +504,20 @@ public class TreeUtil {
         @SafeVarargs
         static <T extends ITreeNode<T>> NodeInfo<T> of(NodeInfo<T>... infos) {
             return of(" | ", infos);
+        }
+
+        void addInfo(T root, T widget, StringBuilder builder);
+
+        default NodeInfo<T> combine(NodeInfo<T> other, String joiner) {
+            return (root, widget, builder) -> {
+                addInfo(root, widget, builder);
+                builder.append(joiner);
+                other.addInfo(root, widget, builder);
+            };
+        }
+
+        default NodeInfo<T> combine(NodeInfo<T> other) {
+            return combine(other, " | ");
         }
     }
 }

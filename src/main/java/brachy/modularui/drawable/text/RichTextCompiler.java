@@ -128,7 +128,7 @@ public class RichTextCompiler {
                     if (this.x > 0) i = fr.getSplitter().plainIndexAtWidth(subText, this.maxWidth, Style.EMPTY);
                     if (i <= 0) {
                         i = 1; // force at least one char
-                        if (subText.charAt(0) == '\u00a7' && subText.length() > 1) {
+                        if (subText.charAt(0) == '§' && subText.length() > 1) {
                             // include format char if it is one
                             i++;
                             if (subText.length() > 2) i++;

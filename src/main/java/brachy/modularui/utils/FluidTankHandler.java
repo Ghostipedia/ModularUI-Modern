@@ -1,24 +1,29 @@
 package brachy.modularui.utils;
 
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidTank;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraft.MethodsReturnNonnullByDefault;
 
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class FluidTankHandler implements IFluidHandler {
+
+    private final IFluidTank fluidTank;
+
+    public FluidTankHandler(IFluidTank tank) {
+        this.fluidTank = tank;
+    }
 
     public static IFluidHandler getTankFluidHandler(IFluidTank tank) {
         if (tank instanceof IFluidHandler fluidHandler) {
             return fluidHandler;
         }
         return new FluidTankHandler(tank);
-    }
-
-    private final IFluidTank fluidTank;
-
-    public FluidTankHandler(IFluidTank tank) {
-        this.fluidTank = tank;
     }
 
     @Override
@@ -29,7 +34,7 @@ public class FluidTankHandler implements IFluidHandler {
     @Override
     public @NotNull FluidStack drain(FluidStack resource, FluidAction action) {
         FluidStack currentFluid = this.fluidTank.getFluid();
-        if (currentFluid.isEmpty() || !currentFluid.isFluidEqual(resource)) {
+        if (currentFluid.isEmpty() || !FluidStack.isSameFluidSameComponents(currentFluid, resource)) {
             return FluidStack.EMPTY;
         }
         return this.fluidTank.drain(resource, action);

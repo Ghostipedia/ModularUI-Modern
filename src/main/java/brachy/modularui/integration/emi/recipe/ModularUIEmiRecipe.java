@@ -24,6 +24,7 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.stack.EmiIngredient;
@@ -44,7 +45,7 @@ import java.util.function.Supplier;
 public abstract class ModularUIEmiRecipe<T extends Recipe<?>, W extends IWidget> implements EmiRecipe {
 
     @Getter
-    protected final T recipe;
+    protected final RecipeHolder<T> recipe;
     protected final MemoizedSupplier<ModularScreen> screen;
 
     @Getter
@@ -61,7 +62,7 @@ public abstract class ModularUIEmiRecipe<T extends Recipe<?>, W extends IWidget>
 
     public boolean allowRecipeTree = true;
 
-    public ModularUIEmiRecipe(T recipe, Supplier<W> widgetSupplier) {
+    public ModularUIEmiRecipe(RecipeHolder<T> recipe, Supplier<W> widgetSupplier) {
         this.recipe = recipe;
 
         this.inputs = new ArrayList<>();
@@ -75,9 +76,9 @@ public abstract class ModularUIEmiRecipe<T extends Recipe<?>, W extends IWidget>
 
         this.screen = Memoizer.memoize(() -> {
             W widget = widgetSupplier.get();
-            ModularPanel panel = ModularPanel.defaultPanel(recipe.getId().toString(), widget.getArea().w(), widget.getArea().h());
+            ModularPanel panel = ModularPanel.defaultPanel(recipe.id().toString(), widget.getArea().w(), widget.getArea().h());
             panel.child(widget);
-            return new ModularScreen(recipe.getId().getNamespace(), panel);
+            return new ModularScreen(recipe.id().getNamespace(), panel);
         }, Duration.ofSeconds(10));
 
         for (IWidget widget : WidgetUtil.getFlatWidgetCollection(recipeWidget)) {
@@ -170,7 +171,7 @@ public abstract class ModularUIEmiRecipe<T extends Recipe<?>, W extends IWidget>
 
     @Override
     public @Nullable ResourceLocation getId() {
-        return this.recipe.getId();
+        return this.recipe.id();
     }
 
     @Override

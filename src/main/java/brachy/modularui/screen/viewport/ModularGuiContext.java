@@ -11,6 +11,7 @@ import brachy.modularui.client.CursorHandler;
 import brachy.modularui.screen.DraggablePanelWrapper;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
+import brachy.modularui.screen.PanelManager;
 import brachy.modularui.screen.RecipeViewerSettingsImpl;
 import brachy.modularui.screen.UISettings;
 
@@ -99,7 +100,7 @@ public class ModularGuiContext extends GuiContext {
     }
 
     public @Nullable IWidget getTopHovered() {
-        return this.hovered.isEmpty() ? null : this.hovered.get(0).getElement();
+        return this.hovered.isEmpty() ? null : this.hovered.getFirst().getElement();
     }
 
     @UnmodifiableView
@@ -298,7 +299,7 @@ public class ModularGuiContext extends GuiContext {
                 draggable = new LocatedElement<>(iDraggable, hovered.getTransformationMatrix());
             } else if (widget instanceof ModularPanel panel) {
                 if (panel.isDraggable()) {
-                    if (!panel.resizer().hasFixedSize()) {
+                    if (!panel.flex().hasFixedSize()) {
                         throw new IllegalStateException(
                                 "Panel must have a fixed size. It can't specify left AND right or top AND bottom!");
                     }
@@ -442,7 +443,7 @@ public class ModularGuiContext extends GuiContext {
 
     public RecipeViewerSettingsImpl getRecipeViewerSettings() {
         if (this.screen.isOverlay()) {
-            throw new IllegalStateException("Overlays don't have JEI settings!");
+            throw new IllegalStateException("Overlays don't have recipe viewer settings!");
         }
         return (RecipeViewerSettingsImpl) getUISettings().getRecipeViewerSettings();
     }

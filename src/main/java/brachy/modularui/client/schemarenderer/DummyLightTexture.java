@@ -46,6 +46,12 @@ public class DummyLightTexture implements AutoCloseable {
         return 0.2f + g * 0.8f;
     }
 
+    private static void clampColor(Vector3f color) {
+        color.set(Mth.clamp(color.x, 0.0f, 1.0f),
+                Mth.clamp(color.y, 0.0f, 1.0f),
+                Mth.clamp(color.z, 0.0f, 1.0f));
+    }
+
     public void update(LevelTimeAccess level) {
         float skyDarkness = getSkyDarken(level, 1.0f);
         float partDarken = Mth.lerp(0.35f, skyDarkness, 1.0f);
@@ -83,12 +89,6 @@ public class DummyLightTexture implements AutoCloseable {
         }
 
         lightmapTexture.upload();
-    }
-
-    private static void clampColor(Vector3f color) {
-        color.set(Mth.clamp(color.x, 0.0f, 1.0f),
-                Mth.clamp(color.y, 0.0f, 1.0f),
-                Mth.clamp(color.z, 0.0f, 1.0f));
     }
 
     private float notGamma(float value) {

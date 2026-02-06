@@ -8,7 +8,7 @@ import brachy.modularui.api.widget.Interactable;
 import brachy.modularui.core.mixins.client.AbstractContainerScreenAccessor;
 import brachy.modularui.core.mixins.client.ScreenAccessor;
 import brachy.modularui.drawable.GuiDraw;
-import brachy.modularui.drawable.text.TextRenderer;
+import brachy.modularui.integration.recipeviewer.RecipeSlotRole;
 import brachy.modularui.integration.recipeviewer.entry.item.ItemStackList;
 import brachy.modularui.integration.recipeviewer.handlers.IngredientProvider;
 import brachy.modularui.screen.ClientScreenHandler;
@@ -27,30 +27,31 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.items.IItemHandlerModifiable;
 
+import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.UnaryOperator;
 
+@Accessors(fluent = true, chain = true)
 public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interactable, IngredientProvider<ItemStack> {
 
     public static final int SIZE = 18;
-
-    public static ItemSlot create(boolean phantom) {
-        return phantom ? new PhantomItemSlot() : new ItemSlot();
-    }
-
-    private static final TextRenderer textRenderer = new TextRenderer();
-    private ItemSlotSyncHandler syncHandler;
-    private RichTooltip tooltip;
+    @Getter
     @Setter
-    protected UnaryOperator<ItemStack> itemHook;
-
+    protected UnaryOperator<ItemStack> renderMappingFunction;
+    private ItemSlotSyncHandler syncHandler;
+    @Setter
+    private RichTooltip tooltip;
+    @Getter
+    @Setter
+    private RecipeSlotRole recipeRole = RecipeSlotRole.RENDER_ONLY;
     public ItemSlot() {
         itemTooltip().autoUpdate(true);// .setHasTitleMargin(true);
         itemTooltip().tooltipBuilder(tooltip -> {
@@ -58,6 +59,10 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
             ItemStack stack = getSlot().getItem();
             buildTooltip(stack, tooltip);
         });
+    }
+
+    public static ItemSlot create(boolean phantom) {
+        return phantom ? new PhantomItemSlot() : new ItemSlot();
     }
 
     @Override
@@ -134,8 +139,8 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
     }
 
     public int getSlotHoverColor() {
-        WidgetThemeEntry<SlotTheme> theme = getWidgetTheme(getPanel().getTheme(), SlotTheme.class);
-        return theme.theme().getSlotHoverColor();
+        WidgetThemeEntry<SlotTheme> theme = getWidgetTheme(getContext().getTheme(), SlotTheme.class);
+        return theme.getTheme().getSlotHoverColor();
     }
 
     @Override
@@ -194,12 +199,6 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
     }
 
     @Override
-    public ItemSlot tooltip(RichTooltip tooltip) {
-        this.tooltip = tooltip;
-        return this;
-    }
-
-    @Override
     public @NotNull RichTooltip tooltip() {
         if (this.tooltip == null) {
             this.tooltip = new RichTooltip().parent(this);
@@ -223,25 +222,27 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
     @OnlyIn(Dist.CLIENT)
     private void drawSlot(ModularGuiContext context, ModularSlot slotIn) {
         // TODO: NEA animations
-        Screen guiScreen = getScreen().getScreenWrapper().wrappedScreen();
-        if (!(guiScreen instanceof AbstractContainerScreen<?>))
+        Screen screen = getScreen().getScreenWrapper().getWrappedScreen();
+        if (!(screen instanceof AbstractContainerScreen<?> containerScreen)) {
             throw new IllegalStateException("The gui must be an instance of GuiContainer if it contains slots!");
-        AbstractContainerScreenAccessor acc = (AbstractContainerScreenAccessor) guiScreen;
+        }
+
+        AbstractContainerScreenAccessor accessor = (AbstractContainerScreenAccessor) screen;
         ItemStack slotStack = slotIn.getItem();
         boolean isDragPreview = false;
-        boolean doDrawItem = slotIn == acc.getClickedSlot() && !acc.getDraggingItem().isEmpty() &&
-                !acc.getIsSplittingStack();
-        ItemStack carried = guiScreen.getMinecraft().player.containerMenu.getCarried();
+        boolean doDrawItem = slotIn == accessor.getClickedSlot() && !accessor.getDraggingItem().isEmpty() &&
+                !accessor.getIsSplittingStack();
+        ItemStack carried = containerScreen.getMenu().getCarried();
         int amount = -1;
         String format = null;
 
         if (!getSyncHandler().isPhantom()) {
-            if (slotIn == acc.getClickedSlot() && !acc.getDraggingItem().isEmpty() && acc.getIsSplittingStack() &&
+            if (slotIn == accessor.getClickedSlot() && !accessor.getDraggingItem().isEmpty() && accessor.getIsSplittingStack() &&
                     !slotStack.isEmpty()) {
                 slotStack = slotStack.copy();
                 slotStack.setCount(slotStack.getCount() / 2);
-            } else if (acc.getIsQuickCrafting() && acc.getQuickCraftSlots().contains(slotIn) && !carried.isEmpty()) {
-                if (acc.getQuickCraftSlots().size() == 1) {
+            } else if (accessor.getIsQuickCrafting() && accessor.getQuickCraftSlots().contains(slotIn) && !carried.isEmpty()) {
+                if (accessor.getQuickCraftSlots().size() == 1) {
                     return;
                 }
 
@@ -249,7 +250,7 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
                         getScreen().getContainer().canDragTo(slotIn)) {
                     slotStack = carried.copy();
                     isDragPreview = true;
-                    AbstractContainerMenu.getQuickCraftPlaceCount(acc.getQuickCraftSlots(), acc.getQuickCraftingType(),
+                    AbstractContainerMenu.getQuickCraftPlaceCount(accessor.getQuickCraftSlots(), accessor.getQuickCraftingType(),
                             slotStack);
                     int k = Math.min(slotStack.getMaxStackSize(), slotIn.getMaxStackSize(slotStack));
 
@@ -259,8 +260,8 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
                         slotStack.setCount(k);
                     }
                 } else {
-                    acc.getQuickCraftSlots().remove(slotIn);
-                    acc.invokeRecalculateQuickCraftRemaining();
+                    accessor.getQuickCraftSlots().remove(slotIn);
+                    accessor.invokeRecalculateQuickCraftRemaining();
                 }
             }
         }
@@ -288,7 +289,7 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
                 int cachedCount = slotStack.getCount();
                 slotStack.setCount(1); // required to not render the amount overlay
                 // render other overlays like durability bar
-                context.getGraphics().renderItemDecorations(((ScreenAccessor) guiScreen).getFont(), slotStack, 1, 1,
+                context.getGraphics().renderItemDecorations(((ScreenAccessor) screen).getFont(), slotStack, 1, 1,
                         null);
                 slotStack.setCount(cachedCount);
                 RenderSystem.disableDepthTest();
@@ -305,10 +306,5 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
     @Override
     public @NotNull Class<ItemStack> ingredientClass() {
         return ItemStack.class;
-    }
-
-    @Override
-    public UnaryOperator<ItemStack> renderMappingFunction() {
-        return this.itemHook;
     }
 }

@@ -16,20 +16,6 @@ public class SelectableTheme extends WidgetTheme {
     @Getter
     private final WidgetTheme selected;
 
-    public static SelectableTheme darkTextNoShadow(int defaultWidth, int defaultHeight, @Nullable IDrawable background,
-                                                   @Nullable IDrawable selectedBackground) {
-        return new SelectableTheme(defaultWidth, defaultHeight,
-                background, Color.WHITE.main, Color.TEXT_COLOR_DARK, false, Color.WHITE.main,
-                selectedBackground, Color.WHITE.main, Color.TEXT_COLOR_DARK, false, Color.WHITE.main);
-    }
-
-    public static SelectableTheme whiteTextShadow(int defaultWidth, int defaultHeight, @Nullable IDrawable background,
-                                                  @Nullable IDrawable selectedBackground) {
-        return new SelectableTheme(defaultWidth, defaultHeight,
-                background, Color.WHITE.main, Color.WHITE.main, true, Color.WHITE.main,
-                selectedBackground, Color.WHITE.main, Color.WHITE.main, true, Color.WHITE.main);
-    }
-
     public SelectableTheme(int defaultWidth, int defaultHeight, @Nullable IDrawable background,
                            int color, int textColor, boolean textShadow, int iconColor,
                            @Nullable IDrawable selectedBackground, int selectedColor,
@@ -55,6 +41,20 @@ public class SelectableTheme extends WidgetTheme {
                 selectedTextColor, selectedTextShadow, selectedIconColor);
     }
 
+    public static SelectableTheme darkTextNoShadow(int defaultWidth, int defaultHeight, @Nullable IDrawable background,
+                                                   @Nullable IDrawable selectedBackground) {
+        return new SelectableTheme(defaultWidth, defaultHeight,
+                background, Color.WHITE.main, Color.TEXT_COLOR_DARK, false, Color.WHITE.main,
+                selectedBackground, Color.WHITE.main, Color.TEXT_COLOR_DARK, false, Color.WHITE.main);
+    }
+
+    public static SelectableTheme whiteTextShadow(int defaultWidth, int defaultHeight, @Nullable IDrawable background,
+                                                  @Nullable IDrawable selectedBackground) {
+        return new SelectableTheme(defaultWidth, defaultHeight,
+                background, Color.WHITE.main, Color.WHITE.main, true, Color.WHITE.main,
+                selectedBackground, Color.WHITE.main, Color.WHITE.main, true, Color.WHITE.main);
+    }
+
     @Override
     public WidgetTheme withNoHoverBackground() {
         return new SelectableTheme(getDefaultWidth(), getDefaultHeight(), IDrawable.NONE, getColor(), getTextColor(),
@@ -62,7 +62,7 @@ public class SelectableTheme extends WidgetTheme {
                 this.selected.isTextShadow(), this.selected.getIconColor());
     }
 
-    public static class Builder<T extends SelectableTheme, B extends SelectableTheme.Builder<T, B>>
+    public static class Builder<T extends SelectableTheme, B extends Builder<T, B>>
             extends WidgetThemeBuilder<T, B> {
 
         public B selectedColor(int color) {

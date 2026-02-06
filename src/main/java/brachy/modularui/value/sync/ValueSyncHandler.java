@@ -2,12 +2,13 @@ package brachy.modularui.value.sync;
 
 import brachy.modularui.api.value.sync.IValueSyncHandler;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
+import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import lombok.Setter;
 
-public abstract class ValueSyncHandler<T> extends SyncHandler implements IValueSyncHandler<T> {
+public abstract class ValueSyncHandler<B extends ByteBuf, T> extends SyncHandler implements IValueSyncHandler<B, T> {
 
     public static final int SYNC_VALUE = 0;
 
@@ -15,18 +16,24 @@ public abstract class ValueSyncHandler<T> extends SyncHandler implements IValueS
     @Setter
     private Runnable changeListener;
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void readOnClient(int id, FriendlyByteBuf buf) {
-        if (id == SYNC_VALUE) read(buf);
+    public void readOnClient(int id, RegistryFriendlyByteBuf buf) {
+        // the lowest subclass of ByteBuf is RegistryFriendlyByteBuf so this *should* work
+        if (id == SYNC_VALUE) read((B) buf);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void readOnServer(int id, FriendlyByteBuf buf) {
-        if (id == SYNC_VALUE) read(buf);
+    public void readOnServer(int id, RegistryFriendlyByteBuf buf) {
+        // the lowest subclass of ByteBuf is RegistryFriendlyByteBuf so this *should* work
+        if (id == SYNC_VALUE) read((B) buf);
     }
 
+    @SuppressWarnings("unchecked")
     protected void sync() {
-        sync(SYNC_VALUE, this::write);
+        // the lowest subclass of ByteBuf is RegistryFriendlyByteBuf so this *should* work
+        sync(SYNC_VALUE, buf -> this.write((B) buf));
     }
 
     @Override

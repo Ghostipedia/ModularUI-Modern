@@ -19,6 +19,11 @@ import java.util.function.IntFunction;
 
 public class SlotGroupWidget extends ParentWidget<SlotGroupWidget> {
 
+    private String slotGroupName;
+    private SlotGroup slotGroup;
+    private boolean sortButtonsAdded = false;
+    private Consumer<SortButtons> sortButtonsEditor;
+
     public static SlotGroupWidget playerInventory(boolean positioned) {
         return positioned ? playerInventory(7, true) : playerInventory((index, slot) -> slot);
     }
@@ -63,10 +68,9 @@ public class SlotGroupWidget extends ParentWidget<SlotGroupWidget> {
         return slotGroupWidget;
     }
 
-    private String slotGroupName;
-    private SlotGroup slotGroup;
-    private boolean sortButtonsAdded = false;
-    private Consumer<SortButtons> sortButtonsEditor;
+    public static Builder builder() {
+        return new Builder();
+    }
 
     @Override
     public void onInit() {
@@ -104,7 +108,7 @@ public class SlotGroupWidget extends ParentWidget<SlotGroupWidget> {
         super.onChildAdd(child);
         if (child instanceof SortButtons sortButtons) {
             this.sortButtonsAdded = true;
-            if (sortButtons.getSlotGroup() == null && sortButtons.getSlotGroupName() == null) {
+            if (sortButtons.slotGroup() == null && sortButtons.slotGroupName() == null) {
                 if (this.slotGroup != null) {
                     sortButtons.slotGroup(this.slotGroup);
                 } else if (this.slotGroupName != null) {
@@ -169,10 +173,7 @@ public class SlotGroupWidget extends ParentWidget<SlotGroupWidget> {
         return this;
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
+    @FunctionalInterface
     public interface SlotConsumer {
 
         ItemSlot apply(int index, ItemSlot widgetSlot);
@@ -180,9 +181,9 @@ public class SlotGroupWidget extends ParentWidget<SlotGroupWidget> {
 
     public static class Builder {
 
-        private String syncKey;
         private final List<String> matrix = new ArrayList<>();
         private final Char2ObjectMap<Object> keys = new Char2ObjectOpenHashMap<>();
+        private String syncKey;
         private String slotGroupName;
         private SlotGroup slotGroup;
 
@@ -253,7 +254,7 @@ public class SlotGroupWidget extends ParentWidget<SlotGroupWidget> {
                         x += 18;
                         continue;
                     }
-                    widget.resizer().left(x).top(y);
+                    widget.flex().left(x).top(y);
                     slotGroupWidget.child(widget);
                     if (this.syncKey != null && widget instanceof ISynced<?> synced) {
                         synced.syncHandler(this.syncKey, syncId++);
@@ -264,7 +265,7 @@ public class SlotGroupWidget extends ParentWidget<SlotGroupWidget> {
                 y += 18;
                 x = 0;
             }
-            slotGroupWidget.resizer().size(maxWidth, this.matrix.size() * 18);
+            slotGroupWidget.flex().size(maxWidth, this.matrix.size() * 18);
             return slotGroupWidget;
         }
     }

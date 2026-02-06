@@ -4,7 +4,7 @@ import net.minecraft.world.inventory.Slot;
 
 public interface IClickableContainerScreen {
 
-    void gtceu$setClickedSlot(Slot slot);
+    void mui$setClickedSlot(Slot slot);
 
-    Slot gtceu$getClickedSlot();
+    Slot mui$getClickedSlot();
 }

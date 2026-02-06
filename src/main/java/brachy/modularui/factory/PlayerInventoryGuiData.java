@@ -26,8 +26,7 @@ public class PlayerInventoryGuiData<T> extends GuiData {
     /**
      * Inventory type where the item can be found (player or curios for example).
      */
-    @NotNull
-    private final InventoryType<T> inventoryType;
+    private final @NotNull InventoryType<T> inventoryType;
     /**
      * Additional context to find the item. Usually this is null, but for curios it is a string (slot identifier).
      */

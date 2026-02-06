@@ -129,12 +129,12 @@ public abstract class ModularUIRecipeCategory<T extends Recipe<?>, W extends IWi
         ModularScreen screen = getModularScreen(recipe);
 
         RecipeScreenRenderingUtil.drawScreenBackground(guiGraphics, screen, (int) mouseX, (int) mouseY,
-                Minecraft.getInstance().getPartialTick());
+                Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false));
     }
 
     @Override
     public void getTooltip(ITooltipBuilder tooltip, T recipe, IRecipeSlotsView recipeSlotsView, double mouseX, double mouseY) {
-        // tooltip.clear();
+        tooltip.clear();
     }
 
     public static RecipeIngredientRole mapToRole(RecipeSlotRole slotRole) {
@@ -179,8 +179,8 @@ public abstract class ModularUIRecipeCategory<T extends Recipe<?>, W extends IWi
         }
 
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double scrollDelta) {
-            return getModularScreen(this.recipe).mouseScrolled(mouseX, mouseY, scrollDelta);
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+            return getModularScreen(this.recipe).mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
         @Override
@@ -206,7 +206,7 @@ public abstract class ModularUIRecipeCategory<T extends Recipe<?>, W extends IWi
         public void drawWidget(GuiGraphics guiGraphics, double mouseX, double mouseY) {
             ModularScreen screen = getModularScreen(this.recipe);
             RecipeScreenRenderingUtil.drawScreenForeground(guiGraphics, screen, (int) mouseX, (int) mouseY,
-                    Minecraft.getInstance().getPartialTick());
+                    Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false));
         }
     }
 }

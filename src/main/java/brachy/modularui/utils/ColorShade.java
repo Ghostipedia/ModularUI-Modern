@@ -17,28 +17,12 @@ import java.util.Map;
 
 public class ColorShade implements IntIterable {
 
-    public static Builder builder(String name, int main) {
-        return new Builder(name, main);
-    }
-
     private static final Map<String, ColorShade> COLOR_SHADES = new Object2ObjectOpenHashMap<>();
-
-    @Nullable
-    public static ColorShade getFromName(String name) {
-        return COLOR_SHADES.get(name);
-    }
-
-    @UnmodifiableView
-    public static Collection<ColorShade> getAll() {
-        return Collections.unmodifiableCollection(COLOR_SHADES.values());
-    }
-
     public final String name;
     public final int main;
     private final int[] brighter;
     private final int[] darker;
     private final int[] all;
-
     private ColorShade(String name, int main, int[] brighter, int[] darker) {
         this.name = name;
         this.main = main;
@@ -56,6 +40,20 @@ public class ColorShade implements IntIterable {
         COLOR_SHADES.put(name, this);
     }
 
+    public static Builder builder(String name, int main) {
+        return new Builder(name, main);
+    }
+
+    @Nullable
+    public static ColorShade getFromName(String name) {
+        return COLOR_SHADES.get(name);
+    }
+
+    @UnmodifiableView
+    public static Collection<ColorShade> getAll() {
+        return Collections.unmodifiableCollection(COLOR_SHADES.values());
+    }
+
     public int darker(int index) {
         return this.darker[index];
     }
@@ -64,20 +62,12 @@ public class ColorShade implements IntIterable {
         return this.darker[Mth.clamp(index, 0, this.darker.length - 1)];
     }
 
-    public int darkerShadeCount() {
-        return this.darker.length;
-    }
-
     public int brighter(int index) {
         return this.brighter[index];
     }
 
     public int brighterSafe(int index) {
         return this.brighter[Mth.clamp(index, 0, this.brighter.length - 1)];
-    }
-
-    public int brighterShadeCount() {
-        return this.brighter.length;
     }
 
     @NotNull

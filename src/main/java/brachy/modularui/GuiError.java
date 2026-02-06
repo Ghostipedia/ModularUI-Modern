@@ -1,6 +1,6 @@
 package brachy.modularui;
 
-import brachy.modularui.api.widget.IWidget;
+import brachy.modularui.api.widget.IGuiElement;
 
 import lombok.Getter;
 import org.apache.logging.log4j.Level;
@@ -9,25 +9,24 @@ import java.util.Objects;
 
 public class GuiError {
 
-    public static void throwNew(IWidget guiElement, Type type, String msg) {
-        if (ModularUI.isClientSide()) {
-            GuiErrorHandler.INSTANCE.pushError(guiElement, type, msg);
-        }
-    }
-
     @Getter
     private final Level level = Level.ERROR;
     @Getter
     private final String msg;
     @Getter
-    private final IWidget reference;
+    private final IGuiElement reference;
     @Getter
     private final Type type;
-
-    protected GuiError(String msg, IWidget reference, Type type) {
+    protected GuiError(String msg, IGuiElement reference, Type type) {
         this.msg = msg;
         this.reference = reference;
         this.type = type;
+    }
+
+    public static void throwNew(IGuiElement guiElement, Type type, String msg) {
+        if (ModularUI.isClientSide()) {
+            GuiErrorHandler.INSTANCE.pushError(guiElement, type, msg);
+        }
     }
 
     @Override

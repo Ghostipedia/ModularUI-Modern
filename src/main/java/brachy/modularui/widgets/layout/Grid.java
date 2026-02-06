@@ -35,6 +35,24 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
         super(null, null);
     }
 
+    public static <T, I extends IWidget> List<List<I>> mapToMatrix(int rowLength, List<T> list,
+                                                                   IndexedElementMapper<T, I> widgetCreator) {
+        return mapToMatrix(rowLength, list.size(), i -> widgetCreator.apply(i, list.get(i)));
+    }
+
+    public static <I extends IWidget> List<List<I>> mapToMatrix(int rowLength, int size, IntFunction<I> widgetCreator) {
+        List<List<I>> matrix = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            int r = i / rowLength;
+
+            if (r == matrix.size())
+                matrix.add(new ArrayList<>());
+
+            matrix.get(r).add(widgetCreator.apply(i));
+        }
+        return matrix;
+    }
+
     @Override
     public void onInit() {
         super.onInit();
@@ -301,24 +319,6 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
     public Grid collapseDisabledChild() {
         this.collapseDisabledChild = true;
         return getThis();
-    }
-
-    public static <T, I extends IWidget> List<List<I>> mapToMatrix(int rowLength, List<T> list,
-                                                                   IndexedElementMapper<T, I> widgetCreator) {
-        return mapToMatrix(rowLength, list.size(), i -> widgetCreator.apply(i, list.get(i)));
-    }
-
-    public static <I extends IWidget> List<List<I>> mapToMatrix(int rowLength, int size, IntFunction<I> widgetCreator) {
-        List<List<I>> matrix = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            int r = i / rowLength;
-
-            if (r == matrix.size())
-                matrix.add(new ArrayList<>());
-
-            matrix.get(r).add(widgetCreator.apply(i));
-        }
-        return matrix;
     }
 
     public interface IndexedElementMapper<T, I> {

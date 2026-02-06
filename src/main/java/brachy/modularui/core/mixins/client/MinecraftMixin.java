@@ -1,6 +1,6 @@
 package brachy.modularui.core.mixins.client;
 
-import brachy.modularui.ClientProxy;
+import brachy.modularui.client.ModularUIClient;
 import brachy.modularui.screen.ClientScreenHandler;
 
 import net.minecraft.Util;
@@ -15,9 +15,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MinecraftMixin {
 
     @Inject(method = "runTick",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Timer;advanceTime(J)I", shift = At.Shift.AFTER))
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/client/DeltaTracker$Timer;advanceTime(JZ)I",
+                    shift = At.Shift.AFTER))
     public void timer(CallbackInfo ci) {
-        int ticks = ClientProxy.getTimer60Fps().advanceTime(Util.getMillis());
+        int ticks = ModularUIClient.getTimer60Fps().advanceTime(Util.getMillis(), true);
         for (int j = 0; j < Math.min(20, ticks); ++j) {
             ClientScreenHandler.onFrameUpdate();
         }

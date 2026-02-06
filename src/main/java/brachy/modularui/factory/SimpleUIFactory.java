@@ -3,12 +3,12 @@ package brachy.modularui.factory;
 import brachy.modularui.api.IUIHolder;
 import brachy.modularui.api.MCHelper;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -60,10 +60,10 @@ public class SimpleUIFactory extends AbstractUIFactory<GuiData> {
     }
 
     @Override
-    public void writeGuiData(GuiData guiData, FriendlyByteBuf buffer) {}
+    public void writeGuiData(GuiData guiData, RegistryFriendlyByteBuf buffer) {}
 
     @Override
-    public @NotNull GuiData readGuiData(Player player, FriendlyByteBuf buffer) {
+    public @NotNull GuiData readGuiData(Player player, RegistryFriendlyByteBuf buffer) {
         return new GuiData(player);
     }
 

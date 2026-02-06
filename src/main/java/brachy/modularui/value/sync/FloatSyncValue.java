@@ -7,16 +7,15 @@ import brachy.modularui.api.value.sync.IStringSyncValue;
 import brachy.modularui.utils.FloatConsumer;
 import brachy.modularui.utils.FloatSupplier;
 
-import net.minecraft.network.FriendlyByteBuf;
-
+import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public class FloatSyncValue extends ValueSyncHandler<Float> implements
-        IFloatSyncValue<Float>, IDoubleSyncValue<Float>, IStringSyncValue<Float> {
+public class FloatSyncValue extends ValueSyncHandler<ByteBuf, Float> implements
+        IFloatSyncValue<ByteBuf, Float>, IDoubleSyncValue<ByteBuf, Float>, IStringSyncValue<ByteBuf, Float> {
 
     private final FloatSupplier getter;
     private final FloatConsumer setter;
@@ -94,12 +93,12 @@ public class FloatSyncValue extends ValueSyncHandler<Float> implements
     }
 
     @Override
-    public void write(FriendlyByteBuf buffer) {
+    public void write(ByteBuf buffer) {
         buffer.writeFloat(getFloatValue());
     }
 
     @Override
-    public void read(FriendlyByteBuf buffer) {
+    public void read(ByteBuf buffer) {
         setFloatValue(buffer.readFloat(), true, false);
     }
 

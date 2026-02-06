@@ -3,40 +3,39 @@ package brachy.modularui.value.sync;
 import brachy.modularui.utils.FluidTankHandler;
 import brachy.modularui.utils.MouseData;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraftforge.common.SoundAction;
-import net.minecraftforge.common.SoundActions;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidActionResult;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.IFluidTank;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.common.SoundAction;
+import net.neoforged.neoforge.common.SoundActions;
+import net.neoforged.neoforge.fluids.FluidActionResult;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.FluidUtil;
+import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Accessors(fluent = true, chain = true)
-public class FluidSlotSyncHandler extends ValueSyncHandler<FluidStack> {
+public class FluidSlotSyncHandler extends ValueSyncHandler<RegistryFriendlyByteBuf, FluidStack> {
 
     public static final int SYNC_CLICK = 1;
     public static final int SYNC_SCROLL = 2;
     public static final int SYNC_CONTROLS_AMOUNT = 3;
-
-    private @NotNull FluidStack cache = FluidStack.EMPTY;
     @Getter
     private final IFluidTank fluidTank;
     private final IFluidHandler fluidHandler;
+    private @NotNull FluidStack cache = FluidStack.EMPTY;
     @Getter
     @Setter
     private boolean canFillSlot = true, canDrainSlot = true, phantom = false;
@@ -73,7 +72,7 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<FluidStack> {
         FluidStack current = this.fluidTank.getFluid();
         if (current == this.cache) return false;
         if (current.isEmpty() && this.cache.isEmpty()) return true;
-        return !current.isFluidStackIdentical(this.cache);
+        return !FluidStack.matches(current, this.cache);
     }
 
     @Override
@@ -96,17 +95,17 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<FluidStack> {
     }
 
     @Override
-    public void write(FriendlyByteBuf buffer) {
-        this.cache.writeToPacket(buffer);
+    public void write(RegistryFriendlyByteBuf buffer) {
+        FluidStack.OPTIONAL_STREAM_CODEC.encode(buffer, this.cache);
     }
 
     @Override
-    public void read(FriendlyByteBuf buffer) {
-        setValue(FluidStack.readFromPacket(buffer), true, false);
+    public void read(RegistryFriendlyByteBuf buffer) {
+        setValue(FluidStack.OPTIONAL_STREAM_CODEC.decode(buffer), true, false);
     }
 
     @Override
-    public void readOnClient(int id, FriendlyByteBuf buf) {
+    public void readOnClient(int id, RegistryFriendlyByteBuf buf) {
         if (id == SYNC_VALUE) {
             read(buf);
         } else if (id == SYNC_CONTROLS_AMOUNT) {
@@ -115,7 +114,7 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<FluidStack> {
     }
 
     @Override
-    public void readOnServer(int id, FriendlyByteBuf buf) {
+    public void readOnServer(int id, RegistryFriendlyByteBuf buf) {
         if (id == SYNC_VALUE) {
             if (this.phantom) {
                 read(buf);
@@ -138,11 +137,11 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<FluidStack> {
     private void tryClickContainer(MouseData mouseData) {
         Player player = getSyncManager().getPlayer();
         ItemStack currentStack = player.containerMenu.getCarried();
-        if (!currentStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM, null).isPresent()) {
+        if (currentStack.getCapability(Capabilities.FluidHandler.ITEM) == null) {
             return;
         }
         int maxAttempts = mouseData.shift() ? currentStack.getCount() : 1;
-        if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_RIGHT && this.canFillSlot) {
+        if (mouseData.mouseButton() == 0 && this.canFillSlot) {
             boolean performedTransfer = false;
             for (int i = 0; i < maxAttempts; i++) {
                 FluidActionResult result = FluidUtil.tryEmptyContainer(currentStack, this.fluidHandler,
@@ -174,8 +173,7 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<FluidStack> {
             return;
         }
         FluidStack currentFluid = this.fluidTank.getFluid();
-        if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_LEFT && this.canDrainSlot &&
-                !currentFluid.isEmpty()) {
+        if (mouseData.mouseButton() == 1 && this.canDrainSlot && !currentFluid.isEmpty()) {
             boolean performedTransfer = false;
             for (int i = 0; i < maxAttempts; i++) {
                 FluidActionResult result = FluidUtil.tryFillContainer(currentStack, this.fluidHandler,
@@ -186,7 +184,7 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<FluidStack> {
                     break; // do not continue if we can't add resulting container into inventory
                 }
 
-                remainingStack = FluidUtil.tryFillContainer(currentStack, this.fluidHandler, Integer.MAX_VALUE, player,
+                remainingStack = FluidUtil.tryFillContainer(currentStack, this.fluidHandler, Integer.MAX_VALUE, null,
                         true).result;
                 if (currentStack.getCount() == 1) {
                     currentStack = remainingStack;
@@ -209,10 +207,9 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<FluidStack> {
         Player player = getSyncManager().getPlayer();
         ItemStack currentStack = player.containerMenu.getCarried();
         FluidStack currentFluid = this.fluidTank.getFluid();
-        IFluidHandlerItem fluidHandlerItem = currentStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM, null)
-                .resolve().orElse(null);
+        IFluidHandlerItem fluidHandlerItem = currentStack.getCapability(Capabilities.FluidHandler.ITEM);
 
-        if (mouseData.mouseButton() == 0) {
+        if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_LEFT) {
             if (currentStack.isEmpty() || fluidHandlerItem == null) {
                 if (this.canDrainSlot) {
                     this.fluidTank.drain(mouseData.shift() ? Integer.MAX_VALUE : 1000,
@@ -236,7 +233,7 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<FluidStack> {
                     }
                 }
             }
-        } else if (mouseData.mouseButton() == 1) {
+        } else if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_RIGHT) {
             if (this.canFillSlot) {
                 if (!currentFluid.isEmpty()) {
                     if (this.controlsAmount) {
@@ -250,7 +247,7 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<FluidStack> {
                     this.fluidTank.fill(toFill, IFluidHandler.FluidAction.EXECUTE);
                 }
             }
-        } else if (mouseData.mouseButton() == 2 && !currentFluid.isEmpty() && this.canDrainSlot) {
+        } else if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_MIDDLE && !currentFluid.isEmpty() && this.canDrainSlot) {
             this.fluidTank.drain(mouseData.shift() ? Integer.MAX_VALUE : FluidType.BUCKET_VOLUME,
                     IFluidHandler.FluidAction.EXECUTE);
         }

@@ -7,19 +7,19 @@ import brachy.modularui.screen.ModularContainerMenu;
 import brachy.modularui.widgets.slot.PlayerSlotGroup;
 import brachy.modularui.widgets.slot.SlotGroup;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.items.wrapper.PlayerInvWrapper;
-import net.minecraftforge.items.wrapper.PlayerMainInvWrapper;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import lombok.Getter;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
+import net.neoforged.neoforge.items.wrapper.PlayerInvWrapper;
+import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,17 +36,37 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
     // A set of all panels which have been opened during the ui. May also contain closed panels.
     // This is used to detect if
     private final Set<String> panelHistory = new ObjectOpenHashSet<>();
+    private final CursorSlotSyncHandler cursorSlotSyncHandler = new CursorSlotSyncHandler();
+    @Getter
+    private final boolean client;
     @Getter
     private PanelSyncManager mainPSM;
     @Getter
     private ModularContainerMenu menu;
-    private final CursorSlotSyncHandler cursorSlotSyncHandler = new CursorSlotSyncHandler();
-    @Getter
-    private final boolean client;
     private State state = State.INIT;
 
     public ModularSyncManager(boolean client) {
         this.client = client;
+    }
+
+    private static boolean isPlayerSlot(Slot slot) {
+        if (slot == null) return false;
+        if (slot.container instanceof Inventory) {
+            return slot.getSlotIndex() >= 0 && slot.getSlotIndex() < 36;
+        }
+        if (slot instanceof SlotItemHandler slotItemHandler) {
+            IItemHandler iItemHandler = slotItemHandler.getItemHandler();
+            if (iItemHandler instanceof PlayerMainInvWrapper || iItemHandler instanceof PlayerInvWrapper) {
+                return slot.getSlotIndex() >= 0 && slot.getSlotIndex() < 36;
+            }
+        }
+        return false;
+    }
+
+    @ApiStatus.ScheduledForRemoval(inVersion = "3.2.0")
+    @Deprecated
+    public static String makeSyncKey(String name, int id) {
+        return ISyncRegistrar.makeSyncKey(name, id);
     }
 
     void setMainPSM(PanelSyncManager mainPSM) {
@@ -144,13 +164,13 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
     }
 
     @ApiStatus.Internal
-    public void receiveWidgetUpdate(String panelName, String mapKey, boolean action, int id, FriendlyByteBuf buf) {
+    public void receiveWidgetUpdate(String panelName, String mapKey, boolean action, int id, RegistryFriendlyByteBuf buf) {
         PanelSyncManager psm = this.panelSyncManagerMap.get(panelName);
         if (psm != null) {
             psm.receiveWidgetUpdate(mapKey, action, id, buf);
         } else if (!this.panelHistory.contains(panelName)) {
-            ModularUI.LOGGER.throwing(new IllegalStateException(
-                    "A packet was send to panel '\" + panelName + \"' which was not opened yet!"));
+            ModularUI.LOGGER.throwing(
+                    new IllegalStateException("A packet was send to panel '\" + panelName + \"' which was not opened yet!"));
         }
         // else the panel was open at some point
         // we simply discard the packet silently and assume the packet was correctly send, but the panel closed earlier
@@ -158,20 +178,6 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
 
     public Player getPlayer() {
         return this.menu.getPlayer();
-    }
-
-    private static boolean isPlayerSlot(Slot slot) {
-        if (slot == null) return false;
-        if (slot.container instanceof Inventory) {
-            return slot.getSlotIndex() >= 0 && slot.getSlotIndex() < 36;
-        }
-        if (slot instanceof SlotItemHandler slotItemHandler) {
-            IItemHandler iItemHandler = slotItemHandler.getItemHandler();
-            if (iItemHandler instanceof PlayerMainInvWrapper || iItemHandler instanceof PlayerInvWrapper) {
-                return slot.getSlotIndex() >= 0 && slot.getSlotIndex() < 36;
-            }
-        }
-        return false;
     }
 
     @Override
@@ -243,6 +249,6 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
         INIT,
         OPEN,
         CLOSED,
-        DISPOSED
+        DISPOSED;
     }
 }

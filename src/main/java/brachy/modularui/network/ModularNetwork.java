@@ -1,25 +1,25 @@
 package brachy.modularui.network;
 
 import brachy.modularui.api.IMuiScreen;
-import brachy.modularui.utils.NetworkUtils;
 import brachy.modularui.value.sync.ModularSyncManager;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Experimental
 public abstract class ModularNetwork {
 
     // You have to make sure you are choosing the logical side you are currently on otherwise you can mess things badly,
-    // since
-    // there is no validation.
+    // since there is no validation.
     public static final Client CLIENT = new Client();
     public static final Server SERVER = new Server();
 
@@ -27,7 +27,7 @@ public abstract class ModularNetwork {
         return client ? CLIENT : SERVER;
     }
 
-    public static ModularNetworkSide get(Side side) {
+    public static ModularNetworkSide get(Dist side) {
         return side.isClient() ? CLIENT : SERVER;
     }
 
@@ -46,8 +46,8 @@ public abstract class ModularNetwork {
         }
 
         @Override
-        void sendPacket(NetworkHandler.INetPacket packet, Player player) {
-            NetworkHandler.sendToServer(packet);
+        void sendPacket(CustomPacketPayload packet, Player player) {
+            PacketDistributor.sendToServer(packet);
         }
 
         @Override
@@ -57,17 +57,17 @@ public abstract class ModularNetwork {
             player.containerMenu = player.inventoryMenu;
         }
 
-        @SideOnly(Side.CLIENT)
+        @OnlyIn(Dist.CLIENT)
         public void closeContainer(int networkId, boolean dispose, Player player) {
             closeContainer(networkId, dispose, player, true);
         }
 
-        @SideOnly(Side.CLIENT)
+        @OnlyIn(Dist.CLIENT)
         public void closeAll() {
             closeAll(Minecraft.getInstance().player);
         }
 
-        @SideOnly(Side.CLIENT)
+        @OnlyIn(Dist.CLIENT)
         public void reopenSyncerOf(Screen guiScreen) {
             if (guiScreen instanceof IMuiScreen ms && !ms.screen().isClientOnly()) {
                 ModularSyncManager msm = ms.screen().getSyncManager();
@@ -91,8 +91,8 @@ public abstract class ModularNetwork {
         }
 
         @Override
-        protected void sendPacket(NetworkHandler.INetPacket packet, Player player) {
-            NetworkHandler.sendToPlayer((ServerPlayer) player, packet);
+        protected void sendPacket(CustomPacketPayload packet, Player player) {
+            PacketDistributor.sendToPlayer((ServerPlayer) player, packet);
         }
 
         @Override

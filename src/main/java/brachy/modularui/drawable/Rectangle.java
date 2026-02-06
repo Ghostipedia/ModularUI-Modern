@@ -1,10 +1,10 @@
 package brachy.modularui.drawable;
 
-import brachy.modularui.GTRenderTypes;
 import brachy.modularui.ModularUI;
 import brachy.modularui.animation.IAnimatable;
 import brachy.modularui.api.IJsonSerializable;
 import brachy.modularui.api.drawable.IDrawable;
+import brachy.modularui.client.ModularUIRenderTypes;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Color;
@@ -12,8 +12,8 @@ import brachy.modularui.utils.Interpolations;
 import brachy.modularui.utils.serialization.json.JsonHelper;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -109,7 +109,7 @@ public class Rectangle implements IDrawable, IJsonSerializable<Rectangle>, IAnim
 
             Matrix4f pose = context.getGraphics().pose().last().pose();
             VertexConsumer bufferbuilder = context.getGraphics().bufferSource()
-                    .getBuffer(GTRenderTypes.guiTriangleStrip());
+                    .getBuffer(ModularUIRenderTypes.guiTriangleStrip());
             v(pose, bufferbuilder, x0, y0, this.colorTL);
             v(pose, bufferbuilder, x1 - d, y0 + d, this.colorTR);
             v(pose, bufferbuilder, x1, y0, this.colorTR);
@@ -124,8 +124,7 @@ public class Rectangle implements IDrawable, IJsonSerializable<Rectangle>, IAnim
     }
 
     private static void v(Matrix4f pose, VertexConsumer buffer, float x, float y, int c) {
-        buffer.vertex(pose, x, y, 0).color(Color.getRed(c), Color.getGreen(c), Color.getBlue(c), Color.getAlpha(c))
-                .endVertex();
+        buffer.addVertex(pose, x, y, 0).setColor(c);
     }
 
     @Override

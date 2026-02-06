@@ -5,6 +5,7 @@ import brachy.modularui.api.IJsonSerializable;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.IKey;
 import brachy.modularui.utils.ObjectList;
+import brachy.modularui.utils.RegistryAccessContainer;
 import brachy.modularui.utils.serialization.json.JsonHelper;
 
 import net.minecraft.network.chat.Component;
@@ -139,7 +140,7 @@ public class DrawableSerialization implements JsonSerializer<IDrawable>, JsonDes
         if (src instanceof IKey key) {
             json.addProperty("type", "text");
             // TODO serialize text properly
-            json.addProperty("text", Component.Serializer.toJson(key.getFormatted()));
+            json.addProperty("text", Component.Serializer.toJson(key.getFormatted(), RegistryAccessContainer.current()));
         } else if (!(src instanceof IJsonSerializable<?> serializable)) {
             throw new IllegalArgumentException("Can't serialize IDrawable which doesn't implement IJsonSerializable!");
         } else {
@@ -166,7 +167,7 @@ public class DrawableSerialization implements JsonSerializer<IDrawable>, JsonDes
     private static IKey parseText(JsonObject json) throws JsonParseException {
         JsonParseException exception = new JsonParseException("Could not parse IKey from %s".formatted(json));
         try {
-            MutableComponent component = Component.Serializer.fromJson(json);
+            MutableComponent component = Component.Serializer.fromJson(json, RegistryAccessContainer.current());
             if (component != null) {
                 return unpackSiblings(component);
             }
@@ -196,7 +197,7 @@ public class DrawableSerialization implements JsonSerializer<IDrawable>, JsonDes
     private static IKey parseText(JsonElement element) throws JsonParseException {
         JsonParseException exception = new JsonParseException("Could not parse IKey from %s".formatted(element));
         try {
-            MutableComponent component = Component.Serializer.fromJson(element);
+            MutableComponent component = Component.Serializer.fromJson(element, RegistryAccessContainer.current());
             if (component != null) {
                 return IKey.lang(component);
             }

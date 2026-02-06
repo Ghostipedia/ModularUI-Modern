@@ -69,7 +69,7 @@ public class TextWidget<W extends TextWidget<W>> extends Widget<W> {
 
     protected void onTextChanged(Component newText) {
         // scheduling it would resize it on next frame, but we need it now
-        WidgetTree.resizeInternal(resizer(), false);
+        WidgetTree.resizeInternal(this, false);
     }
 
     private TextRenderer simulate(float maxWidth) {

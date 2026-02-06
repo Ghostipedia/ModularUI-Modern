@@ -11,23 +11,24 @@ import brachy.modularui.theme.ThemeManager;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import com.mojang.brigadier.Command;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 public class CommonProxy {
 
     public CommonProxy() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.register(this);
-        MinecraftForge.EVENT_BUS.addListener(this::registerReloadListeners);
-        MinecraftForge.EVENT_BUS.addListener(this::onTick);
-        MinecraftForge.EVENT_BUS.addListener(this::registerCommand);
+        NeoForge.EVENT_BUS.addListener(this::registerReloadListeners);
+        NeoForge.EVENT_BUS.addListener(this::onTick);
+        NeoForge.EVENT_BUS.addListener(this::registerCommand);
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ModularUIConfig.CONFIG, ModularUI.MOD_ID + ".toml");
 
@@ -42,8 +43,8 @@ public class CommonProxy {
         }
     }
 
-    public void onTick(TickEvent.PlayerTickEvent event) {
-        if (event.player.containerMenu instanceof ModularContainerMenu containerMenu) {
+    public void onTick(PlayerTickEvent event) {
+        if (event.getEntity().containerMenu instanceof ModularContainerMenu containerMenu) {
             containerMenu.onUpdate();
         }
     }

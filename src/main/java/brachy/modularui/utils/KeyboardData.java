@@ -1,12 +1,24 @@
 package brachy.modularui.utils;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
 public record KeyboardData(Dist side, int keyCode, int scanCode, int modifiers) {
+
+    public static KeyboardData readPacket(FriendlyByteBuf buffer) {
+        int keyCode = buffer.readVarInt();
+        int scanCode = buffer.readVarInt();
+        int modifiers = buffer.readVarInt();
+        return new KeyboardData(Dist.DEDICATED_SERVER, keyCode, scanCode, modifiers);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static KeyboardData create(int keyCode, int scanCode, int modifiers) {
+        return new KeyboardData(Dist.CLIENT, keyCode, scanCode, modifiers);
+    }
 
     public boolean hasControlDown() {
         return (this.modifiers & GLFW.GLFW_MOD_CONTROL) != 0;
@@ -28,17 +40,5 @@ public record KeyboardData(Dist side, int keyCode, int scanCode, int modifiers) 
         buffer.writeVarInt(this.keyCode);
         buffer.writeVarInt(this.scanCode);
         buffer.writeVarInt(this.modifiers);
-    }
-
-    public static KeyboardData readPacket(FriendlyByteBuf buffer) {
-        int keyCode = buffer.readVarInt();
-        int scanCode = buffer.readVarInt();
-        int modifiers = buffer.readVarInt();
-        return new KeyboardData(Dist.DEDICATED_SERVER, keyCode, scanCode, modifiers);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static KeyboardData create(int keyCode, int scanCode, int modifiers) {
-        return new KeyboardData(Dist.CLIENT, keyCode, scanCode, modifiers);
     }
 }

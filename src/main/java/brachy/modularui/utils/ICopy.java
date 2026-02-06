@@ -1,12 +1,16 @@
 package brachy.modularui.utils;
 
 import brachy.modularui.utils.serialization.network.IByteBufAdapter;
-import brachy.modularui.utils.serialization.network.IByteBufDeserializer;
-import brachy.modularui.utils.serialization.network.IByteBufSerializer;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamDecoder;
+import net.minecraft.network.codec.StreamEncoder;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import net.neoforged.neoforge.network.connection.ConnectionType;
 
 public interface ICopy<T> {
 
@@ -14,21 +18,19 @@ public interface ICopy<T> {
         return t -> t;
     }
 
-    static <T> ICopy<T> ofSerializer(IByteBufSerializer<T> serializer, IByteBufDeserializer<T> deserializer) {
+    @SuppressWarnings("unchecked")
+    static <B extends ByteBuf, T> ICopy<T> ofSerializer(StreamEncoder<B, T> serializer, StreamDecoder<B, T> deserializer) {
         return t -> {
-            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-            serializer.serialize(buf, t);
-            return deserializer.deserialize(buf);
+            RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(),
+                    RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY), ConnectionType.NEOFORGE);
+            serializer.encode((B) buf, t);
+            return deserializer.decode((B) buf);
         };
     }
 
-    static <T> ICopy<T> ofSerializer(IByteBufAdapter<T> adapter) {
+    static <B extends ByteBuf, T> ICopy<T> ofSerializer(IByteBufAdapter<B, T> adapter) {
         return ofSerializer(adapter, adapter);
     }
 
     T createDeepCopy(T t);
-
-    static <T> ICopy<T> wrapNullSafe(ICopy<T> copy) {
-        return t -> t == null ? null : copy.createDeepCopy(t);
-    }
 }

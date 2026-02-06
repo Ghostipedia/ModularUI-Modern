@@ -4,19 +4,18 @@ import brachy.modularui.ModularUI;
 import brachy.modularui.api.value.sync.IByteSyncValue;
 import brachy.modularui.value.ByteValue;
 
-import net.minecraft.network.FriendlyByteBuf;
-
+import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public class ByteSyncValue extends ValueSyncHandler<Byte> implements IByteSyncValue<Byte> {
+public class ByteSyncValue extends ValueSyncHandler<ByteBuf, Byte> implements IByteSyncValue<ByteBuf, Byte> {
 
-    private byte cache;
     private final ByteValue.Supplier getter;
     private final ByteValue.Consumer setter;
+    private byte cache;
 
     public ByteSyncValue(@NotNull ByteValue.Supplier getter) {
         this(getter, (ByteValue.Consumer) null);
@@ -69,12 +68,12 @@ public class ByteSyncValue extends ValueSyncHandler<Byte> implements IByteSyncVa
     }
 
     @Override
-    public void write(FriendlyByteBuf buffer) {
+    public void write(ByteBuf buffer) {
         buffer.writeByte(getByteValue());
     }
 
     @Override
-    public void read(FriendlyByteBuf buffer) {
+    public void read(ByteBuf buffer) {
         setByteValue(buffer.readByte(), true, false);
     }
 
