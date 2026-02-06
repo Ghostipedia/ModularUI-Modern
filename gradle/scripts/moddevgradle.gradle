@@ -2,35 +2,14 @@ import org.gradle.internal.os.OperatingSystem
 
 ext.isJetbrainsRuntime = System.getProperty('java.vm.vendor').contains('JetBrains')
 
-mixin {
-    var refmap = add sourceSets.main, "modularui.refmap.json"
-    slimJar.from refmap
-    config 'modularui.mixins.json'
-}
-
-// we have to force LWJGL version 3.3.2, because RenderNurse requires Java 21, and LWJGL 3.3.1 cannot run on Java 21.
-configurations.configureEach {
-    resolutionStrategy {
-        eachDependency {
-            if (it.requested.group == "org.lwjgl") {
-                it.useVersion("3.3.2")
-                it.because("We need a version of LWJGL that supports java 21 for RenderDoc support")
-            }
-        }
-    }
-}
-
-legacyForge {
+neoForge {
     // Specify Forge version
-    version = libs.versions.minecraftForge.get()
+    version = libs.versions.neoForge.get()
 
     parchment {
         minecraftVersion = libs.versions.minecraft.get()
         mappingsVersion = libs.versions.parchment.get()
     }
-
-    // This line is optional. Access Transformers are automatically detected
-    //accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
 
     //interfaceInjectionData = project.files('injected_interfaces/interfaces.json')
 
@@ -127,7 +106,7 @@ legacyForge {
             create("renderDocClient") {
                 client()
                 sourceSet = sourceSets.client
-                ideName = "Clean Client + RenderDoc (Requires Java 21)"
+                ideName = "Clean Client + RenderDoc"
 
                 programArguments.addAll('--username', 'screret', '--uuid', '1184eb79-5831-4f7d-b8f4-3a46fccf7a1d')
 

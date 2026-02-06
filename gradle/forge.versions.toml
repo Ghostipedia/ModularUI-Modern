@@ -1,58 +1,54 @@
 [versions]
-mixinExtras = "0.5.0-rc.3"
+# Recipe viewers
+emi = "1.1.22+1.21.1"
 
-emi = "1.1.13+1.20.1"
+jei = "19.21.0.247"
 
-jei = "15.20.0.105"
+rei = "16.0.799"
+architectury = "13.0.8"
+clothConfig = "15.0.140"
 
-rei = "12.1.785"
-architectury = "9.2.14"
-clothmath = "+"
-clothconfig = "11.1.136"
+# Curios
+curios = "9.4.2+1.21.1"
 
-curios = "5.9.1+1.20.1"
+# Rendering & Optimizations
+sodium = "mc1.21.1-0.6.13-neoforge" # modrinth maven
+iris = "1.8.8+1.21.1-neoforge" # modrinth maven
+modernFix = "4SPHwiDB" # 5.24.3+mc1.21.1; modrinth maven
 
-## modrinth maven ##
-jade = "11.6.3"
-embeddium = "0.3.31+mc1.20.1"
-oculus = "1.20.1-1.8.0"
-modernfix = "DdUByV9S" # 5.24.1+mc1.20.1
-
-## cursemaven ##
-spark = "4738952"
-
+# Performance metrics & testing
+spark = "6225208" # cursemaven
+jade = "15.10.0+neoforge" # modrinth maven
 
 [libraries]
-mixinExtras-common = { module = "io.github.llamalad7:mixinextras-common", version.ref = "mixinExtras" }
-mixinExtras-forge = { module = "io.github.llamalad7:mixinextras-forge", version.ref = "mixinExtras" }
+# Recipe viewers
+emi = { module = "dev.emi:emi-neoforge", version.ref = "emi" }
 
+jei-common-api = { module = "mezz.jei:jei-1.21.1-common-api", version.ref = "jei" }
+jei-forge-api = { module = "mezz.jei:jei-1.21.1-neoforge-api", version.ref = "jei" }
+jei-forge-impl = { module = "mezz.jei:jei-1.21.1-neoforge", version.ref = "jei" }
 
-emi = { module = "dev.emi:emi-forge", version.ref = "emi" }
+rei-plugin = { module = "me.shedaniel:RoughlyEnoughItems-default-plugin-neoforge", version.ref = "rei" }
+rei-api = { module = "me.shedaniel:RoughlyEnoughItems-api-neoforge", version.ref = "rei" }
+rei-forge = { module = "me.shedaniel:RoughlyEnoughItems-neoforge", version.ref = "rei" }
 
-jei-common-api = { module = "mezz.jei:jei-1.20.1-common-api", version.ref = "jei" }
-jei-forge-api = { module = "mezz.jei:jei-1.20.1-forge-api", version.ref = "jei" }
-jei-forge-impl = { module = "mezz.jei:jei-1.20.1-forge", version.ref = "jei" }
+architectury = { module = "dev.architectury:architectury-neoforge", version.ref = "architectury" }
+clothConfig = { module = "me.shedaniel.cloth:cloth-config-neoforge", version.ref = "clothConfig" }
 
-rei-plugin = { module = "me.shedaniel:RoughlyEnoughItems-default-plugin-forge", version.ref = "rei" }
-rei-api = { module = "me.shedaniel:RoughlyEnoughItems-api-forge", version.ref = "rei" }
-rei-forge = { module = "me.shedaniel:RoughlyEnoughItems-forge", version.ref = "rei" }
+# Curios
+curios = { module = "top.theillusivec4.curios:curios-neoforge", version.ref = "curios" }
 
-architectury = { module = "dev.architectury:architectury-forge", version.ref = "architectury" }
-clothmath = { module = "me.shedaniel.cloth:basic-math", version.ref = "clothmath" }
-clothconfig = { module = "me.shedaniel.cloth:cloth-config-forge", version.ref = "clothconfig" }
+# Rendering & Optimizations
+sodium = { module = "maven.modrinth:sodium", version.ref = "sodium" }
+iris = { module = "maven.modrinth:iris", version.ref = "iris" }
+modernFix = { module = "maven.modrinth:modernfix", version.ref = "modernFix" }
 
-
-curios = { module = "top.theillusivec4.curios:curios-forge", version.ref = "curios" }
-
-
-jade = { module = "maven.modrinth:jade", version.ref = "jade" }
-embeddium = { module = "maven.modrinth:embeddium", version.ref = "embeddium" }
-oculus = { module = "maven.modrinth:oculus", version.ref = "oculus" }
-modernfix = { module = "maven.modrinth:modernfix", version.ref = "modernfix" }
+# Performance metrics & testing
 spark = { module = "curse.maven:spark-361579", version.ref = "spark" }
+jade = { module = "maven.modrinth:jade", version.ref = "jade" }
 
 [bundles]
 jei = ["jei-common-api", "jei-forge-api", "jei-forge-impl"]
-rei = ["rei-plugin", "rei-forge", "clothmath", "architectury"]
-rei-runtime = ["rei-forge", "architectury", "clothconfig"]
+rei = ["rei-plugin", "rei-forge", "architectury"]
+rei-runtime = ["rei-forge", "architectury", "clothConfig"]
 

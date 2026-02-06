@@ -5,35 +5,28 @@ dependencies {
     jarJar(implementation(libs.evalEx.get()))
     additionalRuntimeClasspath(libs.evalEx.get())
 
-    // Mixin (& Extras)
-    annotationProcessor(variantOf(libs.mixin) { classifier("processor") })
-    compileOnly(annotationProcessor(forge.mixinExtras.common.get()))
-    jarJar(api(forge.mixinExtras.forge.get())).version {
-        require("[${forge.versions.mixinExtras.get()},)")
-    }
-
     // Recipe Viewers
-    modCompileOnly(forge.bundles.jei)
-    modCompileOnly(forge.bundles.rei)
-    modCompileOnly(forge.emi)
+    compileOnly(forge.bundles.jei)
+    compileOnly(forge.bundles.rei)
+    compileOnly(forge.emi)
 
     // Optional dependencies
-    modCompileOnly(variantOf(forge.curios) { classifier("api") })
-    modCompileOnly(forge.embeddium)
+    compileOnly(variantOf(forge.curios) { classifier("api") })
+    compileOnly(forge.sodium)
 
     // Standard runtime mods //
-    modLocalRuntime(forge.curios)
-    modLocalRuntime(forge.jade)
-    modLocalRuntime(forge.spark)
-    modLocalRuntime(forge.modernfix)
+    localRuntime(forge.curios)
+    localRuntime(forge.jade)
+    localRuntime(forge.spark)
+    localRuntime(forge.modernFix)
 
     // Runtime Recipe Viewers - uncomment whichever one you want to use //
-    modLocalRuntime(forge.emi)
-//    modLocalRuntime(forge.jei.forge.impl)
-//    modLocalRuntime(forge.bundles.rei.runtime)
+    localRuntime(forge.emi)
+//    localRuntime(forge.jei.forge.impl)
+//    localRuntime(forge.bundles.rei.runtime)
 
     // Client-only runtime mods //
-    modClientLocalRuntime(forge.embeddium)
-    modClientLocalRuntime(forge.oculus)
+    clientLocalRuntime(forge.sodium)
+    clientLocalRuntime(forge.iris)
     renderNurseCfg(libs.renderNurse)
 }

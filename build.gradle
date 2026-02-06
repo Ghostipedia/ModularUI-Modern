@@ -1,6 +1,5 @@
 plugins {
     id 'java-library'
-    id 'org.jetbrains.kotlin.jvm'
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
@@ -17,7 +16,7 @@ version = "${mod_version}" + (isSnapshot ? "-SNAPSHOT" : "")
 boolean isCI = System.getenv("CI") != null
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(17)
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
 sourceSets {
@@ -61,22 +60,6 @@ configurations {
     renderNurseCfg {
         canBeConsumed = false
     }
-}
-
-afterEvaluate {
-    configurations {
-        // same as above but for the modRuntimeOnly configurations
-        modClientRuntimeOnly.canBeResolved = false
-        modExtraRuntimeOnly.canBeResolved = false
-        modClientExtraRuntimeOnly.canBeResolved = false
-    }
-}
-obfuscation {
-    createRemappingConfiguration(configurations.localRuntime)
-    createRemappingConfiguration(configurations.clientLocalRuntime)
-
-    createRemappingConfiguration(configurations.extraLocalRuntime)
-    createRemappingConfiguration(configurations.clientExtraLocalRuntime)
 }
 
 apply from: "$rootDir/gradle/scripts/jars.gradle"
