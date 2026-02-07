@@ -234,9 +234,7 @@ public class GuiDraw {
         if (!sprite.contents().name().equals(MissingTextureAtlasSprite.getLocation())) {
             RenderSystem.setShaderTexture(0, sprite.atlasLocation());
 
-            // have to multiply by 16 here because of MC weirdness
-            // REMOVE THE MULTIPLICATION IN 1.21!!!
-            return new RectangleF(sprite.getU(u0 * 16), sprite.getV(u0 * 16), sprite.getU(u1 * 16), sprite.getV(v1 * 16));
+            return new RectangleF(sprite.getU(u0), sprite.getV(v0), sprite.getU(u1), sprite.getV(v1));
         } else {
             ModularUI.LOGGER.warn("Could not find texture {} in GUI atlas", location);
             RenderSystem.setShaderTexture(0, location);
