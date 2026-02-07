@@ -262,7 +262,7 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
 
     @Override
     public boolean isRecipeViewerExclusionArea() {
-        return super.isRecipeViewerExclusionArea() || (!getScreen().isOverlay() && !this.invisible && !flex().isFullSize());
+        return super.isRecipeViewerExclusionArea() || (!getScreen().isOverlay() && !this.invisible && !resizer().isFullSize());
     }
 
     @MustBeInvokedByOverriders

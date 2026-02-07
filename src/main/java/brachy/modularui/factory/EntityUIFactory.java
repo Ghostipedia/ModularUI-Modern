@@ -3,7 +3,7 @@ package brachy.modularui.factory;
 import brachy.modularui.ModularUI;
 import brachy.modularui.api.IUIHolder;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -41,13 +41,13 @@ public class EntityUIFactory extends AbstractUIFactory<EntityGuiData> {
     }
 
     @Override
-    public void writeGuiData(EntityGuiData guiData, FriendlyByteBuf packetBuffer) {
-        packetBuffer.writeInt(guiData.getGuiHolder().getId());
+    public void writeGuiData(EntityGuiData guiData, RegistryFriendlyByteBuf packetBuffer) {
+        packetBuffer.writeVarInt(guiData.getGuiHolder().getId());
     }
 
     @Override
-    public @NotNull EntityGuiData readGuiData(Player entityPlayer, FriendlyByteBuf packetBuffer) {
-        return new EntityGuiData(entityPlayer, entityPlayer.level().getEntity(packetBuffer.readInt()));
+    public @NotNull EntityGuiData readGuiData(Player entityPlayer, RegistryFriendlyByteBuf packetBuffer) {
+        return new EntityGuiData(entityPlayer, entityPlayer.level().getEntity(packetBuffer.readVarInt()));
     }
 
     @Override

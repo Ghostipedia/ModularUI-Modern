@@ -46,7 +46,8 @@ public class ModularUI {
     private static final ResourceLocation TEMPLATE_LOCATION = ResourceLocation.fromNamespaceAndPath(MOD_ID, "");
 
     public ModularUI(IEventBus modBus, ModContainer modContainer) {
-        modBus.register(this);
+        // uncomment if mod bus event listeners are added to this class
+        // modBus.register(this);
         NeoForge.EVENT_BUS.addListener(this::registerReloadListeners);
         NeoForge.EVENT_BUS.addListener(this::onTick);
         NeoForge.EVENT_BUS.addListener(this::registerCommand);
@@ -140,7 +141,7 @@ public class ModularUI {
         return FMLPaths.GAMEDIR.get();
     }
 
-    public void onTick(PlayerTickEvent event) {
+    public void onTick(PlayerTickEvent.Post event) {
         if (event.getEntity().containerMenu instanceof ModularContainerMenu containerMenu) {
             containerMenu.onUpdate();
         }

@@ -14,9 +14,9 @@ public interface SlotAccessor {
 
     @Accessor("x")
     @Mutable
-    void mui$setX(int x);
+    void modularui$setX(int x);
 
     @Accessor("x")
     @Mutable
-    void mui$setY(int y);
+    void modularui$setY(int y);
 }

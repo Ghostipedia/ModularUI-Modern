@@ -16,8 +16,8 @@ public interface ItemStackHashStrategy extends Hash.Strategy<ItemStack> {
     /**
      * @return a builder object for producing a custom ItemStackHashStrategy.
      */
-    static ItemStackHashStrategyBuilder builder() {
-        return new ItemStackHashStrategyBuilder();
+    static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -26,7 +26,7 @@ public interface ItemStackHashStrategy extends Hash.Strategy<ItemStack> {
      * @return the ItemStackHashStrategy as described above.
      */
     static ItemStackHashStrategy comparingAll() {
-        return ItemStackHashStrategyBuilder.ALL;
+        return Builder.ALL;
     }
 
     /**
@@ -36,17 +36,17 @@ public interface ItemStackHashStrategy extends Hash.Strategy<ItemStack> {
      * @return the ItemStackHashStrategy as described above.
      */
     static ItemStackHashStrategy comparingAllButCount() {
-        return ItemStackHashStrategyBuilder.ITEM_AND_TAG;
+        return Builder.ITEM_AND_TAG;
     }
 
     static ItemStackHashStrategy comparingItem() {
-        return ItemStackHashStrategyBuilder.ITEM;
+        return Builder.ITEM;
     }
 
     /**
      * Builder pattern class for generating customized ItemStackHashStrategy
      */
-    class ItemStackHashStrategyBuilder {
+    public static class Builder {
 
         private static final ItemStackHashStrategy ALL = builder().compareItem(true)
                 .compareCount(true)
@@ -57,7 +57,7 @@ public interface ItemStackHashStrategy extends Hash.Strategy<ItemStack> {
                 .build();
         private static final ItemStackHashStrategy ITEM = builder().compareItem(true).build();
 
-        private boolean item, count, tag;
+        private boolean item, count, components;
 
         /**
          * Defines whether the Item type should be considered for equality.
@@ -65,7 +65,7 @@ public interface ItemStackHashStrategy extends Hash.Strategy<ItemStack> {
          * @param choice {@code true} to consider this property, {@code false} to ignore it.
          * @return {@code this}
          */
-        public ItemStackHashStrategyBuilder compareItem(boolean choice) {
+        public Builder compareItem(boolean choice) {
             item = choice;
             return this;
         }
@@ -76,7 +76,7 @@ public interface ItemStackHashStrategy extends Hash.Strategy<ItemStack> {
          * @param choice {@code true} to consider this property, {@code false} to ignore it.
          * @return {@code this}
          */
-        public ItemStackHashStrategyBuilder compareCount(boolean choice) {
+        public Builder compareCount(boolean choice) {
             count = choice;
             return this;
         }
@@ -87,8 +87,8 @@ public interface ItemStackHashStrategy extends Hash.Strategy<ItemStack> {
          * @param choice {@code true} to consider this property, {@code false} to ignore it.
          * @return {@code this}
          */
-        public ItemStackHashStrategyBuilder compareTag(boolean choice) {
-            tag = choice;
+        public Builder compareTag(boolean choice) {
+            components = choice;
             return this;
         }
 
@@ -103,7 +103,7 @@ public interface ItemStackHashStrategy extends Hash.Strategy<ItemStack> {
                     return o == null || o.isEmpty() ? 0 : Objects.hash(
                             item ? o.getItem() : null,
                             count ? o.getCount() : null,
-                            tag ? o.getTag() : null);
+                            components ? o.getComponentsPatch() : null);
                 }
 
                 @Override
@@ -113,7 +113,7 @@ public interface ItemStackHashStrategy extends Hash.Strategy<ItemStack> {
 
                     return (!item || a.getItem() == b.getItem()) &&
                             (!count || a.getCount() == b.getCount()) &&
-                            (!tag || Objects.equals(a.getTag(), b.getTag()));
+                            (!components || a.getComponentsPatch().equals(b.getComponentsPatch()));
                 }
             };
         }

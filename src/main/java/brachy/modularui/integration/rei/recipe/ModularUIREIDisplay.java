@@ -2,6 +2,7 @@ package brachy.modularui.integration.rei.recipe;
 
 import brachy.modularui.api.widget.ITooltip;
 import brachy.modularui.api.widget.IWidget;
+import brachy.modularui.client.component.FormattedTextContents;
 import brachy.modularui.drawable.text.RichText;
 import brachy.modularui.integration.recipeviewer.RecipeSlotRole;
 import brachy.modularui.integration.recipeviewer.RecipeViewerScreenWrapper;
@@ -20,11 +21,8 @@ import brachy.modularui.widgets.slot.ItemSlot;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -147,23 +145,7 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
                     var textList = richText.getAsText();
                     entryWidget.tooltipProcessor(text -> {
                         for (FormattedText line : textList) {
-                            text = text.add(MutableComponent.create(new ComponentContents() {
-
-                                @Override
-                                public <R> Optional<R> visit(FormattedText.ContentConsumer<R> acceptor) {
-                                    return line.visit(acceptor);
-                                }
-
-                                @Override
-                                public <R> Optional<R> visit(FormattedText.StyledContentConsumer<R> acceptor, Style style) {
-                                    return line.visit(acceptor, style);
-                                }
-
-                                @Override
-                                public Type<?> type() {
-                                    return PlainTextContents.TYPE;
-                                }
-                            }));
+                            text = text.add(MutableComponent.create(new FormattedTextContents(line)));
                         }
                         return text;
                     });

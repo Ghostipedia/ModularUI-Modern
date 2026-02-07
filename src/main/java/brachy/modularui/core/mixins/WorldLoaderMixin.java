@@ -27,9 +27,10 @@ public class WorldLoaderMixin {
         RegistryAccessContainer.update(registriesWithDimensions, null);
     }
 
-    @Definition(id = "load", method = "Lnet/minecraft/resources/RegistryDataLoader;load(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/core/RegistryAccess;Ljava/util/List;)Lnet/minecraft/core/RegistryAccess$Frozen;")
-    @Expression("? = load(?, ?, ?)")
-    @Inject(method = "load", at = @At(value = "MIXINEXTRAS:EXPRESSION", shift = At.Shift.AFTER))
+    @Inject(method = "load",
+            at = @At(value = "INVOKE_ASSIGN",
+                    target = "Lnet/minecraft/resources/RegistryDataLoader;load(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/core/RegistryAccess;Ljava/util/List;)Lnet/minecraft/core/RegistryAccess$Frozen;",
+                    shift = At.Shift.AFTER))
     private static <D, R> void mui$captureRegistries2(CallbackInfoReturnable<CompletableFuture<R>> cir,
                                                       @Local(ordinal = 1) RegistryAccess.Frozen registriesWithEverything) {
         RegistryAccessContainer.update(registriesWithEverything, null);
