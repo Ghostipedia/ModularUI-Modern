@@ -102,13 +102,13 @@ public class ScrollArea extends Area {
      * This method should be invoked when mouse wheel is scrolling
      */
     public boolean mouseScroll(int x, int y, double scrollX, double scrollY, boolean shift) {
-        if (this.scrollX != null && (shift || scrollX != 0f)) {
+        if (this.scrollX != null && this.scrollX.isScrollBarActive(this) && (shift || scrollX != 0f)) {
             if (scrollX == 0f) {
                 //noinspection SuspiciousNameCombination
                 scrollX = scrollY;
             }
             return this.mouseScrollInternal(this.scrollX, scrollX);
-        } else if (this.scrollY != null) {
+        } else if (this.scrollY != null && this.scrollY.isScrollBarActive(this)) {
             if (scrollY == 0f) {
                 //noinspection SuspiciousNameCombination
                 scrollY = scrollX;

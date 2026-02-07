@@ -1,4 +1,4 @@
-package brachy.modularui.utils;
+package brachy.modularui.utils.math;
 
 import net.minecraft.util.Mth;
 
@@ -11,7 +11,7 @@ import java.util.Arrays;
 /**
  * A helper class providing math operations on 1D float arrays similar to numpy.
  */
-public class FloatArrayMath {
+public class FAM {
 
     public static final float[] EMPTY = new float[0];
 

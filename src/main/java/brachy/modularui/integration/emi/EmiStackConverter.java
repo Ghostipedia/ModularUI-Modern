@@ -6,7 +6,7 @@ import brachy.modularui.integration.recipeviewer.entry.fluid.FluidTagList;
 import brachy.modularui.integration.recipeviewer.entry.item.ItemStackList;
 import brachy.modularui.integration.recipeviewer.entry.item.ItemTagList;
 import brachy.modularui.integration.recipeviewer.handlers.IngredientProvider;
-import brachy.modularui.utils.MathUtil;
+import brachy.modularui.utils.math.MathUtils;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -42,7 +42,7 @@ public class EmiStackConverter {
             if (key == null || key == Items.AIR) {
                 return null;
             }
-            ItemStack itemStack = new ItemStack(key, MathUtil.saturatedCast(stack.getAmount()));
+            ItemStack itemStack = new ItemStack(key, MathUtils.saturatedCast(stack.getAmount()));
             itemStack.applyComponents(stack.getComponentChanges());
             return itemStack;
         }
@@ -76,7 +76,7 @@ public class EmiStackConverter {
             if (key == null || key == Fluids.EMPTY) {
                 return null;
             }
-            return new FluidStack(key.builtInRegistryHolder(), MathUtil.saturatedCast(stack.getAmount()), stack.getComponentChanges());
+            return new FluidStack(key.builtInRegistryHolder(), MathUtils.saturatedCast(stack.getAmount()), stack.getComponentChanges());
         }
 
         private static EmiIngredient toEMIIngredient(Stream<FluidStack> stream) {

@@ -1,4 +1,4 @@
-package brachy.modularui.utils;
+package brachy.modularui.utils.math;
 
 import net.minecraft.util.Mth;
 
@@ -12,7 +12,7 @@ import java.util.Arrays;
 /**
  * A helper class providing math operations on 1D double arrays similar to numpy.
  */
-public class DoubleArrayMath {
+public class DAM {
 
     public static final double[] EMPTY = new double[0];
 

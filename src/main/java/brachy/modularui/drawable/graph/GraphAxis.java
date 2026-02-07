@@ -4,7 +4,7 @@ import brachy.modularui.api.GuiAxis;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.text.TextRenderer;
 import brachy.modularui.utils.Alignment;
-import brachy.modularui.utils.DoubleArrayMath;
+import brachy.modularui.utils.math.DAM;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -54,14 +54,14 @@ public class GraphAxis {
                 this.min = 0;
                 this.max = 0;
             } else if (plots.size() == 1) {
-                this.min = DoubleArrayMath.min(plots.getFirst().getData(this.axis));
-                this.max = DoubleArrayMath.max(plots.getFirst().getData(this.axis));
+                this.min = DAM.min(plots.getFirst().getData(this.axis));
+                this.max = DAM.max(plots.getFirst().getData(this.axis));
             } else {
                 double min = Double.MAX_VALUE, max = Double.MIN_VALUE;
                 for (Plot plot : plots) {
-                    double m = DoubleArrayMath.min(plot.getData(this.axis));
+                    double m = DAM.min(plot.getData(this.axis));
                     if (m < min) min = m;
-                    m = DoubleArrayMath.max(plot.getData(this.axis));
+                    m = DAM.max(plot.getData(this.axis));
                     if (m > max) max = m;
                 }
                 this.min = min;
@@ -84,7 +84,7 @@ public class GraphAxis {
         }
         textRenderer.setScale(TICK_LABEL_SCALE);
         this.maxLabelWidth = 0;
-        double maxDiff = DoubleArrayMath.max(DoubleArrayMath.diff(this.majorTicks));
+        double maxDiff = DAM.max(DAM.diff(this.majorTicks));
         int significantPlaces = (int) Math.abs(Math.log10(maxDiff)) + 2;
         DecimalFormat format = new DecimalFormat();
         format.setMaximumFractionDigits(significantPlaces);

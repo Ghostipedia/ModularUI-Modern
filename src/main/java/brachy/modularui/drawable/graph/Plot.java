@@ -4,7 +4,7 @@ import brachy.modularui.api.GuiAxis;
 import brachy.modularui.client.ModularUIRenderTypes;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.utils.Color;
-import brachy.modularui.utils.DoubleArrayMath;
+import brachy.modularui.utils.math.DAM;
 import brachy.modularui.utils.Interpolations;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -27,8 +27,8 @@ public class Plot {
             Color.LIME.main
     };
 
-    protected double[] xs = DoubleArrayMath.EMPTY;
-    protected double[] ys = DoubleArrayMath.EMPTY;
+    protected double[] xs = DAM.EMPTY;
+    protected double[] ys = DAM.EMPTY;
     @Getter
     protected float thickness = 1f;
     protected boolean defaultColor = true;
