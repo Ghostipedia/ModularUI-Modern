@@ -9,7 +9,6 @@ import brachy.modularui.api.widget.Interactable;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.drawable.Rectangle;
 import brachy.modularui.screen.viewport.ModularGuiContext;
-import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.Color;
 import brachy.modularui.value.DoubleValue;

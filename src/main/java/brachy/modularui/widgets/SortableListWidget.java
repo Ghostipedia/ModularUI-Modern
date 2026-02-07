@@ -7,7 +7,6 @@ import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.screen.viewport.LocatedWidget;
 import brachy.modularui.widget.DraggableWidget;
-import brachy.modularui.widget.WidgetTree;
 import brachy.modularui.widget.sizer.Area;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;

@@ -7,16 +7,11 @@ import brachy.modularui.drawable.DrawableSerialization;
 import brachy.modularui.factory.inventory.InventoryTypes;
 import brachy.modularui.screen.ContainerScreenWrapper;
 import brachy.modularui.screen.ModularContainerMenu;
+import brachy.modularui.theme.ThemeManager;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-
-import brachy.modularui.theme.ThemeManager;
-
 import com.mojang.blaze3d.systems.RenderSystem;
-
-import it.unimi.dsi.fastutil.floats.FloatUnaryOperator;
-import lombok.Getter;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -24,6 +19,9 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+
+import it.unimi.dsi.fastutil.floats.FloatUnaryOperator;
+import lombok.Getter;
 
 @Mod(value = ModularUI.MOD_ID, dist = Dist.CLIENT)
 public class ModularUIClient {

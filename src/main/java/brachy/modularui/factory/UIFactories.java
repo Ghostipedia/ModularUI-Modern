@@ -1,8 +1,8 @@
 package brachy.modularui.factory;
 
-import brachy.modularui.api.IUIHolder;
-
 import net.minecraft.resources.ResourceLocation;
+
+import brachy.modularui.api.IUIHolder;
 
 import org.jetbrains.annotations.ApiStatus;
 

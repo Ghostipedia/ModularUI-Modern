@@ -2,12 +2,11 @@ package brachy.modularui.utils;
 
 import brachy.modularui.api.widget.Interactable;
 
-import io.netty.buffer.ByteBuf;
-
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.VarInt;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+
+import io.netty.buffer.ByteBuf;
 
 public record MouseData(Dist side, int mouseButton, boolean shift, boolean ctrl, boolean alt) {
 

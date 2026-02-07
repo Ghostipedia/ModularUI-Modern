@@ -36,7 +36,7 @@ public class ClientGUI {
      * Opens a modular screen on the next client tick with custom recipe viewer settings.
      * It needs to be opened in next tick, because we might break the current GUI if we open it now.
      *
-     * @param screen      new modular screen
+     * @param screen               new modular screen
      * @param recipeViewerSettings custom recipe viewer settings
      */
     public static void open(@NotNull ModularScreen screen, @NotNull RecipeViewerSettingsImpl recipeViewerSettings) {

@@ -5,7 +5,6 @@ import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
 import brachy.modularui.screen.viewport.ModularGuiContext;
-import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widget.sizer.StandardResizer;
 

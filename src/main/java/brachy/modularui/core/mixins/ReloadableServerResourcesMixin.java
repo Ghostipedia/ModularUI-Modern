@@ -7,8 +7,8 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.tags.TagManager;
 import net.minecraft.world.flag.FeatureFlagSet;
-
 import net.neoforged.neoforge.common.conditions.ICondition;
+
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

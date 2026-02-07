@@ -158,7 +158,7 @@ public class GenericSyncValue<B extends ByteBuf, T> extends AbstractGenericSyncV
      * Creates a builder for a generic sync value. This method should only be used if the value is never null.
      * The class is inferred from the value of the value supplier once.
      *
-     * @param <B>  type of the buffer to use for syncing
+     * @param <B> type of the buffer to use for syncing
      * @param <T> type of the value to sync
      * @return builder
      */

@@ -106,11 +106,14 @@ public class BaseSchemaRenderer implements IDrawable {
     private @Nullable RenderCompileTask lastRenderCompileTask = null;
     @Getter
     private @Nullable BlockHitResult lastRayTrace = null;
+
     public BaseSchemaRenderer(ISchema schema) {
         this.schema = schema;
         this.renderLevel = new RenderLevel(schema);
         this.sectionBufferBuilders = new SectionBufferBuilderPack();
-    }    private @Nullable Map<RenderType, VertexBuffer> chunkBuffers = getOrCreateChunkBuffers();
+    }
+
+    private @Nullable Map<RenderType, VertexBuffer> chunkBuffers = getOrCreateChunkBuffers();
 
     protected @NotNull Map<RenderType, VertexBuffer> getOrCreateChunkBuffers() {
         if (this.chunkBuffers == null || this.chunkBuffers.isEmpty()) {

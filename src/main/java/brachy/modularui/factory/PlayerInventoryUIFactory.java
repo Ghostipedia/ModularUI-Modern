@@ -6,7 +6,6 @@ import brachy.modularui.api.MCHelper;
 import brachy.modularui.factory.inventory.InventoryType;
 import brachy.modularui.factory.inventory.InventoryTypes;
 
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;

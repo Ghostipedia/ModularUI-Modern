@@ -5,19 +5,15 @@ import brachy.modularui.factory.UIFactories;
 import brachy.modularui.factory.inventory.InventoryTypes;
 import brachy.modularui.screen.ModularContainerMenu;
 import brachy.modularui.test.ModularUITestingRegistration;
+import brachy.modularui.theme.ThemeManager;
+import brachy.modularui.utils.RegistryAccessContainer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-
-import brachy.modularui.theme.ThemeManager;
-
-import brachy.modularui.utils.RegistryAccessContainer;
-
-import com.mojang.brigadier.Command;
-
 import net.minecraft.server.MinecraftServer;
+import com.mojang.brigadier.Command;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;

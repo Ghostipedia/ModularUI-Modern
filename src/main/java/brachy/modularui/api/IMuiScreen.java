@@ -18,8 +18,6 @@ import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Consumer;
-
 /**
  * Implement this interface on a {@link Screen} to be able to use it as a custom wrapper.
  * The Screen should have final {@link ModularScreen} field, which is set from the constructor.

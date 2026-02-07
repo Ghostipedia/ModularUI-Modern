@@ -31,7 +31,6 @@ import brachy.modularui.widgets.SlotGroupWidget;
 import net.minecraft.Util;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectList;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.ApiStatus;

@@ -1,8 +1,8 @@
 package brachy.modularui.drawable.text;
 
-import brachy.modularui.api.drawable.IKey;
-
 import net.minecraft.network.chat.MutableComponent;
+
+import brachy.modularui.api.drawable.IKey;
 
 import org.jetbrains.annotations.Nullable;
 

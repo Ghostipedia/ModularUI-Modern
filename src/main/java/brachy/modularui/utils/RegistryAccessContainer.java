@@ -10,10 +10,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageSources;
+import net.neoforged.neoforge.common.conditions.ICondition;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import net.neoforged.neoforge.common.conditions.ICondition;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 

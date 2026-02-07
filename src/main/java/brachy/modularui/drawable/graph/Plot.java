@@ -1,8 +1,8 @@
 package brachy.modularui.drawable.graph;
 
 import brachy.modularui.api.GuiAxis;
-import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.client.ModularUIRenderTypes;
+import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.DoubleArrayMath;
 import brachy.modularui.utils.Interpolations;

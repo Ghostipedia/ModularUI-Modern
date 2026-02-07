@@ -1,7 +1,7 @@
 package brachy.modularui.value.sync;
 
-import brachy.modularui.utils.ICopy;
 import brachy.modularui.utils.EqualityTest;
+import brachy.modularui.utils.ICopy;
 
 import net.minecraft.network.VarInt;
 import net.minecraft.network.codec.StreamDecoder;

@@ -7,11 +7,10 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.alchemy.PotionBrewing;
 import net.minecraft.world.item.crafting.RecipeManager;
-
-import io.netty.buffer.ByteBuf;
-
 import net.neoforged.neoforge.network.connection.ConnectionType;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
+
+import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.Nullable;
 
 public final class SidedAccessHelper {
