@@ -9,7 +9,7 @@ import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.FluidTextureType;
-import brachy.modularui.utils.MatrixUtils;
+import brachy.modularui.utils.math.MatrixUtils;
 import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widgets.SchemaWidget;
 
