@@ -2,7 +2,9 @@ package brachy.modularui.api.drawable;
 
 import brachy.modularui.drawable.text.Spacer;
 import brachy.modularui.utils.Alignment;
+import brachy.modularui.utils.LangUtil;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 
@@ -116,12 +118,12 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
      * @param lang lang key of the multilang to add.
      * @return this
      */
-    /*TODO default T addMultiLine(String lang) {
-        for (MutableComponent text : LangHandler.getMultiLang(lang)) {
+    default T addMultiLine(String lang) {
+        for (Component text : LangUtil.getMultiline(lang)) {
             getRichText().addLine(text);
         }
         return getThis();
-    }*/
+    }
 
     /**
      * Starts a new line. This is always preferred over {@code "\n"} or {@code IKey.str("\n")}, it reduces computation a

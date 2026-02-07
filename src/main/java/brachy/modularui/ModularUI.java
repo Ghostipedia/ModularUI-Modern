@@ -1,16 +1,23 @@
 package brachy.modularui;
 
+import brachy.modularui.api.drawable.IKey;
+import brachy.modularui.factory.UIFactories;
+import brachy.modularui.factory.inventory.InventoryTypes;
 import brachy.modularui.screen.ModularContainerMenu;
 import brachy.modularui.test.ModularUITestingRegistration;
 
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.MenuType;
 
-import it.unimi.dsi.fastutil.floats.FloatUnaryOperator;
-import lombok.Getter;
+import brachy.modularui.theme.ThemeManager;
+
+import brachy.modularui.utils.RegistryAccessContainer;
+
+import com.mojang.brigadier.Command;
+
+import net.minecraft.server.MinecraftServer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
@@ -18,14 +25,19 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
-import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.data.loading.DatagenModLoader;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.mariuszgromada.math.mxparser.License;
 
+import java.nio.file.Path;
 import java.util.function.Predicate;
 
 @Mod(ModularUI.MOD_ID)
@@ -37,24 +49,21 @@ public class ModularUI {
 
     private static final ResourceLocation TEMPLATE_LOCATION = ResourceLocation.fromNamespaceAndPath(MOD_ID, "");
 
-    @Getter
-    private static final DeltaTracker.Timer timer60Fps = new DeltaTracker.Timer(60f, 0, FloatUnaryOperator.identity());
+    public ModularUI(IEventBus modBus, ModContainer modContainer) {
+        modBus.register(this);
+        NeoForge.EVENT_BUS.addListener(this::registerReloadListeners);
+        NeoForge.EVENT_BUS.addListener(this::onTick);
+        NeoForge.EVENT_BUS.addListener(this::registerCommand);
 
-    private static final DeferredRegister<MenuType<?>> MENU_TYPES = DeferredRegister.create(Registries.MENU, ModularUI.MOD_ID);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, ModularUIConfig.CONFIG, ModularUI.MOD_ID + ".toml");
 
-    static {
-        License.iConfirmNonCommercialUse("ModularUI");
-    }    public static final DeferredHolder<MenuType<?>, MenuType<ModularContainerMenu>> MODULAR_CONTAINER = MENU_TYPES.register(
-            "modular",
-            () -> IMenuTypeExtension.create(ModularContainerMenu::new));
+        /* MUI Initialization */
+        UIFactories.init();
+        InventoryTypes.init();
 
-    public ModularUI(IEventBus modEventBus, ModContainer modContainer) {
-        MENU_TYPES.register(modEventBus);
-
-        modContainer.registerConfig(ModConfig.Type.CLIENT, ModularUIConfig.CONFIG, MOD_ID + ".toml");
-
-        if (isDev()) {
-            ModularUITestingRegistration.register(modEventBus);
+        ModularUIMenuTypes.register(modBus);
+        if (ModularUI.isDev()) {
+            ModularUITestingRegistration.register(modBus);
         }
     }
 
@@ -63,7 +72,37 @@ public class ModularUI {
     }
 
     /**
-     * For async stuff use this, otherwise use {@link #isClientSide()}
+     * @return whether we're running in a production environment
+     */
+    public static boolean isProd() {
+        return FMLLoader.isProduction();
+    }
+
+    /**
+     * @return whether we're not running in a production environment
+     */
+    public static boolean isDev() {
+        return !isProd();
+    }
+
+    /**
+     * @return if we're running data generation
+     */
+    public static boolean isDataGen() {
+        return DatagenModLoader.isRunningDataGen();
+    }
+
+    /**
+     * A friendly reminder that the server instance is populated on the server side only, so null/side check it!
+     *
+     * @return the current minecraft server instance
+     */
+    public static MinecraftServer getMinecraftServer() {
+        return ServerLifecycleHooks.getCurrentServer();
+    }
+
+    /**
+     * For async stuff use this, otherwise use {@link #isClientSide}
      *
      * @return if the current thread is the client thread
      * @see #isClientSide()
@@ -84,32 +123,78 @@ public class ModularUI {
     }
 
     /**
-     * @return whether we're running in a production environment
+     * This check isn't the same for client and server!
+     *
+     * @return if it's safe to access the current instance {@link net.minecraft.world.level.Level Level} on client or if
+     * it's safe to access any level on server.
      */
-    public static boolean isProd() {
-        return FMLLoader.isProduction();
+    public static boolean canGetServerLevel() {
+        if (isClientSide()) {
+            return Minecraft.getInstance().level != null;
+        }
+        var server = getMinecraftServer();
+        return server != null &&
+                !(server.isStopped() || server.isShutdown() || !server.isRunning() || server.isCurrentlySaving());
     }
 
     /**
-     * @return whether we're not running in a production environment
+     * @return the path to the minecraft instance directory
      */
-    public static boolean isDev() {
-        return !isProd();
+    public static Path getGameDir() {
+        return FMLPaths.GAMEDIR.get();
+    }
+
+    public void onTick(PlayerTickEvent event) {
+        if (event.getEntity().containerMenu instanceof ModularContainerMenu containerMenu) {
+            containerMenu.onUpdate();
+        }
+    }
+
+    public void registerReloadListeners(AddReloadListenerEvent event) {
+        RegistryAccessContainer.update(event.getRegistryAccess(), event.getConditionContext());
+    }
+
+    public void registerCommand(RegisterCommandsEvent event) {
+        var command = Commands.literal("mui")
+                .then(Commands.literal("reload_themes")
+                        .executes(ctx -> {
+                            ThemeManager.reload();
+                            // TODO translations for this
+                            ctx.getSource().sendSuccess(() -> Component.literal("ModularUI Themes reloaded").withStyle(IKey.GREEN), true);
+                            return Command.SINGLE_SUCCESS;
+                        }));
+        event.getDispatcher().register(command);
     }
 
     public enum Mods {
 
+        //BLUR(ModIds.BLUR),
+        //BOGOSORTER(ModIds.BOGOSORTER),
         CURIOS(ModIds.CURIOS),
         EMI(ModIds.EMI),
         JEI(ModIds.JEI),
         REI(ModIds.REI),
+        //MODNAMETOOLTIP(ModIds.MODNAMETOOLTIP),
+        //NEA(ModIds.NEA),
         SODIUM(ModIds.SODIUM),
-        MOD_NAME_TOOLTIP(ModIds.MOD_NAME_TOOLTIP);
+        IRIS(ModIds.IRIS);
+
+        public static boolean isSodiumLikeLoaded() {
+            return SODIUM.isLoaded();
+        }
+
+        public static boolean isIrisLikeLoaded() {
+            return IRIS.isLoaded();
+        }
+
+        public static boolean isRecipeViewerLoaded() {
+            return JEI.isLoaded() || EMI.isLoaded() || REI.isLoaded();
+        }
 
         public final String id;
-        private final Predicate<ModContainer> extraLoadedCheck;
         private boolean loaded = false;
         private boolean initialized = false;
+        private final Predicate<ModContainer> extraLoadedCheck;
 
         Mods(String id) {
             this(id, null);
@@ -135,13 +220,14 @@ public class ModularUI {
 
     public static class ModIds {
 
+        public static final String BLUR = "blur";
+        public static final String BOGOSORTER = "bogosorter";
+        public static final String CURIOS = "curios";
         public static final String EMI = "emi";
         public static final String JEI = "jei";
         public static final String REI = "roughlyenoughitems";
-        public static final String CURIOS = "curios";
+        public static final String MODNAMETOOLTIP = "modnametooltip";
+        public static final String IRIS = "iris";
         public static final String SODIUM = "sodium";
-        public static final String MOD_NAME_TOOLTIP = "modnametooltip";
     }
-
-
 }

@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 @Accessors(fluent = true, chain = true)
 public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
 
-    public static final UITexture DEFAULT = fullImage("gui/options_background", ColorType.DEFAULT);
+    public static final UITexture DEFAULT = fullImage(ResourceLocation.withDefaultNamespace("gui/options_background"), ColorType.DEFAULT);
     public static final FileToIdConverter GUI_TEXTURE_ID_CONVERTER = new FileToIdConverter("textures/gui", ".png");
 
     private static final ResourceLocation ICONS_LOCATION = ModularUI.id("textures/gui/icons.png");
@@ -90,8 +90,9 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         boolean png = !location.getPath().endsWith(PNG_SUFFIX);
         boolean textures = !location.getPath().startsWith(TEXTURES_PREFIX);
         if (png || textures) {
-            location = location.withPath(
-                    path -> png ? (textures ? TEXTURES_PREFIX + path + PNG_SUFFIX : path + PNG_SUFFIX) : TEXTURES_PREFIX + path);
+            String path = location.getPath();
+            path = png ? (textures ? TEXTURES_PREFIX + path + PNG_SUFFIX : path + PNG_SUFFIX) : TEXTURES_PREFIX + path;
+            location = location.withPath(path);
         }
         this.location = location;
         this.u0 = u0;
@@ -99,15 +100,6 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         this.u1 = u1;
         this.v1 = v1;
         this.nonOpaque = nonOpaque;
-    }
-
-    // only for usage in GuiTextures
-    static UITexture fullImageIcon(String path) {
-        return fullImageIcon(path, null);
-    }
-
-    static UITexture fullImageIcon(String path, ColorType colorType) {
-        return fullImage(ModularUI.MOD_ID, path, colorType);
     }
 
     public static Builder builder() {
@@ -118,24 +110,8 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         return new UITexture(location, 0, 0, 1, 1, null);
     }
 
-    public static UITexture fullImage(String location) {
-        return fullImage(ResourceLocation.parse(location), null);
-    }
-
-    public static UITexture fullImage(String mod, String location) {
-        return fullImage(ResourceLocation.fromNamespaceAndPath(mod, location), null);
-    }
-
     public static UITexture fullImage(ResourceLocation location, ColorType colorType) {
         return new UITexture(location, 0, 0, 1, 1, colorType);
-    }
-
-    public static UITexture fullImage(String location, ColorType colorType) {
-        return fullImage(ResourceLocation.parse(location), colorType);
-    }
-
-    public static UITexture fullImage(String mod, String location, ColorType colorType) {
-        return fullImage(ResourceLocation.fromNamespaceAndPath(mod, location), colorType);
     }
 
     public UITexture getSubArea(Area bounds) {
@@ -263,6 +239,7 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         json.addProperty("u1", this.u1);
         json.addProperty("v1", this.v1);
         if (this.colorType != null) json.addProperty("colorType", this.colorType.getName());
+        json.addProperty("colorOverride", this.colorOverride);
         return true;
     }
 

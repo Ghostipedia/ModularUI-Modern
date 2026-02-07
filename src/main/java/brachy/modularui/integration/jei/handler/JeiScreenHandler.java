@@ -24,6 +24,7 @@ import mezz.jei.api.gui.handlers.IScreenHandler;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.runtime.IClickableIngredient;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -64,7 +65,7 @@ public class JeiScreenHandler<T extends Screen & IMuiScreen> extends RecipeViewe
     }
 
     @Override
-    public <I> List<Target<I>> getTargetsTyped(T screen, ITypedIngredient<I> ingredient, boolean doStart) {
+    public <I> @NotNull List<Target<I>> getTargetsTyped(T screen, @NotNull ITypedIngredient<I> ingredient, boolean doStart) {
         currentIngredient = ingredient;
 
         List<GhostIngredientSlot<?>> ghostSlots = screen.screen().getContext()
@@ -101,9 +102,9 @@ public class JeiScreenHandler<T extends Screen & IMuiScreen> extends RecipeViewe
 
     @Override
     public void setSearchFocused(boolean focused) {
-        // only set the search field state if it's JEI's actual search field and not JEMI
+        // only set the search field state if it's JEI's actual search field and not JEMI/TMRV
         if (ModularUIJeiPlugin.getRuntime().getIngredientListOverlay() instanceof IngredientListOverlayAccessor accessor) {
-            accessor.getSearchField().setFocused(focused);
+            accessor.mui$getSearchField().setFocused(focused);
         }
     }
 

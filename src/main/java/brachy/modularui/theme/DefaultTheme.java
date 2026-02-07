@@ -16,10 +16,6 @@ public class DefaultTheme extends AbstractTheme {
         super(ThemeAPI.DEFAULT_ID, null);
     }
 
-    private static <T extends WidgetTheme> WidgetThemeEntry<T> entryOfKey(WidgetThemeKey<T> key) {
-        return new WidgetThemeEntry<>(key, key.getDefaultValue(), key.getDefaultHoverValue());
-    }
-
     private void initialize() {
         if (!initialized) {
             initialized = true;
@@ -43,5 +39,9 @@ public class DefaultTheme extends AbstractTheme {
             widgetTheme = this.widgetThemes.getTheme(key.getParent());
         }
         return widgetTheme;
+    }
+
+    private static <T extends WidgetTheme> WidgetThemeEntry<T> entryOfKey(WidgetThemeKey<T> key) {
+        return new WidgetThemeEntry<>(key, key.getDefaultValue(), key.getDefaultHoverValue());
     }
 }

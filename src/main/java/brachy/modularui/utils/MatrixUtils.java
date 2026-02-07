@@ -180,7 +180,7 @@ public class MatrixUtils {
      * @see Matrix4f#lookAt(Vector3fc, Vector3fc, Vector3fc)
      */
     public static Matrix4f lookAt(Vector3fc eyePos, Vector3fc target) {
-        return new Matrix4f().lookAt(eyePos, target, MathHelper.UNIT_Y);
+        return new Matrix4f().lookAt(eyePos, target, MathUtil.UNIT_Y);
     }
 
     /**
@@ -203,7 +203,7 @@ public class MatrixUtils {
      */
     public static void lookAt(PoseStack.Pose pose, Vector3fc eyePos, Vector3fc target) {
         lookAt(pose.pose(), eyePos, target);
-        pose.normal().lookAlong(target, MathHelper.UNIT_Y);
+        pose.normal().lookAlong(target, MathUtil.UNIT_Y);
     }
 
     /**
@@ -214,7 +214,7 @@ public class MatrixUtils {
      * @param target the point to look at
      */
     public static void lookAt(Matrix4f matrix, Vector3fc eyePos, Vector3fc target) {
-        matrix.lookAt(eyePos, target, MathHelper.UNIT_Y);
+        matrix.lookAt(eyePos, target, MathUtil.UNIT_Y);
     }
 
     /**

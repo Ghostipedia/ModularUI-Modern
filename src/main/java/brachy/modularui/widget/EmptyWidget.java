@@ -1,6 +1,5 @@
 package brachy.modularui.widget;
 
-import brachy.modularui.api.layout.IResizeable;
 import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.ModularPanel;
@@ -8,7 +7,7 @@ import brachy.modularui.screen.ModularScreen;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.widget.sizer.Area;
-import brachy.modularui.widget.sizer.Flex;
+import brachy.modularui.widget.sizer.StandardResizer;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -20,11 +19,11 @@ public class EmptyWidget implements IWidget {
     @Getter
     private final Area area = new Area();
     @Getter
-    private final Flex flex = new Flex(this);
+    private final StandardResizer resizer = new StandardResizer(this);
+    private boolean requiresResize = false;
     @Setter
     @Getter
     public boolean enabled = true;
-    private boolean requiresResize = false;
     @Getter
     private IWidget parent;
 
@@ -48,21 +47,6 @@ public class EmptyWidget implements IWidget {
     public boolean isValid() {
         return this.parent != null;
     }
-
-    @Override
-    public void drawBackground(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {}
-
-    @Override
-    public void draw(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {}
-
-    @Override
-    public void drawOverlay(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {}
-
-    @Override
-    public void drawForeground(ModularGuiContext context) {}
-
-    @Override
-    public void onUpdate() {}
 
     @Override
     public @NotNull ModularPanel getPanel() {
@@ -100,26 +84,14 @@ public class EmptyWidget implements IWidget {
     }
 
     @Override
-    public void markTooltipDirty() {}
-
-    @Override
     public ModularGuiContext getContext() {
         return this.parent.getContext();
     }
 
     @Override
-    public Flex flex() {
-        return this.flex;
+    public @NotNull StandardResizer resizer() {
+        return this.resizer;
     }
-
-    @NotNull
-    @Override
-    public IResizeable resizer() {
-        return this.flex;
-    }
-
-    @Override
-    public void resizer(IResizeable resizer) {}
 
     @Nullable
     @Override

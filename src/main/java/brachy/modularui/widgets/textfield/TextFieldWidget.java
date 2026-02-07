@@ -6,8 +6,10 @@ import brachy.modularui.api.drawable.IKey;
 import brachy.modularui.api.drawable.ITextLine;
 import brachy.modularui.api.value.IStringValue;
 import brachy.modularui.api.value.ISyncOrValue;
+import brachy.modularui.api.widget.ITooltip;
 import brachy.modularui.screen.RichTooltip;
 import brachy.modularui.screen.viewport.ModularGuiContext;
+import brachy.modularui.utils.MathUtil;
 import brachy.modularui.utils.math.ParseResult;
 import brachy.modularui.value.StringValue;
 import brachy.modularui.value.sync.ValueSyncHandler;
@@ -44,13 +46,13 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
     private boolean tooltipOverride = false;
 
     public double parse(String num) {
-        ParseResult result = MathHelper.parseExpression(num, this.defaultNumber, true);
-        double value = result.getResult();
+        ParseResult result = MathUtil.parseExpression(num, this.defaultNumber, true);
         if (result.isFailure()) {
-            this.mathFailMessage = result.getError();
+            this.mathFailMessage = result.getErrorMessage();
             ModularUI.LOGGER.error("Math expression error in {}: {}", this, this.mathFailMessage);
+            return defaultNumber;
         }
-        return value;
+        return result.getResult().getNumberValue().doubleValue();
     }
 
     public IStringValue<?> createMathFailMessageValue() {
@@ -115,7 +117,7 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
         if (this.handler.getText().size() > 1) {
             throw new IllegalStateException("TextFieldWidget can only have one line!");
         }
-        return this.handler.getText().get(0);
+        return this.handler.getText().getFirst();
     }
 
     public void setText(@NotNull String text) {
@@ -132,7 +134,7 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
         if (this.handler.getText().isEmpty()) {
             this.handler.getText().add(this.validator.apply(""));
         } else if (this.handler.getText().size() == 1) {
-            this.handler.getText().set(0, this.validator.apply(this.handler.getText().get(0)));
+            this.handler.getText().set(0, this.validator.apply(this.handler.getText().getFirst()));
             markTooltipDirty();
         } else {
             throw new IllegalStateException("TextFieldWidget can only have one line!");
@@ -232,13 +234,11 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
     }
 
     /**
-     * Normally, Tooltips on text field widgets are used to display the contents of the widget when the scrollbar is
-     * active
-     * This value is an override, that allows the methods provided by
-     * {@link brachy.modularui.api.widget.ITooltip} to be used
-     * Every method that adds a tooltip from ITooltip is overridden to enable the tooltipOverride
+     * Normally, Tooltips on text field widgets are used to display the contents of the widget when the scrollbar is active.
+     * This value is an override, that allows the methods provided by {@link ITooltip} to be used.<br>
+     * Every method that adds a tooltip from {@link ITooltip} is overridden to enable the {@link #tooltipOverride}.
      *
-     * @param value - sets the tooltip override on or off
+     * @param value sets the tooltip override on or off
      */
     public TextFieldWidget setTooltipOverride(boolean value) {
         this.tooltipOverride = value;

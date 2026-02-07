@@ -8,7 +8,10 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -30,12 +33,18 @@ public class ModularUITestingRegistration {
         }
     }
 
-    public static void register(IEventBus bus) {
-        if (!ModularUI.isDev()) return;
+    @SubscribeEvent
+    public static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerItem(Capabilities.ItemHandler.ITEM, (stack, ctx) -> {
+            return new ItemStackHandler(4);
+        }, ModularUITestingRegistration.TEST_ITEM.get());
+    }
 
-        bus.register(ModularUITestingRegistration.class);
-        ITEMS.register(bus);
-        BLOCKS.register(bus);
-        BLOCK_ENTITY_TYPES.register(bus);
+    public static void register(IEventBus modBus) {
+        modBus.register(ModularUITestingRegistration.class);
+
+        ITEMS.register(modBus);
+        BLOCKS.register(modBus);
+        BLOCK_ENTITY_TYPES.register(modBus);
     }
 }

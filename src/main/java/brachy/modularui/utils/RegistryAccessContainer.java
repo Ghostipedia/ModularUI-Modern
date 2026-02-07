@@ -36,16 +36,16 @@ public final class RegistryAccessContainer implements ICondition.IContext, Regis
     private static ICondition.IContext tagContext = ICondition.IContext.TAGS_INVALID;
 
     @Getter
-    private final Frozen access;
+    private final RegistryAccess access;
     private DamageSources damageSources;
 
-    public RegistryAccessContainer(Frozen access) {
+    public RegistryAccessContainer(RegistryAccess access) {
         this.access = access;
         this.damageSources = null;
     }
 
     @ApiStatus.Internal
-    public static void update(Frozen registries, @Nullable ICondition.IContext tagContext) {
+    public static void update(RegistryAccess registries, @Nullable ICondition.IContext tagContext) {
         RegistryAccessContainer.current = new RegistryAccessContainer(registries);
         if (tagContext != null) {
             RegistryAccessContainer.tagContext = tagContext;

@@ -10,12 +10,13 @@ import brachy.modularui.widget.sizer.Box;
 
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.util.Mth;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Scrollable area
@@ -26,13 +27,13 @@ import net.neoforged.api.distmarker.OnlyIn;
 @Accessors(chain = true)
 public class ScrollArea extends Area {
 
-    private final ScrollPadding scrollPadding = new ScrollPadding();
     @Getter
     @Setter
     private HorizontalScrollData scrollX;
     @Getter
     @Setter
     private VerticalScrollData scrollY;
+    private final ScrollPadding scrollPadding = new ScrollPadding();
     @Getter
     @Setter
     private int scrollBarBackgroundColor = Color.withAlpha(Color.BLACK.main, 0.25f);
@@ -101,17 +102,27 @@ public class ScrollArea extends Area {
      * This method should be invoked when mouse wheel is scrolling
      */
     public boolean mouseScroll(int x, int y, double scrollX, double scrollY, boolean shift) {
-        ScrollData data;
-        if (this.scrollX != null) {
-            data = this.scrollY == null || shift ? this.scrollX : this.scrollY;
+        if (this.scrollX != null && (shift || scrollX != 0f)) {
+            if (scrollX == 0f) {
+                //noinspection SuspiciousNameCombination
+                scrollX = scrollY;
+            }
+            return this.mouseScrollInternal(this.scrollX, scrollX);
         } else if (this.scrollY != null) {
-            data = this.scrollY;
+            if (scrollY == 0f) {
+                //noinspection SuspiciousNameCombination
+                scrollY = scrollX;
+            }
+            return this.mouseScrollInternal(this.scrollY, scrollY);
         } else {
             // no scroll data present -> cant be scrolled
             return false;
         }
+    }
 
-        int scrollAmount = (int) Math.copySign(data.getScrollSpeed(), scrollY);
+    @ApiStatus.OverrideOnly
+    protected boolean mouseScrollInternal(ScrollData data, double scroll) {
+        int scrollAmount = (int) Math.copySign(data.getScrollSpeed(), scroll);
         int scrollTo;
         if (data.isAnimating()) {
             scrollTo = data.getAnimatingTo() - scrollAmount;

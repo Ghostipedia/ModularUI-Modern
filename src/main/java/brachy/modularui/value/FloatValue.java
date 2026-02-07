@@ -10,12 +10,6 @@ import com.google.common.util.concurrent.AtomicDouble;
 
 public class FloatValue implements IFloatValue<Float>, IDoubleValue<Float>, IStringValue<Float> {
 
-    private float value;
-
-    public FloatValue(float value) {
-        this.value = value;
-    }
-
     public static Dynamic wrap(IFloatValue<?> val) {
         return new Dynamic(val::getFloatValue, val::setFloatValue);
     }
@@ -24,14 +18,15 @@ public class FloatValue implements IFloatValue<Float>, IDoubleValue<Float>, IStr
         return new Dynamic(val::floatValue, val::set);
     }
 
-    @Override
-    public Float getValue() {
-        return getFloatValue();
+    private float value;
+
+    public FloatValue(float value) {
+        this.value = value;
     }
 
     @Override
-    public void setValue(Float value) {
-        setDoubleValue(value);
+    public Float getValue() {
+        return getFloatValue();
     }
 
     @Override
@@ -42,6 +37,11 @@ public class FloatValue implements IFloatValue<Float>, IDoubleValue<Float>, IStr
     @Override
     public void setFloatValue(float val) {
         this.value = val;
+    }
+
+    @Override
+    public void setValue(Float value) {
+        setDoubleValue(value);
     }
 
     @Override

@@ -15,9 +15,9 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -30,10 +30,11 @@ import java.util.stream.Stream;
 @OnlyIn(Dist.CLIENT)
 public class WidgetWrapper extends AbstractWidget {
 
+    private NarratableEntry lastNarratable = null;
+
     private final IWidget wrapped;
     private final List<WidgetWrapper> children = new ArrayList<>();
     private final ModularScreen screen;
-    private NarratableEntry lastNarratable = null;
 
     public WidgetWrapper(IWidget wrapped) {
         super(0, 0, 0, 0, CommonComponents.EMPTY);
@@ -41,30 +42,6 @@ public class WidgetWrapper extends AbstractWidget {
         this.screen = wrapped.getScreen();
         for (IWidget widget : this.wrapped.getChildren()) {
             this.children.add(new WidgetWrapper(widget));
-        }
-    }
-
-    public static <T extends NarratableEntry> void updateNarrations(Stream<T> unsorted, NarrationElementOutput output,
-                                                                    NarratableEntry lastNarratable,
-                                                                    Consumer<NarratableEntry> setter) {
-        List<NarratableEntry> entries = unsorted.filter(NarratableEntry::isActive)
-                .sorted(Comparator.comparingInt(TabOrderedElement::getTabOrderGroup))
-                .collect(Collectors.toList());
-        Screen.NarratableSearchResult result = Screen.findNarratableWidget(entries, lastNarratable);
-        if (result != null) {
-            if (result.priority.isTerminal()) {
-                setter.accept(result.entry);
-            }
-
-            if (entries.size() > 1) {
-                output.add(NarratedElementType.POSITION,
-                        Component.translatable("narrator.position.screen", result.index + 1, entries.size()));
-                if (result.priority == NarrationPriority.FOCUSED) {
-                    output.add(NarratedElementType.USAGE, Component.translatable("narration.component_list.usage"));
-                }
-            }
-
-            result.entry.updateNarration(output.nest());
         }
     }
 
@@ -122,5 +99,29 @@ public class WidgetWrapper extends AbstractWidget {
 
         Stream<WidgetWrapper> entries = this.children.stream();
         updateNarrations(this.children.stream(), output, lastNarratable, entry -> lastNarratable = entry);
+    }
+
+    public static <T extends NarratableEntry> void updateNarrations(Stream<T> unsorted, NarrationElementOutput output,
+                                                                    NarratableEntry lastNarratable,
+                                                                    Consumer<NarratableEntry> setter) {
+        List<NarratableEntry> entries = unsorted.filter(NarratableEntry::isActive)
+                .sorted(Comparator.comparingInt(TabOrderedElement::getTabOrderGroup))
+                .collect(Collectors.toList());
+        Screen.NarratableSearchResult result = Screen.findNarratableWidget(entries, lastNarratable);
+        if (result != null) {
+            if (result.priority.isTerminal()) {
+                setter.accept(result.entry);
+            }
+
+            if (entries.size() > 1) {
+                output.add(NarratedElementType.POSITION,
+                        Component.translatable("narrator.position.screen", result.index + 1, entries.size()));
+                if (result.priority == NarrationPriority.FOCUSED) {
+                    output.add(NarratedElementType.USAGE, Component.translatable("narration.component_list.usage"));
+                }
+            }
+
+            result.entry.updateNarration(output.nest());
+        }
     }
 }

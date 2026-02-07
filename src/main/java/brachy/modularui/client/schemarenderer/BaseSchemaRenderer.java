@@ -10,7 +10,6 @@ import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.FluidTextureType;
 import brachy.modularui.utils.MatrixUtils;
-import brachy.modularui.utils.RenderUtil;
 import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widgets.SchemaWidget;
 
@@ -350,7 +349,7 @@ public class BaseSchemaRenderer implements IDrawable {
         // actually draw the chunk
         RenderCompileResults compileResults = this.compileResults.get();
         if (compileResults != null && !compileResults.isEmpty(renderType)) {
-            if (ModularUI.Mods.SODIUM.isLoaded()) {
+            if (ModularUI.Mods.isSodiumLikeLoaded()) {
                 SodiumCompat.markSpritesAsActive(compileResults.activeFluidSprites);
             }
 

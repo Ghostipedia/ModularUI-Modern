@@ -1,8 +1,10 @@
 package brachy.modularui.screen;
 
+import brachy.modularui.ModularUIConfig;
 import brachy.modularui.animation.Animator;
 import brachy.modularui.api.IPanelHandler;
 import brachy.modularui.api.ITheme;
+import brachy.modularui.api.IThemeApi;
 import brachy.modularui.api.MCHelper;
 import brachy.modularui.api.layout.IViewport;
 import brachy.modularui.api.layout.IViewportStack;
@@ -54,42 +56,49 @@ import java.util.function.Supplier;
  */
 public class ModularPanel extends ParentWidget<ModularPanel> implements IViewport, IDragResizeable {
 
-    private static final int tapTime = 200;
-    @Getter
-    private final @NotNull String name;
-    @Getter
-    private final @NotNull ObjectArrayList<LocatedWidget> hovering = new ObjectArrayList<>();
-    private final Input keyboard = new Input();
-    private final Input mouse = new Input();
-    private final Area startArea = new Area();
-    private final List<IPanelHandler> clientSubPanels = new ArrayList<>();
-    private ModularScreen screen;
-    @Setter
-    private IPanelHandler panelHandler;
-    @Getter
-    private State state = State.IDLE;
-    private boolean cantDisposeNow = false;
-    // drag resizing
-    private IDragResizeable currentResizing = null;
-    private LocatedWidget currentResizingWidget = null;
-    private ResizeDragArea draggingDragArea = null;
-    private int dragX, dragY;
-    private boolean invisible = false;
-    private Animator animator;
-    private boolean resizeable = false;
-    private Runnable onCloseAction;
-
-    public ModularPanel(@NotNull String name) {
-        this.name = Objects.requireNonNull(name, "A panels name must not be null and should be unique!");
-        center();
-    }
-
     public static ModularPanel defaultPanel(@NotNull String name) {
         return defaultPanel(name, 176, 166);
     }
 
     public static ModularPanel defaultPanel(@NotNull String name, int width, int height) {
         return new ModularPanel(name).size(width, height);
+    }
+
+    private static final int tapTime = 200;
+
+    @Getter
+    private final @NotNull String name;
+    private ModularScreen screen;
+    @Setter
+    private IPanelHandler panelHandler;
+    @Getter
+    private State state = State.IDLE;
+    private boolean cantDisposeNow = false;
+    @Getter
+    private final @NotNull List<LocatedWidget> hovering = new ObjectArrayList<>();
+    private final Input keyboard = new Input();
+    private final Input mouse = new Input();
+
+    // drag resizing
+    private IDragResizeable currentResizing = null;
+    private LocatedWidget currentResizingWidget = null;
+    private ResizeDragArea draggingDragArea = null;
+    private final Area startArea = new Area();
+    private int dragX, dragY;
+
+    private final List<IPanelHandler> clientSubPanels = new ArrayList<>();
+    private boolean invisible = false;
+    private Animator animator;
+
+    private boolean resizeable = false;
+    private String themeOverride;
+    private ITheme theme;
+
+    private Runnable onCloseAction;
+
+    public ModularPanel(@NotNull String name) {
+        this.name = Objects.requireNonNull(name, "A panels name must not be null and should be unique!");
+        center();
     }
 
     @Override
@@ -168,6 +177,11 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
         }
     }
 
+    @Deprecated
+    public void animateClose() {
+        closeIfOpen();
+    }
+
     @Override
     public boolean hasParent() {
         return false;
@@ -189,20 +203,6 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
             stack.translate(x, y);
             stack.scale(scale, scale);
             stack.translate(-x, -y);
-        }
-    }
-
-    @Override
-    public void getWidgetsAt(IViewportStack stack, HoveredWidgetList widgets, int x, int y) {
-        if (hasChildren()) {
-            IViewport.getChildrenAt(this, stack, widgets, x, y);
-        }
-    }
-
-    @Override
-    public void getSelfAt(IViewportStack stack, HoveredWidgetList widgets, int x, int y) {
-        if (isInside(stack, x, y)) {
-            widgets.add(this, stack.peek(), getAdditionalHoverInfo(stack, x, y));
         }
     }
 
@@ -234,6 +234,7 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
     public void onOpen(ModularScreen screen) {
         this.screen = screen;
         getArea().z(1);
+        resizer().initialize(this.screen.getResizeNode(), this.screen.getResizeNode());
         initialise(this, false);
         WidgetTree.onUpdate(this);
         // TODO: NEA handles main panel
@@ -734,7 +735,7 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
 
     public boolean isAnyHovered() {
         if (this.hovering.isEmpty()) return false;
-        if (this.hovering.size() == 1 && this.hovering.get(0).getElement() instanceof ModularPanel panel) {
+        if (this.hovering.size() == 1 && this.hovering.getFirst().getElement() instanceof ModularPanel panel) {
             return panel.canHover();
         }
         return true;
@@ -753,7 +754,7 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
     }
 
     public float getScale() {
-        // if (ConfigHolder.INSTANCE.client.ui.animationTime == 0) return 1f;
+        if (ModularUIConfig.animationTime() == 0) return 1f;
         // 0.9 is default nea value
         return Interpolations.lerp(0.9f, 1f, getAnimator().getValue());
         // TODO NEA
@@ -806,6 +807,13 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
         }
     }
 
+    public ITheme getTheme() {
+        if (this.theme == null) {
+            this.theme = IThemeApi.get().getThemeForScreen(this, this.themeOverride);
+        }
+        return this.theme;
+    }
+
     public ModularPanel bindPlayerInventory() {
         return child(SlotGroupWidget.playerInventory(true));
     }
@@ -834,7 +842,13 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
         return this;
     }
 
-    @ApiStatus.Internal
+    public ModularPanel themeOverride(String id) {
+        this.themeOverride = id;
+        this.theme = null;
+        return this;
+    }
+
+    @Deprecated
     @Override
     public ModularPanel name(String name) {
         throw new IllegalStateException("Name for ModularPanels are final!");
@@ -870,7 +884,7 @@ public class ModularPanel extends ParentWidget<ModularPanel> implements IViewpor
      */
     private static class Input {
 
-        private final ObjectList<Interactable> acceptedInteractions = new ObjectArrayList<>();
+        private final List<Interactable> acceptedInteractions = new ObjectArrayList<>();
         @Nullable
         private LocatedWidget lastPressed;
         private boolean held;

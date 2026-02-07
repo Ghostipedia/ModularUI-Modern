@@ -2,10 +2,11 @@ package brachy.modularui.value.sync;
 
 import brachy.modularui.widgets.slot.ModularSlot;
 
-import io.netty.buffer.ByteBuf;
-import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
+
+import io.netty.buffer.ByteBuf;
+import it.unimi.dsi.fastutil.booleans.BooleanConsumer;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -55,6 +56,6 @@ public class SyncHandlers {
     }
 
     public static <B extends ByteBuf, T> GenericSyncValue.Builder<B, T> generic(Class<T> type) {
-        return new GenericSyncValue.Builder<>(type);
+        return GenericSyncValue.builder(type);
     }
 }

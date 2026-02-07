@@ -101,11 +101,6 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
     }
 
     @Override
-    public void setLayoutDone(boolean done) {
-        this.layoutResized = done;
-    }
-
-    @Override
     public boolean canRelayout(boolean isParentLayout) {
         return isParentLayout && (this.x.canRelayout() || this.y.canRelayout());
     }
@@ -116,18 +111,8 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
     }
 
     @Override
-    public void setXMarginPaddingApplied(boolean b) {
-        this.x.setMarginPaddingApplied(b);
-    }
-
-    @Override
     public boolean isYMarginPaddingApplied() {
         return this.y.isMarginPaddingApplied();
-    }
-
-    @Override
-    public void setYMarginPaddingApplied(boolean b) {
-        this.y.setMarginPaddingApplied(b);
     }
 
     @Override
@@ -364,14 +349,19 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
             Area mainArea = widget.getScreen().getMainPanel().getArea();
             // in vanilla uis the position is relative to the gui area and size is 16 x 16
             // since our slots are 18 x 18 we need to offset by 1
-            slot.gtceu$setX(widget.getArea().x - mainArea.x + 1);
-            slot.gtceu$setY(widget.getArea().y - mainArea.y + 1);
+            slot.modularui$setX(widget.getArea().x - mainArea.x + 1);
+            slot.modularui$setY(widget.getArea().y - mainArea.y + 1);
         }
     }
 
     @Override
     public void setChildrenResized(boolean resized) {
         this.childrenResized = resized;
+    }
+
+    @Override
+    public void setLayoutDone(boolean done) {
+        this.layoutResized = done;
     }
 
     @Override
@@ -382,6 +372,16 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
     @Override
     public void setYAxisResized(boolean pos, boolean size) {
         this.y.setResized(pos, size);
+    }
+
+    @Override
+    public void setXMarginPaddingApplied(boolean b) {
+        this.x.setMarginPaddingApplied(b);
+    }
+
+    @Override
+    public void setYMarginPaddingApplied(boolean b) {
+        this.y.setMarginPaddingApplied(b);
     }
 
     @Override

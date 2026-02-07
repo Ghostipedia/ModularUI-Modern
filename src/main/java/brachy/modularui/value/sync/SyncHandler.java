@@ -31,27 +31,6 @@ public abstract class SyncHandler implements ISyncOrValue {
     @Getter
     private String key;
 
-    private static void send(ModularNetworkSide network, String panel, IPacketWriter<? super RegistryFriendlyByteBuf> writer,
-                             SyncHandler syncHandler) {
-        Objects.requireNonNull(writer);
-        Objects.requireNonNull(syncHandler);
-        if (!syncHandler.isValid()) {
-            throw new IllegalStateException("Not initialized sync handlers can't send packets!");
-        }
-        network.sendSyncHandlerPacket(panel, syncHandler, writer, syncHandler.syncManager.getPlayer());
-    }
-
-    public static void sendToClient(String panel, IPacketWriter<? super RegistryFriendlyByteBuf> writer,
-                                    SyncHandler syncHandler) {
-        send(ModularNetwork.SERVER, panel, writer, syncHandler);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static void sendToServer(String panel, IPacketWriter<? super RegistryFriendlyByteBuf> writer,
-                                    SyncHandler syncHandler) {
-        send(ModularNetwork.CLIENT, panel, writer, syncHandler);
-    }
-
     @ApiStatus.OverrideOnly
     @MustBeInvokedByOverriders
     public void init(String key, PanelSyncManager syncManager) {
@@ -187,5 +166,26 @@ public abstract class SyncHandler implements ISyncOrValue {
     @Override
     public boolean isSyncHandler() {
         return true;
+    }
+
+    private static void send(ModularNetworkSide network, String panel, IPacketWriter<? super RegistryFriendlyByteBuf> writer,
+                             SyncHandler syncHandler) {
+        Objects.requireNonNull(writer);
+        Objects.requireNonNull(syncHandler);
+        if (!syncHandler.isValid()) {
+            throw new IllegalStateException("Not initialized sync handlers can't send packets!");
+        }
+        network.sendSyncHandlerPacket(panel, syncHandler, writer, syncHandler.syncManager.getPlayer());
+    }
+
+    public static void sendToClient(String panel, IPacketWriter<? super RegistryFriendlyByteBuf> writer,
+                                    SyncHandler syncHandler) {
+        send(ModularNetwork.SERVER, panel, writer, syncHandler);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void sendToServer(String panel, IPacketWriter<? super RegistryFriendlyByteBuf> writer,
+                                    SyncHandler syncHandler) {
+        send(ModularNetwork.CLIENT, panel, writer, syncHandler);
     }
 }

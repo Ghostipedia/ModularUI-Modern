@@ -20,9 +20,9 @@ public class IntSyncValue extends ValueSyncHandler<ByteBuf, Integer>
         implements IIntSyncValue<ByteBuf, Integer>, IDoubleSyncValue<ByteBuf, Integer>,
         IStringSyncValue<ByteBuf, Integer> {
 
+    private int cache;
     private final IntSupplier getter;
     private final IntConsumer setter;
-    private int cache;
 
     public IntSyncValue(@NotNull IntSupplier getter, @Nullable IntConsumer setter) {
         this.getter = Objects.requireNonNull(getter);

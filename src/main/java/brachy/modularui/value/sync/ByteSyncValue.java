@@ -13,9 +13,9 @@ import java.util.Objects;
 
 public class ByteSyncValue extends ValueSyncHandler<ByteBuf, Byte> implements IByteSyncValue<ByteBuf, Byte> {
 
+    private byte cache;
     private final ByteValue.Supplier getter;
     private final ByteValue.Consumer setter;
-    private byte cache;
 
     public ByteSyncValue(@NotNull ByteValue.Supplier getter) {
         this(getter, (ByteValue.Consumer) null);

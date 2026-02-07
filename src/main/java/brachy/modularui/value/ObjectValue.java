@@ -8,6 +8,14 @@ import java.util.function.Supplier;
 
 public class ObjectValue<T> implements IValue<T> {
 
+    public static <T> Dynamic<T> wrap(IValue<T> val) {
+        return new Dynamic<>(val::getValue, val::setValue);
+    }
+
+    public static <T> Dynamic<T> wrapAtomic(AtomicReference<T> val) {
+        return new Dynamic<>(val::get, val::set);
+    }
+
     private final Class<T> type;
     private T value;
 
@@ -16,12 +24,10 @@ public class ObjectValue<T> implements IValue<T> {
         this.value = value;
     }
 
-    public static <T> Dynamic<T> wrap(IValue<T> val) {
-        return new Dynamic<>(val::getValue, val::setValue);
-    }
-
-    public static <T> Dynamic<T> wrapAtomic(AtomicReference<T> val) {
-        return new Dynamic<>(val::get, val::set);
+    @Deprecated
+    public ObjectValue(T value) {
+        this.type = value != null ? (Class<T>) value.getClass() : null;
+        this.value = value;
     }
 
     @Override

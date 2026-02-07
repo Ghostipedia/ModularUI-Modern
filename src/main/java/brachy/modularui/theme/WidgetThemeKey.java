@@ -11,6 +11,12 @@ import java.util.Objects;
 public class WidgetThemeKey<T extends WidgetTheme> implements Comparable<WidgetThemeKey<?>> {
 
     private static final Map<String, WidgetThemeKey<?>> KEYS = new Object2ObjectOpenHashMap<>();
+
+    @Nullable
+    public static WidgetThemeKey<?> getFromFullName(String key) {
+        return KEYS.get(key);
+    }
+
     @Nullable
     @Getter
     private final WidgetThemeKey<T> parent;
@@ -26,6 +32,7 @@ public class WidgetThemeKey<T extends WidgetTheme> implements Comparable<WidgetT
     private final T defaultHoverValue;
     @Getter
     private final WidgetThemeParser<T> parser;
+
     WidgetThemeKey(Class<T> type, String name, T defaultValue, WidgetThemeParser parser) {
         this(type, name, defaultValue, defaultValue, parser);
     }
@@ -45,11 +52,6 @@ public class WidgetThemeKey<T extends WidgetTheme> implements Comparable<WidgetT
         this.parser = parser;
         KEYS.put(getFullName(), this);
         ThemeAPI.INSTANCE.registerWidgetThemeKey(this);
-    }
-
-    @Nullable
-    public static WidgetThemeKey<?> getFromFullName(String key) {
-        return KEYS.get(key);
     }
 
     public WidgetThemeKey<T> createSubKey(String subName) {

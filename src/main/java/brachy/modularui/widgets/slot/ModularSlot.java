@@ -8,13 +8,15 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.datafixers.util.Pair;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
+import net.neoforged.neoforge.items.wrapper.PlayerArmorInvWrapper;
+import net.neoforged.neoforge.items.wrapper.PlayerInvWrapper;
+import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
+import net.neoforged.neoforge.items.wrapper.PlayerOffhandInvWrapper;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.SlotItemHandler;
-import net.neoforged.neoforge.items.wrapper.PlayerInvWrapper;
-import net.neoforged.neoforge.items.wrapper.PlayerMainInvWrapper;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,15 +64,6 @@ public class ModularSlot extends SlotItemHandler {
             throw new IllegalArgumentException("Tried to create a slot with invalid index " + index +
                     ". Valid index range is [0," + itemHandler.getSlots() + ")");
         }
-    }
-
-    public static boolean isPlayerSlot(Slot slot) {
-        return slot.container instanceof Inventory;
-    }
-
-    public static boolean isPlayerSlot(SlotItemHandler slot) {
-        return slot.getItemHandler() instanceof PlayerInvWrapper ||
-                slot.getItemHandler() instanceof PlayerMainInvWrapper;
     }
 
     @ApiStatus.Internal
@@ -232,5 +225,16 @@ public class ModularSlot extends SlotItemHandler {
      */
     public ModularSlot singletonSlotGroup() {
         return singletonSlotGroup(SlotGroup.STORAGE_SLOT_PRIO);
+    }
+
+    public static boolean isPlayerSlot(Slot slot) {
+        return slot.container instanceof Inventory;
+    }
+
+    public static boolean isPlayerSlot(SlotItemHandler slot) {
+        return slot.getItemHandler() instanceof PlayerInvWrapper ||
+                slot.getItemHandler() instanceof PlayerMainInvWrapper ||
+                slot.getItemHandler() instanceof PlayerArmorInvWrapper ||
+                slot.getItemHandler() instanceof PlayerOffhandInvWrapper;
     }
 }

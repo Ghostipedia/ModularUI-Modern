@@ -24,14 +24,7 @@ import java.util.function.Supplier;
 public class ColorPickerDialog extends Dialog<Integer> {
 
     private static final IDrawable handleBackground = new Rectangle().color(Color.WHITE.main);
-    private final boolean controlAlpha;
-    private final Rectangle preview = new Rectangle();
-    private final Rectangle sliderBackgroundR = new Rectangle();
-    private final Rectangle sliderBackgroundG = new Rectangle();
-    private final Rectangle sliderBackgroundB = new Rectangle();
-    private final Rectangle sliderBackgroundA = new Rectangle();
-    private final Rectangle sliderBackgroundS = new Rectangle();
-    private final Rectangle sliderBackgroundV = new Rectangle();
+
     private int color;
     private int red;
     private int green;
@@ -39,7 +32,17 @@ public class ColorPickerDialog extends Dialog<Integer> {
     private double hue;
     private double saturation;
     private double value;
+
     private int alpha;
+    private final boolean controlAlpha;
+
+    private final Rectangle preview = new Rectangle();
+    private final Rectangle sliderBackgroundR = new Rectangle();
+    private final Rectangle sliderBackgroundG = new Rectangle();
+    private final Rectangle sliderBackgroundB = new Rectangle();
+    private final Rectangle sliderBackgroundA = new Rectangle();
+    private final Rectangle sliderBackgroundS = new Rectangle();
+    private final Rectangle sliderBackgroundV = new Rectangle();
 
     public ColorPickerDialog(Consumer<Integer> resultConsumer, int startColor, boolean controlAlpha) {
         this("color_picker", resultConsumer, startColor, controlAlpha);
@@ -51,7 +54,7 @@ public class ColorPickerDialog extends Dialog<Integer> {
         this.controlAlpha = controlAlpha;
         this.alpha = Color.getAlpha(startColor);
         updateAll(startColor);
-        size(140, controlAlpha ? 106 : 94).background(GuiTextures.MC_BACKGROUND);
+        size(140, controlAlpha ? 106 : 94);
 
         PagedWidget.Controller controller = new PagedWidget.Controller();
         child(new Column()
@@ -60,11 +63,14 @@ public class ColorPickerDialog extends Dialog<Integer> {
                         .left(5).right(5).height(14)
                         .child(new PageButton(0, controller)
                                 .sizeRel(0.5f, 1f)
+                                // TODO make translatable?
                                 .overlay(IKey.str("RGB")))
                         .child(new PageButton(1, controller)
                                 .sizeRel(0.5f, 1f)
+                                // TODO make translatable?
                                 .overlay(IKey.str("HSV"))))
                 .child(new Row().widthRel(1f).height(12).marginTop(4)
+                        // TODO make translatable
                         .child(IKey.str("Hex: ").asWidget().heightRel(1f))
                         .child(new TextFieldWidget()
                                 .height(12)
@@ -110,20 +116,12 @@ public class ColorPickerDialog extends Dialog<Integer> {
                                 }))));
     }
 
-    private static SliderWidget createSlider(IDrawable background) {
-        return new SliderWidget()
-                .expanded()
-                .heightRel(1f)
-                .background(background.asIcon().size(0, 4))
-                .sliderTexture(handleBackground)
-                .sliderSize(2, 8);
-    }
-
     private IWidget createRGBPage(@Nullable Supplier<IWidget> alphaSlider) {
         return new Column()
                 .sizeRel(1f, 1f)
                 .child(new Row()
                         .widthRel(1f).height(12)
+                        // TODO make translatable?
                         .child(IKey.str("R: ").asWidget().heightRel(1f))
                         .child(createSlider(this.sliderBackgroundR)
                                 .name("red")
@@ -131,6 +129,7 @@ public class ColorPickerDialog extends Dialog<Integer> {
                                 .value(new DoubleValue.Dynamic(() -> this.red, this::updateRed))))
                 .child(new Row()
                         .widthRel(1f).height(12)
+                        // TODO make translatable?
                         .child(IKey.str("G: ").asWidget().heightRel(1f))
                         .child(createSlider(this.sliderBackgroundG)
                                 .name("green")
@@ -138,6 +137,7 @@ public class ColorPickerDialog extends Dialog<Integer> {
                                 .value(new DoubleValue.Dynamic(() -> this.green, this::updateGreen))))
                 .child(new Row()
                         .widthRel(1f).height(12)
+                        // TODO make translatable?
                         .child(IKey.str("B: ").asWidget().heightRel(1f))
                         .child(createSlider(this.sliderBackgroundB)
                                 .name("blue")
@@ -151,6 +151,7 @@ public class ColorPickerDialog extends Dialog<Integer> {
                 .sizeRel(1f, 1f)
                 .child(new Row()
                         .widthRel(1f).height(12)
+                        // TODO make translatable?
                         .child(IKey.str("H: ").asWidget().heightRel(1f))
                         .child(createSlider(new HueBar(GuiAxis.X))
                                 .name("hue")
@@ -158,6 +159,7 @@ public class ColorPickerDialog extends Dialog<Integer> {
                                 .value(new DoubleValue.Dynamic(() -> this.hue, this::updateHue))))
                 .child(new Row()
                         .widthRel(1f).height(12)
+                        // TODO make translatable?
                         .child(IKey.str("S: ").asWidget().heightRel(1f))
                         .child(createSlider(this.sliderBackgroundS)
                                 .name("saturation")
@@ -165,12 +167,22 @@ public class ColorPickerDialog extends Dialog<Integer> {
                                 .value(new DoubleValue.Dynamic(() -> this.saturation, this::updateSaturation))))
                 .child(new Row()
                         .widthRel(1f).height(12)
+                        // TODO make translatable?
                         .child(IKey.str("V: ").asWidget().heightRel(1f))
                         .child(createSlider(this.sliderBackgroundV)
                                 .name("value")
                                 .bounds(0, 1)
                                 .value(new DoubleValue.Dynamic(() -> this.value, this::updateValue))))
                 .childIf(alphaSlider != null, alphaSlider);
+    }
+
+    private static SliderWidget createSlider(IDrawable background) {
+        return new SliderWidget()
+                .expanded()
+                .heightRel(1f)
+                .background(background.asIcon().size(0, 4))
+                .sliderTexture(handleBackground)
+                .sliderSize(2, 8);
     }
 
     private @Nullable Supplier<IWidget> createAlphaSlider(String s) {

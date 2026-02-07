@@ -59,7 +59,7 @@ public interface IIcon extends IDrawable {
 
     /**
      * This returns a hoverable wrapper of this icon. This is only used in
-     * {@link RichText RichText}.
+     * {@link RichText}.
      * This allows this icon to have its own tooltip.
      */
     default HoverableIcon asHoverable() {
@@ -68,7 +68,7 @@ public interface IIcon extends IDrawable {
 
     /**
      * This returns an interactable wrapper of this icon. This is only used in
-     * {@link RichText RichText}.
+     * {@link RichText}.
      * This allows this icon to be able to listen to clicks and other inputs.
      */
     default InteractableIcon asInteractable() {

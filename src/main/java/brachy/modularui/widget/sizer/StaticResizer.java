@@ -45,9 +45,6 @@ public abstract class StaticResizer extends ResizeNode {
     }
 
     @Override
-    public void setLayoutDone(boolean done) {}
-
-    @Override
     public boolean canRelayout(boolean isParentLayout) {
         return false;
     }
@@ -58,15 +55,9 @@ public abstract class StaticResizer extends ResizeNode {
     }
 
     @Override
-    public void setXMarginPaddingApplied(boolean b) {}
-
-    @Override
     public boolean isYMarginPaddingApplied() {
         return true;
     }
-
-    @Override
-    public void setYMarginPaddingApplied(boolean b) {}
 
     @Override
     public boolean resize(boolean isParentLayout) {
@@ -84,10 +75,19 @@ public abstract class StaticResizer extends ResizeNode {
     }
 
     @Override
+    public void setLayoutDone(boolean done) {}
+
+    @Override
     public void setXAxisResized(boolean pos, boolean size) {}
 
     @Override
     public void setYAxisResized(boolean pos, boolean size) {}
+
+    @Override
+    public void setXMarginPaddingApplied(boolean b) {}
+
+    @Override
+    public void setYMarginPaddingApplied(boolean b) {}
 
     @Override
     public boolean hasYPos() {

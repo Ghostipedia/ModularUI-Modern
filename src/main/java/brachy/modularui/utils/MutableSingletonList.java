@@ -126,7 +126,7 @@ public class MutableSingletonList<T> implements List<T> {
         int s = c.size();
         if (s > 1 || (s == 1 != this.hasValue)) return false;
         if (!this.hasValue) return true;
-        if (c instanceof List<?> l) return Objects.equals(this.value, l.get(0));
+        if (c instanceof List<?> l) return Objects.equals(this.value, l.getFirst());
         return Objects.equals(this.value, c.iterator().next());
     }
 
@@ -134,7 +134,7 @@ public class MutableSingletonList<T> implements List<T> {
     public boolean addAll(@NotNull Collection<? extends T> c) {
         if (this.hasValue || c.isEmpty()) return false;
         if (c instanceof List<?> l) {
-            add((T) l.get(0));
+            add((T) l.getFirst());
         } else {
             add(c.iterator().next());
         }
@@ -157,7 +157,7 @@ public class MutableSingletonList<T> implements List<T> {
     public boolean removeAll(@NotNull Collection<?> c) {
         if (!this.hasValue || c.isEmpty()) return false;
         if (c instanceof List<?> l) {
-            return remove(l.get(0));
+            return remove(l.getFirst());
         }
         return remove(c.iterator().next());
     }

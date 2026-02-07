@@ -3,8 +3,9 @@ package brachy.modularui.widget.sizer;
 import brachy.modularui.animation.IAnimatable;
 import brachy.modularui.api.GuiAxis;
 import brachy.modularui.api.layout.IViewportStack;
-import brachy.modularui.api.widget.IGuiElement;
+import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.utils.Interpolations;
+import brachy.modularui.utils.MathUtil;
 import brachy.modularui.utils.Point;
 import brachy.modularui.utils.Rectangle;
 
@@ -18,22 +19,31 @@ import java.util.Objects;
  * A rectangular widget area, composed of a position and a size.
  * Also has fields for a relative position, a layer and margin & padding.
  */
-public class Area extends Rectangle implements IUnResizeable, IAnimatable<Area> {
+public class Area extends Rectangle implements IAnimatable<Area> {
+
+    public static boolean isInside(int x, int y, int w, int h, int px, int py) {
+        SHARED.set(x, y, w, h);
+        return SHARED.isInside(px, py);
+    }
 
     public static final Area SHARED = new Area();
+
     public static final Area ZERO = new Area();
-    @Getter
-    private final Box margin = new Box();
-    @Getter
-    private final Box padding = new Box();
+
     /**
      * relative position (in most cases the direct parent)
      */
-    public int rx, ry;
+    public int rx;
+    public int ry;
     /**
      * the widget layer within this panel
      */
     private int z;
+    @Getter
+    private final Box margin = new Box();
+    @Getter
+    private final Box padding = new Box();
+
     public Area() {
         super();
     }
@@ -53,11 +63,6 @@ public class Area extends Rectangle implements IUnResizeable, IAnimatable<Area> 
         this.z = area.z;
         getMargin().set(area.getMargin());
         getPadding().set(area.getPadding());
-    }
-
-    public static boolean isInside(int x, int y, int w, int h, int px, int py) {
-        SHARED.set(x, y, w, h);
-        return SHARED.isInside(px, py);
     }
 
     public int x() {
@@ -227,6 +232,10 @@ public class Area extends Rectangle implements IUnResizeable, IAnimatable<Area> 
         return axis.isHorizontal() ? requestedWidth() : requestedHeight();
     }
 
+    public int paddedSize(GuiAxis axis) {
+        return axis.isHorizontal() ? paddedWidth() : paddedHeight();
+    }
+
     public int relativeEndX() {
         return this.rx + this.width;
     }
@@ -237,7 +246,7 @@ public class Area extends Rectangle implements IUnResizeable, IAnimatable<Area> 
 
     /**
      * Check whether given position is inside the rect.
-     * Use {@link brachy.modularui.api.widget.IWidget#isInside(IViewportStack, int, int)} rather than
+     * Use {@link IWidget#isInside(IViewportStack, int, int)} rather than
      * this!
      */
     public boolean isInside(int x, int y) {
@@ -246,7 +255,7 @@ public class Area extends Rectangle implements IUnResizeable, IAnimatable<Area> 
 
     /**
      * Check whether given point is inside the rect.
-     * Use {@link brachy.modularui.api.widget.IWidget#isInside(IViewportStack, Point)} rather than
+     * Use {@link IWidget#isInside(IViewportStack, int, int)} rather than
      * this!
      */
     public boolean isInside(Point point) {
@@ -487,7 +496,7 @@ public class Area extends Rectangle implements IUnResizeable, IAnimatable<Area> 
 
     /**
      * Transforms the four corners of this rectangle with the given pose stack. The new rectangle can be rotated.
-     * Then a min fit rectangle, which is not rotated and aligned with the screen, is put around the corners.
+     * Then a min fit rectangle, which is aligned with the screen axis, is put around the corners.
      *
      * @param stack pose stack
      */
@@ -496,22 +505,11 @@ public class Area extends Rectangle implements IUnResizeable, IAnimatable<Area> 
                 xBL = stack.transformX(this.x, ey()), xBR = stack.transformX(ex(), ey());
         int yTL = stack.transformY(this.x, this.y), yTR = stack.transformY(ex(), this.y),
                 yBL = stack.transformY(this.x, ey()), yBR = stack.transformY(ex(), ey());
-        int x0 = MathHelper.min(xTL, xTR, xBL, xBR);
-        int x1 = MathHelper.max(xTL, xTR, xBL, xBR);
-        int y0 = MathHelper.min(yTL, yTR, yBL, yBR);
-        int y1 = MathHelper.max(yTL, yTR, yBL, yBR);
+        int x0 = MathUtil.min(xTL, xTR, xBL, xBR);
+        int x1 = MathUtil.max(xTL, xTR, xBL, xBR);
+        int y0 = MathUtil.min(yTL, yTR, yBL, yBR);
+        int y1 = MathUtil.max(yTL, yTR, yBL, yBR);
         setPos(x0, y0, x1, y1);
-    }
-
-    @Override
-    public boolean resize(IGuiElement guiElement, boolean isParentLayout) {
-        guiElement.getArea().set(this);
-        return true;
-    }
-
-    @Override
-    public Area getArea() {
-        return this;
     }
 
     /**
@@ -528,8 +526,10 @@ public class Area extends Rectangle implements IUnResizeable, IAnimatable<Area> 
         return "Area{" +
                 "x=" + this.x +
                 ", y=" + this.y +
-                ", width=" + this.width +
-                ", height=" + this.height +
+                ", w=" + this.width +
+                ", h=" + this.height +
+                ", rx=" + this.rx +
+                ", ry=" + this.ry +
                 '}';
     }
 

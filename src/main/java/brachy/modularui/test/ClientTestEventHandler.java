@@ -25,16 +25,17 @@ import brachy.modularui.utils.Color;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+
 import org.jetbrains.annotations.NotNull;
 
 @EventBusSubscriber(modid = ModularUI.MOD_ID, value = Dist.CLIENT)
 public class ClientTestEventHandler {
 
+    public static boolean enabledRichTooltipEventTest = false;
     public static final String TEST_THEME = "mui:test_theme";
     private static final ThemeBuilder<?> testTheme = new ThemeBuilder<>(TEST_THEME)
             .defaultColor(Color.BLUE_ACCENT.brighter(0))
@@ -45,6 +46,7 @@ public class ClientTestEventHandler {
             .widgetThemeHover(IThemeApi.TOGGLE_BUTTON, new SelectableTheme.Builder<>()
                     .selectedIconColor(Color.DEEP_PURPLE.brighter(0)))
             .textColor(IThemeApi.TEXT_FIELD, Color.DEEP_PURPLE.main);
+
     private static final IIcon tooltipLine = new IDrawable() {
         @Override
         public void draw(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
@@ -54,7 +56,6 @@ public class ClientTestEventHandler {
             GuiDraw.drawHorizontalGradientRect(context.getGraphics(), x + width / 2f, y + 1, width / 2f, 1, high, low);
         }
     }.asIcon().height(3);
-    public static boolean enabledRichTooltipEventTest = false;
 
     @SubscribeEvent
     public static void onItemUse(PlayerInteractEvent.RightClickItem event) {

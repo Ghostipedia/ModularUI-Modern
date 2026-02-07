@@ -60,7 +60,7 @@ public class JsonBuilder {
     }
 
     public JsonBuilder add(String key, JsonArrayBuilder element) {
-        return add(key, element.getJson());
+        return add(key, element.json());
     }
 
     public JsonBuilder mergeAdd(String key, JsonBuilder element) {
@@ -76,7 +76,7 @@ public class JsonBuilder {
     public JsonBuilder addArray(String key, Consumer<JsonArrayBuilder> builderConsumer) {
         JsonArrayBuilder builder = new JsonArrayBuilder();
         builderConsumer.accept(builder);
-        return add(key, builder.getJson());
+        return add(key, builder.json());
     }
 
     public JsonBuilder addAllOf(JsonObject json) {

@@ -27,7 +27,7 @@ import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.utils.Alignment;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.ColorShade;
-import brachy.modularui.utils.DAM;
+import brachy.modularui.utils.DoubleArrayMath;
 import brachy.modularui.utils.Interpolation;
 import brachy.modularui.utils.Interpolations;
 import brachy.modularui.value.BoolValue;
@@ -88,6 +88,73 @@ public class TestGuis extends CustomModularScreen {
 
     public TestGuis() {
         super(ModularUI.MOD_ID);
+    }
+
+    /**
+     * This method finds all 'build___UI' methods in this class via reflection and adds a button that opens that UI to a list widget.
+     * This makes it very convenient to add and test test-screens without having to swap out the screen that the diamond item opens.
+     */
+    @Override
+    public @NotNull ModularPanel buildUI(ModularGuiContext context) {
+        // collect all test from all build methods in this class via reflection
+        List<Method> uiMethods = new ArrayList<>();
+        for (Method method : TestGuis.class.getDeclaredMethods()) {
+            if (Modifier.isStatic(method.getModifiers()) &&
+                    Modifier.isPublic(method.getModifiers()) &&
+                    ModularPanel.class.isAssignableFrom(method.getReturnType()) &&
+                    method.getParameterCount() == 0) {
+                uiMethods.add(method);
+            }
+        }
+        uiMethods.sort(Comparator.comparing(Method::getName));
+
+        return new ModularPanel("client_tests").height(200).width(170)
+                .padding(7)
+                .child(Flow.column()
+                        .child(IKey.str("Client Test UIs").asWidget().margin(1))
+                        .child(new ListWidget<>().widthRel(1f).expanded()
+                                .children(uiMethods.size(), i -> {
+                                    Method m = uiMethods.get(i);
+                                    String name = m.getName();
+                                    if (name.startsWith("build")) name = name.substring(5);
+                                    if (name.endsWith("UI")) name = name.substring(0, name.length() - 2);
+                                    String codeTextureName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name);
+                                    name = name.replaceAll("([a-z])([A-Z])", "$1 $2");
+                                    return button(name)
+                                            .onMousePressed((x, y, button) -> {
+                                                try {
+                                                    ModularPanel panel = (ModularPanel) m.invoke(null);
+                                                    if (TestGuis.withCode) {
+                                                        // WIP: this is meant to put an image of the code next to ui for showcase purpose
+                                                        panel.child(UITexture.builder()
+                                                                .location("gui/code/" + codeTextureName)
+                                                                .build()
+                                                                .asWidget()
+                                                                .leftRel(1f)
+                                                                .heightRel(1f));
+                                                    }
+                                                    ClientGUI.open(new ModularScreen(ModularUI.MOD_ID, panel).openParentOnClose(true));
+                                                } catch (IllegalAccessException | InvocationTargetException e) {
+                                                    ModularUI.LOGGER.throwing(e);
+                                                }
+                                                return true;
+                                            });
+                                })
+                                /*.child(button("OpenGL test")
+                                        .onMousePressed(button -> {
+                                            ClientGUI.open(new GLTestGui().openParentOnClose(true));
+                                            return true;
+                                        }))
+                                .child(button("Sortable List")
+                                        .onMousePressed(button -> {
+                                            ClientGUI.open(new TestGui().openParentOnClose(true));
+                                            return true;
+                                        }))*/
+                                .child(button("Test self")
+                                        .onMousePressed((x, y, button) -> {
+                                            ClientGUI.open(this);
+                                            return true;
+                                        }))));
     }
 
     private static ButtonWidget<?> button(String text) {
@@ -189,6 +256,50 @@ public class TestGuis extends CustomModularScreen {
                                 })));
     }
 
+    /*public static @NotNull ModularPanel buildSpriteAndEntityUI() {
+        TextureAtlasSprite sprite = SpriteHelper.getSpriteOfBlockState(GameObjectHelper.getBlockState("minecraft", "command_block"), EnumFacing.UP);
+        // SpriteHelper.getSpriteOfItem(new ItemStack(Items.DIAMOND));
+        Entity entity = FakeEntity.create(EntityDragon.class);
+        float period = 3000f;
+        return ModularPanel.defaultPanel("main")
+                .size(150)
+                .overlay(new Rectangle()
+                        .color(Color.GREEN.main)
+                        .hollow(2)
+                        .asIcon().margin(5))
+                .child(new TextWidget<>(IKey.str("Test String")).scale(0.6f).horizontalCenter().top(7))
+                .child(new DraggableWidget<>()
+                        .background(new SpriteDrawable(sprite))
+                        .size(20)
+                        .alignX(0.5f)
+                        .top(20)
+                        .tooltipBuilder(tooltip -> {
+                            tooltip.addLine(
+                                    "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.  "
+                                            + "Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.  "
+                                            + "Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.  "
+                                            + "Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem");
+                            tooltip.addLine("Longer Line 2");
+                            tooltip.addLine("Line 3");
+                            tooltip.alignment(Alignment.Center);
+                            tooltip.scale(0.5f);
+                            tooltip.pos(RichTooltip.Pos.NEXT_TO_MOUSE);
+                        }))
+                .child(new IDrawable() {
+                    @Override
+                    public void draw(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
+                        GuiDraw.drawEntity(context.getGraphics(), entity, 0, 0, width, height, context.getCurrentDrawingZ(), (graphics, e) -> {
+                            // TODO the drawable doesnt seem to update the rotation
+                            float scale = 0.9f;
+                            graphics.pose().scale(scale, scale, scale);
+                            graphics.pose().translate(0, 7, 0);
+                            //graphics.pose().rotate(35, 1, 0, 0);
+                            //graphics.pose().rotate(360 * (Util.getMillis() % period) / period, 0, 1, 0);
+                        }, null);
+                    }
+                }.asWidget().alignX(0.5f).bottom(10).size(100, 75));
+    }*/
+
     public static @NotNull ModularPanel buildRichTextUI() {
         IntValue integer = new IntValue(0);
         return new ModularPanel("main")
@@ -197,10 +308,10 @@ public class TestGuis extends CustomModularScreen {
                         .sizeRel(1f).margin(7)
                         .autoUpdate(true)
                         .textBuilder(text -> text.add("Hello ")
-                                .add(new ItemDrawable(new ItemStack(Blocks.GRASS))
+                                .add(new ItemDrawable(new ItemStack(Blocks.GRASS_BLOCK))
                                         .asIcon()
                                         .asHoverable()
-                                        .tooltip(richTooltip -> richTooltip.addFromItem(new ItemStack(Blocks.GRASS))
+                                        .tooltip(richTooltip -> richTooltip.addFromItem(new ItemStack(Blocks.GRASS_BLOCK))
                                                 .add(IKey.GRAY + "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.")))
                                 .add(", nice to ")
                                 .add(new ItemDrawable(new ItemStack(Items.PORKCHOP))
@@ -250,50 +361,6 @@ public class TestGuis extends CustomModularScreen {
                         ));
     }
 
-    /*public static @NotNull ModularPanel buildSpriteAndEntityUI() {
-        TextureAtlasSprite sprite = SpriteHelper.getSpriteOfBlockState(GameObjectHelper.getBlockState("minecraft", "command_block"), EnumFacing.UP);
-        // SpriteHelper.getSpriteOfItem(new ItemStack(Items.DIAMOND));
-        Entity entity = FakeEntity.create(EntityDragon.class);
-        float period = 3000f;
-        return ModularPanel.defaultPanel("main")
-                .size(150)
-                .overlay(new Rectangle()
-                        .color(Color.GREEN.main)
-                        .hollow(2)
-                        .asIcon().margin(5))
-                .child(new TextWidget<>(IKey.str("Test String")).scale(0.6f).horizontalCenter().top(7))
-                .child(new DraggableWidget<>()
-                        .background(new SpriteDrawable(sprite))
-                        .size(20)
-                        .alignX(0.5f)
-                        .top(20)
-                        .tooltipBuilder(tooltip -> {
-                            tooltip.addLine(
-                                    "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.  "
-                                            + "Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.  "
-                                            + "Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.  "
-                                            + "Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem");
-                            tooltip.addLine("Longer Line 2");
-                            tooltip.addLine("Line 3");
-                            tooltip.alignment(Alignment.Center);
-                            tooltip.scale(0.5f);
-                            tooltip.pos(RichTooltip.Pos.NEXT_TO_MOUSE);
-                        }))
-                .child(new IDrawable() {
-                    @Override
-                    public void draw(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
-                        GuiDraw.drawEntity(context.getGraphics(), entity, 0, 0, width, height, context.getCurrentDrawingZ(), (graphics, e) -> {
-                            // TODO the drawable doesnt seem to update the rotation
-                            float scale = 0.9f;
-                            graphics.pose().scale(scale, scale, scale);
-                            graphics.pose().translate(0, 7, 0);
-                            //graphics.pose().rotate(35, 1, 0, 0);
-                            //graphics.pose().rotate(360 * (Util.getMillis() % period) / period, 0, 1, 0);
-                        }, null);
-                    }
-                }.asWidget().alignX(0.5f).bottom(10).size(100, 75));
-    }*/
-
     public static @NotNull ModularPanel buildWorldSchemaUI() {
         /*TrackedDummyWorld world = new TrackedDummyWorld();
         world.addBlock(new BlockPos(0, 0, 0), new BlockInfo(Blocks.DIAMOND_BLOCK.getDefaultState()));
@@ -325,10 +392,10 @@ public class TestGuis extends CustomModularScreen {
                 .layer(" DDD ", "  E  ", "  G  ", "  B  ")
                 .layer(" DDD ", " E E ", "     ", "     ")
                 .layer("D   D", "     ", "     ", "     ")
-                .where('D', "minecraft:gold_block")
-                .where('E', "minecraft:emerald_block")
-                .where('G', "minecraft:diamond_block")
-                .where('B', "minecraft:beacon")
+                .where('D', Blocks.GOLD_BLOCK)
+                .where('E', Blocks.EMERALD_BLOCK)
+                .where('G', Blocks.DIAMOND_BLOCK)
+                .where('B', Blocks.BEACON)
                 .build();
 
         var panel = ModularPanel.defaultPanel("main").size(170);
@@ -523,9 +590,9 @@ public class TestGuis extends CustomModularScreen {
     }
 
     public static @NotNull ModularPanel buildGraphUI() {
-        double[] x = DAM.linspace(-25, 25, 200);
+        double[] x = DoubleArrayMath.linspace(-25, 25, 200);
         // sin(x) / x
-        double[] y1 = DAM.div(DAM.sin(x, null), x, null);
+        double[] y1 = DoubleArrayMath.div(DoubleArrayMath.sin(x, null), x, null);
         return new ModularPanel("graph")
                 .size(200, 160)
                 .padding(5)
@@ -590,73 +657,6 @@ public class TestGuis extends CustomModularScreen {
         int c = colors.removeInt(i);
         if (colors.isEmpty()) colors.addAll(LIGHT_COLORS);
         return new Rectangle().color(c);
-    }
-
-    /**
-     * This method finds all 'build___UI' methods in this class via reflection and adds a button that opens that UI to a list widget.
-     * This makes it very convenient to add and test test-screens without having to swap out the screen that the diamond item opens.
-     */
-    @Override
-    public @NotNull ModularPanel buildUI(ModularGuiContext context) {
-        // collect all test from all build methods in this class via reflection
-        List<Method> uiMethods = new ArrayList<>();
-        for (Method method : TestGuis.class.getDeclaredMethods()) {
-            if (Modifier.isStatic(method.getModifiers()) &&
-                    Modifier.isPublic(method.getModifiers()) &&
-                    ModularPanel.class.isAssignableFrom(method.getReturnType()) &&
-                    method.getParameterCount() == 0) {
-                uiMethods.add(method);
-            }
-        }
-        uiMethods.sort(Comparator.comparing(Method::getName));
-
-        return new ModularPanel("client_tests").height(200).width(170)
-                .padding(7)
-                .child(Flow.column()
-                        .child(IKey.str("Client Test UIs").asWidget().margin(1))
-                        .child(new ListWidget<>().widthRel(1f).expanded()
-                                .children(uiMethods.size(), i -> {
-                                    Method m = uiMethods.get(i);
-                                    String name = m.getName();
-                                    if (name.startsWith("build")) name = name.substring(5);
-                                    if (name.endsWith("UI")) name = name.substring(0, name.length() - 2);
-                                    String codeTextureName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name);
-                                    name = name.replaceAll("([a-z])([A-Z])", "$1 $2");
-                                    return button(name)
-                                            .onMousePressed((x, y, button) -> {
-                                                try {
-                                                    ModularPanel panel = (ModularPanel) m.invoke(null);
-                                                    if (TestGuis.withCode) {
-                                                        // WIP: this is meant to put an image of the code next to ui for showcase purpose
-                                                        panel.child(UITexture.builder()
-                                                                .location("gui/code/" + codeTextureName)
-                                                                .build()
-                                                                .asWidget()
-                                                                .leftRel(1f)
-                                                                .heightRel(1f));
-                                                    }
-                                                    ClientGUI.open(new ModularScreen(ModularUI.MOD_ID, panel).openParentOnClose(true));
-                                                } catch (IllegalAccessException | InvocationTargetException e) {
-                                                    ModularUI.LOGGER.throwing(e);
-                                                }
-                                                return true;
-                                            });
-                                })
-                                /*.child(button("OpenGL test")
-                                        .onMousePressed(button -> {
-                                            ClientGUI.open(new GLTestGui().openParentOnClose(true));
-                                            return true;
-                                        }))
-                                .child(button("Sortable List")
-                                        .onMousePressed(button -> {
-                                            ClientGUI.open(new TestGui().openParentOnClose(true));
-                                            return true;
-                                        }))*/
-                                .child(button("Test self")
-                                        .onMousePressed((x, y, button) -> {
-                                            ClientGUI.open(this);
-                                            return true;
-                                        }))));
     }
 
     private static class TestPanel extends ModularPanel {

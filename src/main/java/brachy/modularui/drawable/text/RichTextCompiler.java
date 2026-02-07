@@ -184,10 +184,10 @@ public class RichTextCompiler {
         }
         if (this.currentLine.isEmpty()) {
             // lines.add(null);
-        } else if (this.currentLine.size() == 1 && this.currentLine.get(0) instanceof Component c) {
+        } else if (this.currentLine.size() == 1 && this.currentLine.getFirst() instanceof Component c) {
             this.lines.add(new TextLine(c, this.x));
             this.currentLine.clear();
-        } else if (this.currentLine.size() == 1 && this.currentLine.get(0) instanceof String s) {
+        } else if (this.currentLine.size() == 1 && this.currentLine.getFirst() instanceof String s) {
             this.lines.add(new TextLine(Component.literal(s), this.x));
             this.currentLine.clear();
         } else {
@@ -206,19 +206,19 @@ public class RichTextCompiler {
                 this.currentLine.set(s - 1, s1 + c2);
                 return;
             }
-            if (this.currentLine.size() == 1 && this.currentLine.get(0) instanceof Component c1) {
+            if (this.currentLine.size() == 1 && this.currentLine.getFirst() instanceof Component c1) {
                 // if there is already one string in the line, merge them
                 this.currentLine.set(0, c1.copy().append(c2));
                 return;
             }
             o = c2.copy().withStyle(this.formatting::getFormatting);
         } else if (o instanceof String s2) {
-            if (this.currentLine.size() == 1 && this.currentLine.get(0) instanceof String s1) {
+            if (this.currentLine.size() == 1 && this.currentLine.getFirst() instanceof String s1) {
                 // if there is already one string in the line, merge them
                 this.currentLine.set(0, s1 + s2);
                 return;
             }
-            if (this.currentLine.size() == 1 && this.currentLine.get(0) instanceof Component c1) {
+            if (this.currentLine.size() == 1 && this.currentLine.getFirst() instanceof Component c1) {
                 // if there is already one string in the line, merge them
                 this.currentLine.set(0, c1.copy().append(s2));
                 return;

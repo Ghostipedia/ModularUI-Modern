@@ -9,12 +9,12 @@ import java.util.function.Supplier;
 
 public class StringValue extends ObjectValue<String> implements IStringValue<String> {
 
-    public StringValue(String value) {
-        super(String.class, value);
-    }
-
     public static Dynamic wrap(IStringValue<?> val) {
         return new Dynamic(val::getStringValue, val::setStringValue);
+    }
+
+    public StringValue(String value) {
+        super(String.class, value);
     }
 
     @Override

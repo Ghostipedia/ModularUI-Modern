@@ -11,12 +11,25 @@ import java.util.function.DoubleSupplier;
 @ApiStatus.Internal
 public class Unit {
 
-    public static final byte UNUSED = -2;
-    public static final byte DEFAULT = -1;
-    public static final byte START = 0;
-    public static final byte END = 1;
-    public static final byte SIZE = 2;
-    public State state = State.UNUSED;
+    public enum State {
+
+        UNUSED("", ""),
+        START("LEFT", "TOP"),
+        END("RIGHT", "BOTTOM"),
+        SIZE("WIDTH", "HEIGHT");
+
+        public final String xText, yText;
+
+        State(String xText, String yText) {
+            this.xText = xText;
+            this.yText = yText;
+        }
+
+        public String getText(GuiAxis axis) {
+            return axis.isHorizontal() ? this.xText : this.yText;
+        }
+    }
+
     @Getter
     @Setter
     private boolean autoAnchor = true;
@@ -30,6 +43,8 @@ public class Unit {
     @Getter
     @Setter
     private int offset = 0;
+
+    public State state = State.UNUSED;
 
     public Unit() {}
 
@@ -52,10 +67,6 @@ public class Unit {
         this.offset = other.offset;
     }
 
-    public float getValue() {
-        return this.valueSupplier == null ? this.value : (float) this.valueSupplier.getAsDouble();
-    }
-
     public void setValue(float value) {
         this.value = value;
         this.valueSupplier = null;
@@ -63,6 +74,10 @@ public class Unit {
 
     public void setValue(DoubleSupplier valueSupplier) {
         this.valueSupplier = valueSupplier;
+    }
+
+    public float getValue() {
+        return this.valueSupplier == null ? this.value : (float) this.valueSupplier.getAsDouble();
     }
 
     public int getAbsOffset() {
@@ -87,25 +102,6 @@ public class Unit {
 
     public boolean isUnused() {
         return this.state == State.UNUSED;
-    }
-
-    public enum State {
-
-        UNUSED("", ""),
-        START("LEFT", "TOP"),
-        END("RIGHT", "BOTTOM"),
-        SIZE("WIDTH", "HEIGHT");
-
-        public final String xText, yText;
-
-        State(String xText, String yText) {
-            this.xText = xText;
-            this.yText = yText;
-        }
-
-        public String getText(GuiAxis axis) {
-            return axis.isHorizontal() ? this.xText : this.yText;
-        }
     }
 
     public enum Measure {

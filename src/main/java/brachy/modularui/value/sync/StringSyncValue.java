@@ -1,7 +1,7 @@
 package brachy.modularui.value.sync;
 
 import brachy.modularui.api.value.sync.IStringSyncValue;
-import brachy.modularui.network.NetworkUtils;
+import brachy.modularui.utils.NetworkUtils;
 
 import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.Contract;

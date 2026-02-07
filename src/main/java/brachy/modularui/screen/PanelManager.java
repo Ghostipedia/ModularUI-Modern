@@ -38,7 +38,7 @@ public class PanelManager {
     /**
      * List of all open panels from top to bottom.
      */
-    private final ObjectList<ModularPanel> panels = new ObjectArrayList<>();
+    private final List<ModularPanel> panels = new ObjectArrayList<>();
     // a clone of the list to avoid CMEs
     private final List<ModularPanel> panelsClone = new ArrayList<>();
     private final List<ModularPanel> panelsView = Collections.unmodifiableList(this.panelsClone);
@@ -46,7 +46,7 @@ public class PanelManager {
     private final List<WidgetWrapper> panelWrappers = new ArrayList<>();
     private final List<WidgetWrapper> panelWrappersView = Collections.unmodifiableList(this.panelWrappers);
     private final ReverseIterable<WidgetWrapper> reversePanelWrappers = new ReverseIterable<>(this.panelWrappersView);
-    private final ObjectList<ModularPanel> disposal = new ObjectArrayList<>(DISPOSAL_CAPACITY);
+    private final List<ModularPanel> disposal = new ObjectArrayList<>(DISPOSAL_CAPACITY);
     private final Map<String, IPanelHandler> panelHandlerMap = new Object2ObjectOpenHashMap<>();
     private boolean cantDisposeNow = false;
     private boolean dirty = false;
@@ -134,11 +134,11 @@ public class PanelManager {
         }
         this.disposal.remove(panel);
         panel.setPanelGuiContext(this.screen.getContext());
-        this.panels.add(0, panel);
+        this.panels.addFirst(panel);
         this.dirty = true;
         panel.onOpen(this.screen);
         if (resize) {
-            WidgetTree.resizeInternal(panel, true);
+            WidgetTree.resizeInternal(panel.resizer(), true);
         }
     }
 
@@ -167,7 +167,7 @@ public class PanelManager {
      */
     @NotNull
     public ModularPanel getTopMostPanel() {
-        return this.panels.get(0);
+        return this.panels.getFirst();
     }
 
     @Nullable

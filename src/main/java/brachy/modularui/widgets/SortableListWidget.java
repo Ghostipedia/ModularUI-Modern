@@ -2,10 +2,10 @@ package brachy.modularui.widgets;
 
 import brachy.modularui.ModularUI;
 import brachy.modularui.animation.Animator;
-import brachy.modularui.api.widget.IGuiElement;
 import brachy.modularui.api.widget.IValueWidget;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.drawable.GuiTextures;
+import brachy.modularui.screen.viewport.LocatedWidget;
 import brachy.modularui.widget.DraggableWidget;
 import brachy.modularui.widget.WidgetTree;
 import brachy.modularui.widget.sizer.Area;
@@ -25,13 +25,12 @@ import java.util.function.Predicate;
 
 public class SortableListWidget<T> extends ListValueWidget<T, SortableListWidget.Item<T>, SortableListWidget<T>> {
 
-    private final ObjectList<Area> widgetAreaSnapshots = new ObjectArrayList<>();
-    private final ObjectList<Animator> animators = new ObjectArrayList<>();
     private Consumer<List<T>> onChange;
     private Consumer<Item<T>> onRemove;
     private int timeSinceLastMove = 0;
     private boolean scheduleAnimation = false;
-    ;
+    private final ObjectList<Area> widgetAreaSnapshots = new ObjectArrayList<>();
+    private final ObjectList<Animator> animators = new ObjectArrayList<>();
 
     public SortableListWidget() {
         super(Item::getWidgetValue);
@@ -102,8 +101,8 @@ public class SortableListWidget<T> extends ListValueWidget<T, SortableListWidget
             ModularUI.LOGGER.error("Failed to move element from {} to {}", from, to);
             return;
         }
-        Item<?> child = getTypeChildren().remove(from);
-        getChildren().add(to, child);
+        Item<T> child = getTypeChildren().remove(from);
+        getTypeChildren().add(to, child);
         assignIndexes();
         if (isValid()) {
             assignIndexes();
@@ -166,15 +165,16 @@ public class SortableListWidget<T> extends ListValueWidget<T, SortableListWidget
 
         private final T value;
         private List<IWidget> children;
-        private Predicate<IGuiElement> dropPredicate;
+        private Predicate<IWidget> dropPredicate;
         private SortableListWidget<T> listWidget;
         @Getter
         private int index = -1;
+        private final int movingFrom = -1; // no usages? why added?
 
         public Item(T value) {
             this.value = value;
-            flex().widthRel(1f).height(18);
-            background(GuiTextures.MC_BUTTON);
+            resizer().widthRel(1f).height(18);
+            background(GuiTextures.BUTTON_CLEAN);
         }
 
         @Override
@@ -192,18 +192,19 @@ public class SortableListWidget<T> extends ListValueWidget<T, SortableListWidget
         }
 
         @Override
-        public boolean canDropHere(int x, int y, @Nullable IGuiElement widget) {
+        public boolean canDropHere(int x, int y, @Nullable IWidget widget) {
             return this.dropPredicate == null || this.dropPredicate.test(widget);
         }
 
         @Override
         public void onDrag(int mouseButton, double timeSinceLastClick) {
             super.onDrag(mouseButton, timeSinceLastClick);
-            // TODO: this kind of assumes the hovered is in the bounds of the parent item, which may not be true.
-            IWidget hovered = getContext().getTopHovered();
-            Item<?> item = WidgetTree.findParent(hovered, Item.class);
-            if (item != null && item != this && item.listWidget == this.listWidget) {
-                this.listWidget.moveTo(this.index, item.index);
+            for (LocatedWidget hovering : getPanel().getAllHoveringList(false)) {
+                if (hovering.getElement() instanceof SortableListWidget.Item<?> item && item != this &&
+                        item.listWidget == this.listWidget) {
+                    this.listWidget.moveTo(this.index, item.index);
+                    break;
+                }
             }
         }
 
@@ -230,7 +231,7 @@ public class SortableListWidget<T> extends ListValueWidget<T, SortableListWidget
             return child(widgetCreator.apply(this));
         }
 
-        public Item<T> dropPredicate(Predicate<IGuiElement> dropPredicate) {
+        public Item<T> dropPredicate(Predicate<IWidget> dropPredicate) {
             this.dropPredicate = dropPredicate;
             return this;
         }

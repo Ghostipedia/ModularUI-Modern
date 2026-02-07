@@ -305,6 +305,11 @@ public enum Interpolation implements IInterpolation, StringRepresentable {
         this.name = name;
     }
 
+    @Override
+    public @NotNull String getSerializedName() {
+        return this.name;
+    }
+
     public static Interpolation getForName(String name) {
         for (Interpolation interpolation : values()) {
             if (interpolation.name.equals(name)) {
@@ -312,10 +317,5 @@ public enum Interpolation implements IInterpolation, StringRepresentable {
             }
         }
         return null;
-    }
-
-    @Override
-    public @NotNull String getSerializedName() {
-        return this.name;
     }
 }

@@ -3,6 +3,7 @@ package brachy.modularui.utils;
 import brachy.modularui.ModularUI;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.VarInt;
 import net.minecraft.world.entity.player.Player;
 
 import io.netty.buffer.ByteBuf;
@@ -14,7 +15,7 @@ import java.util.function.Consumer;
 
 public class NetworkUtils {
 
-    public static final Consumer<FriendlyByteBuf> EMPTY_PACKET = buffer -> {};
+    public static final Consumer<ByteBuf> EMPTY_PACKET = buffer -> {};
     private static final int MAX_ENCODED = getMaxEncodedUtfLength(Short.MAX_VALUE);
 
     public static boolean isClient(Player player) {
@@ -22,39 +23,35 @@ public class NetworkUtils {
         return player.level().isClientSide;
     }
 
-    public static void writeByteBuf(FriendlyByteBuf writeTo, ByteBuf writeFrom) {
-        writeTo.writeVarInt(writeFrom.readableBytes());
+    public static void writeByteBuf(ByteBuf writeTo, ByteBuf writeFrom) {
+        VarInt.write(writeTo, writeFrom.readableBytes());
         writeTo.writeBytes(writeFrom.slice());
     }
 
-    public static ByteBuf readByteBuf(FriendlyByteBuf buf) {
-        ByteBuf directSliceBuffer = buf.readBytes(buf.readVarInt());
+    public static ByteBuf readByteBuf(ByteBuf buf) {
+        ByteBuf directSliceBuffer = buf.readBytes(VarInt.read(buf));
         return Unpooled.copiedBuffer(directSliceBuffer);
     }
 
-    public static FriendlyByteBuf readFriendlyByteBuf(FriendlyByteBuf buf) {
+    public static FriendlyByteBuf readFriendlyByteBuf(ByteBuf buf) {
         return new FriendlyByteBuf(readByteBuf(buf));
     }
 
-    public static void writeStringSafe(FriendlyByteBuf buffer, String string) {
+    public static void writeStringSafe(ByteBuf buffer, String string) {
         writeStringSafe(buffer, string, Short.MAX_VALUE, false);
     }
 
-    public static void writeStringSafe(FriendlyByteBuf buffer, @Nullable String string, boolean crash) {
+    public static void writeStringSafe(ByteBuf buffer, @Nullable String string, boolean crash) {
         writeStringSafe(buffer, string, Short.MAX_VALUE, crash);
     }
 
-    public static void writeStringSafe(FriendlyByteBuf buffer, @Nullable String string, int maxBytes) {
+    public static void writeStringSafe(ByteBuf buffer, @Nullable String string, int maxBytes) {
         writeStringSafe(buffer, string, maxBytes, false);
     }
 
-    public static void writeStringSafe(FriendlyByteBuf buffer, @Nullable String string, int maxBytes, boolean crash) {
+    public static void writeStringSafe(ByteBuf buffer, @Nullable String string, int maxBytes, boolean crash) {
         if (string == null) {
-            buffer.writeVarInt(MAX_ENCODED + 1);
-            return;
-        }
-        if (string.isEmpty()) {
-            buffer.writeVarInt(0);
+            VarInt.write(buffer, MAX_ENCODED + 1);
             return;
         }
         maxBytes = Math.min(maxBytes, Short.MAX_VALUE);
@@ -73,14 +70,15 @@ public class NetworkUtils {
         } else {
             bytes = bytesTest;
         }
-        buffer.writeVarInt(bytes.length);
+        VarInt.write(buffer, bytes.length);
         buffer.writeBytes(bytes);
     }
 
-    public static String readStringSafe(FriendlyByteBuf buffer) {
-        int length = buffer.readVarInt();
-        if (length > MAX_ENCODED) return null;
-        if (length == 0) return "";
+    public static String readStringSafe(ByteBuf buffer) {
+        int length = VarInt.read(buffer);
+        if (length > MAX_ENCODED) {
+            return null;
+        }
         String s = buffer.toString(buffer.readerIndex(), length, StandardCharsets.UTF_8);
         buffer.readerIndex(buffer.readerIndex() + length);
         return s;

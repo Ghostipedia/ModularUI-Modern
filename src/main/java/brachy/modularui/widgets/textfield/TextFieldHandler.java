@@ -64,10 +64,6 @@ public class TextFieldHandler {
         return this.mainCursorStart ? this.cursorEnd : this.cursor;
     }
 
-    public void setOffsetCursor(Point cursor) {
-        setOffsetCursor(cursor.y, cursor.x);
-    }
-
     public Point getStartCursor() {
         if (!hasTextMarked()) {
             return this.cursor;
@@ -126,6 +122,10 @@ public class TextFieldHandler {
         if (applyToOffset) {
             setOffsetCursor(linePos, charPos);
         }
+    }
+
+    public void setOffsetCursor(Point cursor) {
+        setOffsetCursor(cursor.y, cursor.x);
     }
 
     public void setMainCursor(Point cursor, boolean animate) {
@@ -301,7 +301,7 @@ public class TextFieldHandler {
             delete(false);
         }
         if (text.isEmpty()) {
-            if (insertion.size() == 1 && !test(insertion.get(0))) {
+            if (insertion.size() == 1 && !test(insertion.getFirst())) {
                 return null;
             }
             text.addAll(insertion);
@@ -309,16 +309,16 @@ public class TextFieldHandler {
         }
         String lineStart = text.get(this.cursor.y).substring(0, this.cursor.x);
         String lineEnd = text.get(this.cursor.y).substring(this.cursor.x);
-        if (insertion.size() == 1 && text.size() == 1 && !test(lineStart + insertion.get(0) + lineEnd)) {
+        if (insertion.size() == 1 && text.size() == 1 && !test(lineStart + insertion.getFirst() + lineEnd)) {
             return null;
         }
-        text.set(this.cursor.y, lineStart + insertion.get(0));
+        text.set(this.cursor.y, lineStart + insertion.getFirst());
         if (insertion.size() == 1) {
-            if (!test(insertion.get(0))) {
+            if (!test(insertion.getFirst())) {
                 return null;
             }
             text.set(this.cursor.y, text.get(this.cursor.y) + lineEnd);
-            return new Point(this.cursor.x + insertion.get(0).length(), this.cursor.y);
+            return new Point(this.cursor.x + insertion.getFirst().length(), this.cursor.y);
         } else {
             text.add(this.cursor.y + 1, insertion.get(insertion.size() - 1) + lineEnd);
             x = insertion.get(insertion.size() - 1).length();

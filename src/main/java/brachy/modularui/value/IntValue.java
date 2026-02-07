@@ -10,18 +10,18 @@ import java.util.function.IntSupplier;
 
 public class IntValue implements IIntValue<Integer>, IDoubleValue<Integer>, IStringValue<Integer> {
 
-    private int value;
-
-    public IntValue(int value) {
-        this.value = value;
-    }
-
     public static Dynamic wrap(IIntValue<?> val) {
         return new Dynamic(val::getIntValue, val::setIntValue);
     }
 
     public static Dynamic wrapAtomic(AtomicInteger val) {
         return new Dynamic(val::get, val::set);
+    }
+
+    private int value;
+
+    public IntValue(int value) {
+        this.value = value;
     }
 
     @Override

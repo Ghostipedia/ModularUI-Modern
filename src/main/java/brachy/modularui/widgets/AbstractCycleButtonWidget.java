@@ -9,13 +9,14 @@ import brachy.modularui.api.value.IBoolValue;
 import brachy.modularui.api.value.IEnumValue;
 import brachy.modularui.api.value.IIntValue;
 import brachy.modularui.api.value.ISyncOrValue;
+import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.api.widget.Interactable;
 import brachy.modularui.drawable.UITexture;
 import brachy.modularui.screen.RichTooltip;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.Alignment;
 import brachy.modularui.value.IntValue;
-import brachy.modularui.widget.Widget;
+import brachy.modularui.widget.SingleChildWidget;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,38 +24,30 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
-public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> extends Widget<W>
+public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> extends SingleChildWidget<W>
         implements Interactable {
 
     private static final RichTooltip[] EMPTY_TOOLTIP = new RichTooltip[0];
-    protected IDrawable[] background = null;
-    protected IDrawable[] hoverBackground = null;
-    protected IDrawable[] overlay = null;
-    protected IDrawable[] hoverOverlay = null;
-    protected RichTooltip[] tooltip = EMPTY_TOOLTIP;
+
     private int stateCount = 1;
     private boolean explicitStateCount = false;
     private boolean hasCount = false;
     private IIntValue<?> intValue;
     private int lastValue = -1;
-
-    private static IDrawable[] checkArray(IDrawable[] array, int length) {
-        if (array == null) return new IDrawable[length];
-        return array.length < length ? Arrays.copyOf(array, length) : array;
-    }
-
-    protected static void splitTexture(UITexture texture, IDrawable[] dest) {
-        for (int i = 0; i < dest.length; i++) {
-            float a = 1f / dest.length;
-            dest[i] = texture.getSubArea(0, i * a, 1, i * a + a);
-        }
-    }
+    protected IDrawable[] background = null;
+    protected IDrawable[] hoverBackground = null;
+    protected IDrawable[] overlay = null;
+    protected IDrawable[] hoverOverlay = null;
+    protected RichTooltip[] tooltip = EMPTY_TOOLTIP;
+    protected IWidget[] stateChildren = null;
+    protected IWidget fallbackChild = null;
 
     @Override
     public void onInit() {
         if (this.intValue == null) {
             this.intValue = new IntValue(0);
         }
+        updateChild(getState());
     }
 
     @Override
@@ -93,6 +86,9 @@ public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> e
         this.overlay = checkArray(this.overlay, stateCount);
         this.hoverBackground = checkArray(this.hoverBackground, stateCount);
         this.hoverOverlay = checkArray(this.hoverOverlay, stateCount);
+        if (this.stateChildren == null) this.stateChildren = new IWidget[stateCount];
+        else if (this.stateChildren.length < stateCount)
+            this.stateChildren = Arrays.copyOf(this.stateChildren, stateCount);
     }
 
     protected void expectCount() {
@@ -138,11 +134,22 @@ public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> e
         if (state < 0 || state >= this.stateCount) {
             throw new IndexOutOfBoundsException("CycleButton state out of bounds");
         }
+        updateChild(state);
         if (setSource) {
             this.intValue.setIntValue(state);
         }
         this.lastValue = state;
         markTooltipDirty();
+    }
+
+    private void updateChild(int state) {
+        IWidget child = this.stateChildren != null && this.stateChildren.length > state ? this.stateChildren[state] :
+                null;
+        if (child != null) {
+            child(child);
+        } else if (getChild() != this.fallbackChild) {
+            child(this.fallbackChild);
+        }
     }
 
     @Override
@@ -239,8 +246,36 @@ public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> e
         return getThis();
     }
 
+    @Override
+    public W invisible() {
+        if (this.background != null) {
+            Arrays.fill(this.background, IDrawable.EMPTY);
+        }
+        if (getBackground() == null) {
+            super.background(IDrawable.EMPTY);
+        }
+        return disableHoverBackground();
+    }
+
     protected W value(IIntValue<?> value) {
         setSyncOrValue(ISyncOrValue.orEmpty(value));
+        return getThis();
+    }
+
+    @Override
+    public W child(IWidget child) {
+        this.fallbackChild = child;
+        return super.child(child);
+    }
+
+    public W stateChild(int state, IWidget child) {
+        updateStateCount(state, false);
+        if (this.stateChildren == null) {
+            this.stateChildren = new IWidget[state + 1];
+        } else if (this.stateChildren.length < state + 1) {
+            this.stateChildren = Arrays.copyOf(this.stateChildren, state + 1);
+        }
+        this.stateChildren[state] = child;
         return getThis();
     }
 
@@ -543,6 +578,11 @@ public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> e
         return getThis();
     }
 
+    private static IDrawable[] checkArray(IDrawable[] array, int length) {
+        if (array == null) return new IDrawable[length];
+        return array.length < length ? Arrays.copyOf(array, length) : array;
+    }
+
     protected IDrawable[] addToArray(IDrawable[] array, IDrawable[] drawable, int index) {
         return addToArray(array, IDrawable.of(drawable), index);
     }
@@ -559,6 +599,13 @@ public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> e
         }
         array[index] = drawable;
         return array;
+    }
+
+    protected static void splitTexture(UITexture texture, IDrawable[] dest) {
+        for (int i = 0; i < dest.length; i++) {
+            float a = 1f / dest.length;
+            dest[i] = texture.getSubArea(0, i * a, 1, i * a + a);
+        }
     }
 
     protected W tooltip(int index, Consumer<RichTooltip> builder) {

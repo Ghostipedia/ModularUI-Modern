@@ -126,7 +126,7 @@ public class ProgressWidget extends Widget<ProgressWidget> {
     }
 
     public float getProgressUV(float uv) {
-        if (ModularUIConfig.isSmoothProgressBars()) {
+        if (ModularUIConfig.smoothProgressBars()) {
             return uv;
         }
         return (float) (Math.floor(uv * this.imageSize) / this.imageSize);

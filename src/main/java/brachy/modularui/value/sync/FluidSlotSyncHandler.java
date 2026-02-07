@@ -9,10 +9,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.platform.InputConstants;
-
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.common.SoundAction;
 import net.neoforged.neoforge.common.SoundActions;
@@ -23,6 +19,10 @@ import net.neoforged.neoforge.fluids.FluidUtil;
 import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,10 +32,11 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<RegistryFriendlyByteB
     public static final int SYNC_CLICK = 1;
     public static final int SYNC_SCROLL = 2;
     public static final int SYNC_CONTROLS_AMOUNT = 3;
+
+    private @NotNull FluidStack cache = FluidStack.EMPTY;
     @Getter
     private final IFluidTank fluidTank;
     private final IFluidHandler fluidHandler;
-    private @NotNull FluidStack cache = FluidStack.EMPTY;
     @Getter
     @Setter
     private boolean canFillSlot = true, canDrainSlot = true, phantom = false;
@@ -141,7 +142,7 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<RegistryFriendlyByteB
             return;
         }
         int maxAttempts = mouseData.shift() ? currentStack.getCount() : 1;
-        if (mouseData.mouseButton() == 0 && this.canFillSlot) {
+        if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_RIGHT && this.canFillSlot) {
             boolean performedTransfer = false;
             for (int i = 0; i < maxAttempts; i++) {
                 FluidActionResult result = FluidUtil.tryEmptyContainer(currentStack, this.fluidHandler,
@@ -173,7 +174,8 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<RegistryFriendlyByteB
             return;
         }
         FluidStack currentFluid = this.fluidTank.getFluid();
-        if (mouseData.mouseButton() == 1 && this.canDrainSlot && !currentFluid.isEmpty()) {
+        if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_LEFT && this.canDrainSlot &&
+                !currentFluid.isEmpty()) {
             boolean performedTransfer = false;
             for (int i = 0; i < maxAttempts; i++) {
                 FluidActionResult result = FluidUtil.tryFillContainer(currentStack, this.fluidHandler,
@@ -184,8 +186,7 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<RegistryFriendlyByteB
                     break; // do not continue if we can't add resulting container into inventory
                 }
 
-                remainingStack = FluidUtil.tryFillContainer(currentStack, this.fluidHandler, Integer.MAX_VALUE, null,
-                        true).result;
+                remainingStack = FluidUtil.tryFillContainer(currentStack, this.fluidHandler, Integer.MAX_VALUE, player, true).result;
                 if (currentStack.getCount() == 1) {
                     currentStack = remainingStack;
                 } else {

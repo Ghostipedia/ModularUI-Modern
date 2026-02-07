@@ -9,6 +9,8 @@ import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
+import brachy.modularui.network.ModularNetworkSide;
+
 import io.netty.buffer.ByteBuf;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -20,11 +22,8 @@ public record ReopenGuiPacket(int networkId) implements CustomPacketPayload {
             .map(ReopenGuiPacket::new, ReopenGuiPacket::networkId);
 
     public void execute(IPayloadContext context) {
-        if (context.flow() == PacketFlow.CLIENTBOUND) {
-            ModularNetwork.CLIENT.reopen(context.player(), this.networkId, false);
-        } else {
-            ModularNetwork.SERVER.reopen(context.player(), this.networkId, false);
-        }
+        ModularNetwork.get(context.flow().isClientbound())
+                .reopen(context.player(), this.networkId, false);
     }
 
     @Override

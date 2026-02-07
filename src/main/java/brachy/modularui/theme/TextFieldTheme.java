@@ -18,7 +18,7 @@ public class TextFieldTheme extends WidgetTheme {
     private final int hintColor;
 
     public TextFieldTheme(int markedColor, int hintColor) {
-        this(56, 18, GuiTextures.DISPLAY, Color.WHITE.main, Color.WHITE.main,
+        this(56, 18, GuiTextures.DISPLAY_SMALL, Color.WHITE.main, Color.WHITE.main,
                 false, Color.WHITE.main, markedColor, hintColor);
     }
 
@@ -42,7 +42,7 @@ public class TextFieldTheme extends WidgetTheme {
                 isTextShadow(), getIconColor(), this.markedColor, this.hintColor);
     }
 
-    public static class Builder<T extends TextFieldTheme, B extends Builder<T, B>>
+    public static class Builder<T extends TextFieldTheme, B extends TextFieldTheme.Builder<T, B>>
             extends WidgetThemeBuilder<T, B> {
 
         public B markedColor(int markedColor) {

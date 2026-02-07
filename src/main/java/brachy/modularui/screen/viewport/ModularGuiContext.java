@@ -11,7 +11,6 @@ import brachy.modularui.client.CursorHandler;
 import brachy.modularui.screen.DraggablePanelWrapper;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
-import brachy.modularui.screen.PanelManager;
 import brachy.modularui.screen.RecipeViewerSettingsImpl;
 import brachy.modularui.screen.UISettings;
 
@@ -299,7 +298,7 @@ public class ModularGuiContext extends GuiContext {
                 draggable = new LocatedElement<>(iDraggable, hovered.getTransformationMatrix());
             } else if (widget instanceof ModularPanel panel) {
                 if (panel.isDraggable()) {
-                    if (!panel.flex().hasFixedSize()) {
+                    if (!panel.resizer().hasFixedSize()) {
                         throw new IllegalStateException(
                                 "Panel must have a fixed size. It can't specify left AND right or top AND bottom!");
                     }

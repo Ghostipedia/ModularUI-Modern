@@ -75,9 +75,9 @@ public final class LangUtil {
     /**
      * Gets a single translation from a multi lang.
      *
-     * @param key   Base key of the multi lang. E.g. "gtceu.gui.overclock.enabled".
+     * @param key   Base key of the multi lang. E.g. "modularui.gui.overclock.enabled".
      * @param index Index of the single translation. E.g. 3 would return
-     *              "gtceu.gui.overclock.enabled.3".
+     *              "modularui.gui.overclock.enabled.3".
      * @return Returns a single translation from a multi lang.
      */
     public static MutableComponent getFromMultiline(String key, int index) {
@@ -88,9 +88,9 @@ public final class LangUtil {
      * Gets a single translation from a multi lang. Supports additional arguments
      * for the translation component.
      *
-     * @param key   Base key of the multi lang. E.g. "gtceu.gui.overclock.enabled".
+     * @param key   Base key of the multi lang. E.g. "modularui.gui.overclock.enabled".
      * @param index Index of the single translation. E.g. 3 would return
-     *              "gtceu.gui.overclock.enabled.3".
+     *              "modularui.gui.overclock.enabled.3".
      * @return Returns a single translation from a multi lang.
      */
     public static MutableComponent getFromMultiline(String key, int index, Object... args) {

@@ -10,6 +10,8 @@ import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
+import brachy.modularui.network.ModularNetworkSide;
+
 import io.netty.buffer.ByteBuf;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -26,11 +28,8 @@ public record CloseGuiPacket(int networkId, boolean dispose) implements CustomPa
     // @formatter:on
 
     public void execute(IPayloadContext context) {
-        if (context.flow() == PacketFlow.CLIENTBOUND) {
-            ModularNetwork.CLIENT.closeContainer(this.networkId, this.dispose, MCHelper.getPlayer(), false);
-        } else {
-            ModularNetwork.SERVER.closeContainer(this.networkId, this.dispose, context.player(), false);
-        }
+        ModularNetwork.get(context.flow().isClientbound())
+                .closeContainer(this.networkId, this.dispose, context.player(), false);
     }
 
     @Override

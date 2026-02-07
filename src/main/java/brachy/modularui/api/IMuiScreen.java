@@ -48,9 +48,10 @@ public interface IMuiScreen {
      *                     {@code guiGraphics} as the parameter
      */
     @ApiStatus.NonExtendable
-    default void handleDrawBackground(GuiGraphics guiGraphics, Consumer<GuiGraphics> drawFunction) {
+    default void handleDrawBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick,
+                                      RenderFunction drawFunction) {
         if (ClientScreenHandler.shouldDrawWorldBackground()) {
-            drawFunction.accept(guiGraphics);
+            drawFunction.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         ClientScreenHandler.drawDarkBackground(wrappedScreen(), guiGraphics);
     }
@@ -101,5 +102,11 @@ public interface IMuiScreen {
      */
     default Screen wrappedScreen() {
         return (Screen) this;
+    }
+
+    @FunctionalInterface
+    interface RenderFunction {
+
+        void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick);
     }
 }

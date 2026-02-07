@@ -1,7 +1,7 @@
 package brachy.modularui.value.sync;
 
 import brachy.modularui.utils.ICopy;
-import brachy.modularui.utils.serialization.network.IEquals;
+import brachy.modularui.utils.EqualityTest;
 
 import net.minecraft.network.VarInt;
 import net.minecraft.network.codec.StreamDecoder;
@@ -9,7 +9,6 @@ import net.minecraft.network.codec.StreamEncoder;
 
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,17 +21,13 @@ import java.util.function.Supplier;
 
 public class GenericListSyncHandler<B extends ByteBuf, T> extends GenericCollectionSyncHandler<B, T, List<T>> {
 
-    private final ObjectList<T> cache = new ObjectArrayList<>();
+    private final List<T> cache = new ObjectArrayList<>();
 
     public GenericListSyncHandler(@NotNull Supplier<List<T>> getter, @Nullable Consumer<List<T>> setter,
                                   @NotNull StreamDecoder<B, T> deserializer,
                                   @NotNull StreamEncoder<B, T> serializer,
-                                  @Nullable IEquals<T> equals, @Nullable ICopy<T> copy) {
+                                  @Nullable EqualityTest<T> equals, @Nullable ICopy<T> copy) {
         super(getter, setter, deserializer, serializer, equals, copy);
-    }
-
-    public static <B extends ByteBuf, T> Builder<B, T> builder() {
-        return new Builder<>();
     }
 
     @Override
@@ -71,6 +66,10 @@ public class GenericListSyncHandler<B extends ByteBuf, T> extends GenericCollect
     @Override
     public Class<List<T>> getValueType() {
         return (Class<List<T>>) (Object) List.class;
+    }
+
+    public static <B extends ByteBuf, T> Builder<B, T> builder() {
+        return new Builder<>();
     }
 
     public static class Builder<B extends ByteBuf, T> extends GenericCollectionSyncHandler.Builder<B, T, List<T>, Builder<B, T>> {

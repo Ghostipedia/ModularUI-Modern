@@ -2,6 +2,7 @@ package brachy.modularui.value.sync;
 
 import brachy.modularui.api.value.sync.IServerKeyboardAction;
 import brachy.modularui.api.value.sync.IServerMouseAction;
+import brachy.modularui.api.value.sync.IServerMouseScrollAction;
 import brachy.modularui.utils.KeyboardData;
 import brachy.modularui.utils.MouseData;
 
@@ -9,10 +10,20 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 
 public class InteractionSyncHandler extends SyncHandler {
 
+    private static final int MOUSE_PRESSED = 1;
+    private static final int MOUSE_RELEASED = 2;
+    private static final int MOUSE_TAPPED = 3;
+    private static final int MOUSE_SCROLL = 4;
+
+    private static final int KEY_ACTIONS = 10;
+    private static final int KEY_PRESSED = 11;
+    private static final int KEY_RELEASED = 12;
+    private static final int KEY_TAPPED = 13;
+
     private IServerMouseAction mousePressed;
     private IServerMouseAction mouseReleased;
     private IServerMouseAction mouseTapped;
-    private IServerMouseAction mouseScroll;
+    private IServerMouseScrollAction mouseScroll;
     private IServerKeyboardAction keyPressed;
     private IServerKeyboardAction keyReleased;
     private IServerKeyboardAction keyTapped;
@@ -22,54 +33,47 @@ public class InteractionSyncHandler extends SyncHandler {
 
     @Override
     public void readOnServer(int id, RegistryFriendlyByteBuf buf) {
-        if (id < 10) {
+        if (id < KEY_ACTIONS) {
             MouseData mouseData = MouseData.readPacket(buf);
             switch (id) {
-                case 1: {
+                case MOUSE_PRESSED -> {
                     if (this.mousePressed != null) {
                         this.mousePressed.onServerMouseAction(mouseData);
                     }
-                    break;
                 }
-                case 2: {
+                case MOUSE_RELEASED -> {
                     if (this.mouseReleased != null) {
                         this.mouseReleased.onServerMouseAction(mouseData);
                     }
-                    break;
                 }
-                case 3: {
+                case MOUSE_TAPPED -> {
                     if (this.mouseTapped != null) {
                         this.mouseTapped.onServerMouseAction(mouseData);
                     }
-                    break;
                 }
-                case 4: {
+                case MOUSE_SCROLL -> {
                     if (this.mouseScroll != null) {
-                        this.mouseScroll.onServerMouseAction(mouseData);
+                        this.mouseScroll.onServerMouseAction(mouseData, buf.readDouble(), buf.readDouble());
                     }
-                    break;
                 }
             }
-        } else if (id > 10) {
+        } else {
             KeyboardData keyboardData = KeyboardData.readPacket(buf);
             switch (id) {
-                case 11: {
+                case KEY_PRESSED -> {
                     if (this.keyPressed != null) {
                         this.keyPressed.onServerKeyboardAction(keyboardData);
                     }
-                    break;
                 }
-                case 12: {
+                case KEY_RELEASED -> {
                     if (this.keyReleased != null) {
                         this.keyReleased.onServerKeyboardAction(keyboardData);
                     }
-                    break;
                 }
-                case 13: {
+                case KEY_TAPPED -> {
                     if (this.keyTapped != null) {
                         this.keyTapped.onServerKeyboardAction(keyboardData);
                     }
-                    break;
                 }
             }
         }
@@ -79,7 +83,7 @@ public class InteractionSyncHandler extends SyncHandler {
         if (this.mousePressed == null) return false;
         MouseData mouseData = MouseData.create(button);
         this.mousePressed.onServerMouseAction(mouseData);
-        syncToServer(1, mouseData::writeToPacket);
+        syncToServer(MOUSE_PRESSED, mouseData::writeToPacket);
         return true;
     }
 
@@ -87,7 +91,7 @@ public class InteractionSyncHandler extends SyncHandler {
         if (this.mouseReleased == null) return false;
         MouseData mouseData = MouseData.create(button);
         this.mouseReleased.onServerMouseAction(mouseData);
-        syncToServer(2, mouseData::writeToPacket);
+        syncToServer(MOUSE_RELEASED, mouseData::writeToPacket);
         return true;
     }
 
@@ -95,15 +99,19 @@ public class InteractionSyncHandler extends SyncHandler {
         if (this.mouseTapped == null) return false;
         MouseData mouseData = MouseData.create(button);
         this.mouseTapped.onServerMouseAction(mouseData);
-        syncToServer(3, mouseData::writeToPacket);
+        syncToServer(MOUSE_TAPPED, mouseData::writeToPacket);
         return true;
     }
 
-    public boolean onMouseScroll(int scroll) {
+    public boolean onMouseScroll(double scrollX, double scrollY) {
         if (this.mouseScroll == null) return false;
-        MouseData mouseData = MouseData.create(scroll);
-        this.mouseScroll.onServerMouseAction(mouseData);
-        syncToServer(4, mouseData::writeToPacket);
+        MouseData mouseData = MouseData.create((int) scrollY);
+        this.mouseScroll.onServerMouseAction(mouseData, scrollX, scrollY);
+        syncToServer(MOUSE_SCROLL, buf -> {
+            mouseData.writeToPacket(buf);
+            buf.writeDouble(scrollX);
+            buf.writeDouble(scrollY);
+        });
         return true;
     }
 
@@ -111,7 +119,7 @@ public class InteractionSyncHandler extends SyncHandler {
         if (this.keyPressed == null) return false;
         KeyboardData keyboardData = KeyboardData.create(keyCode, scanCode, modifiers);
         this.keyPressed.onServerKeyboardAction(keyboardData);
-        syncToServer(11, keyboardData::writeToPacket);
+        syncToServer(KEY_PRESSED, keyboardData::writeToPacket);
         return true;
     }
 
@@ -119,7 +127,7 @@ public class InteractionSyncHandler extends SyncHandler {
         if (this.keyReleased == null) return false;
         KeyboardData keyboardData = KeyboardData.create(keyCode, scanCode, modifiers);
         this.keyReleased.onServerKeyboardAction(keyboardData);
-        syncToServer(12, keyboardData::writeToPacket);
+        syncToServer(KEY_RELEASED, keyboardData::writeToPacket);
         return true;
     }
 
@@ -127,7 +135,7 @@ public class InteractionSyncHandler extends SyncHandler {
         if (this.keyTapped == null) return false;
         KeyboardData keyboardData = KeyboardData.create(keyCode, scanCode, modifiers);
         this.keyTapped.onServerKeyboardAction(keyboardData);
-        syncToServer(13, keyboardData::writeToPacket);
+        syncToServer(KEY_TAPPED, keyboardData::writeToPacket);
         return true;
     }
 
@@ -146,7 +154,7 @@ public class InteractionSyncHandler extends SyncHandler {
         return this;
     }
 
-    public InteractionSyncHandler setOnMouseScroll(IServerMouseAction mouseAction) {
+    public InteractionSyncHandler setOnMouseScroll(IServerMouseScrollAction mouseAction) {
         this.mouseScroll = mouseAction;
         return this;
     }

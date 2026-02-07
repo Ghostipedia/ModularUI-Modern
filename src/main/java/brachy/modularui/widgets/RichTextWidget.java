@@ -2,6 +2,7 @@ package brachy.modularui.widgets;
 
 import brachy.modularui.api.drawable.IHoverable;
 import brachy.modularui.api.drawable.IRichTextBuilder;
+import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.widget.Interactable;
 import brachy.modularui.drawable.text.RichText;
 import brachy.modularui.screen.RichTooltip;
@@ -114,10 +115,8 @@ public class RichTextWidget extends Widget<RichTextWidget> implements IRichTextB
     }
 
     /**
-     * Returns the currently hovered element of this rich text or {@code null} if none is hovered.
-     * Note that this method assumes, that the {@link brachy.modularui.api.layout.IViewportStack
-     * IViewportStack}
-     * is transformed to this widget.
+     * Returns the currently hovered element of this rich text or {@code null} if none is hovered.<br>
+     * Note that this method assumes that the {@link IViewportStack} is transformed to this widget.
      *
      * @return hovered element or null
      */
@@ -127,10 +126,8 @@ public class RichTextWidget extends Widget<RichTextWidget> implements IRichTextB
     }
 
     /**
-     * Returns the currently hovered element of this rich text or {@code null} if none is hovered.
-     * Note that this method assumes, that the {@link brachy.modularui.api.layout.IViewportStack
-     * IViewportStack}
-     * is transformed to this widget.
+     * Returns the currently hovered element of this rich text or {@code null} if none is hovered.<br>
+     * Note that this method assumes that the {@link IViewportStack} is transformed to this widget.
      *
      * @param context the viewport stack with transformation to this widget
      * @return hovered element or null

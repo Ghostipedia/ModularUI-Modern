@@ -1,12 +1,11 @@
 package brachy.modularui.widget;
 
 import brachy.modularui.api.GuiAxis;
-import brachy.modularui.api.layout.ILayoutWidget;
-import brachy.modularui.api.layout.IResizeable;
 import brachy.modularui.api.layout.IViewport;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetThemeEntry;
+import brachy.modularui.widget.sizer.ResizeNode;
 import brachy.modularui.widgets.layout.IExpander;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -21,7 +20,6 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.Predicate;
 
 public class InternalWidgetTree {
 
@@ -56,7 +54,7 @@ public class InternalWidgetTree {
                          boolean shouldDrawBackground) {
         if (!parent.isEnabled() && !ignoreEnabled) return;
         if (parent.requiresResize()) {
-            WidgetTree.resizeInternal(parent, false);
+            WidgetTree.resizeInternal(parent.resizer(), false);
         }
 
         GuiGraphics graphics = context.getGraphics();
@@ -76,7 +74,7 @@ public class InternalWidgetTree {
         if (canBeSeen) {
             // draw widget
             graphics.setColor(1f, 1f, 1f, alpha);
-            WidgetThemeEntry<?> widgetTheme = parent.getWidgetTheme(context.getTheme());
+            WidgetThemeEntry<?> widgetTheme = parent.getWidgetTheme(parent.getPanel().getTheme());
             if (shouldDrawBackground) parent.drawBackground(context, widgetTheme);
             parent.draw(context, widgetTheme);
             parent.drawOverlay(context, widgetTheme);
@@ -165,7 +163,7 @@ public class InternalWidgetTree {
 
         // draw widget
         graphics.setColor(1f, 1f, 1f, alpha);
-        WidgetThemeEntry<?> widgetTheme = parent.getWidgetTheme(context.getTheme());
+        WidgetThemeEntry<?> widgetTheme = parent.getWidgetTheme(parent.getPanel().getTheme());
         parent.drawBackground(context, widgetTheme);
 
         graphics.pose().popPose();
@@ -193,30 +191,27 @@ public class InternalWidgetTree {
         context.popMatrix();
     }
 
-    static boolean resizeWidget(IWidget widget, boolean init, boolean onOpen, boolean isParentLayout) {
+    static boolean resize(ResizeNode resizer, boolean init, boolean onOpen, boolean isParentLayout) {
         boolean alreadyCalculated = false;
         // first try to resize this widget
-        IResizeable resizer = widget.resizer();
-        ILayoutWidget layout = widget instanceof ILayoutWidget layoutWidget ? layoutWidget : null;
-        boolean isLayout = layout != null;
+        boolean isLayout = resizer.isLayout();
         if (init) {
-            widget.beforeResize(onOpen);
-            resizer.initResizing();
+            resizer.initResizing(onOpen);
             if (!isLayout) resizer.setLayoutDone(true);
         } else {
             // if this is not the first time check if this widget is already resized
             alreadyCalculated = resizer.isFullyCalculated(isParentLayout);
         }
-        boolean selfFullyCalculated = resizer.isSelfFullyCalculated() || resizer.resize(widget, isParentLayout);
+        boolean selfFullyCalculated = resizer.isSelfFullyCalculated() || resizer.resize(isParentLayout);
 
-        GuiAxis expandAxis = widget instanceof IExpander expander ? expander.getExpandAxis() : null;
+        GuiAxis expandAxis = resizer instanceof IExpander expander ? expander.getExpandAxis() : null;
         // now resize all children and collect children which could not be fully calculated
-        List<IWidget> anotherResize = Collections.emptyList();
-        if (!resizer.areChildrenCalculated() && widget.hasChildren()) {
+        List<ResizeNode> anotherResize = Collections.emptyList();
+        if (!resizer.areChildrenCalculated() && !resizer.getChildren().isEmpty()) {
             anotherResize = new ArrayList<>();
-            for (IWidget child : widget.getChildren()) {
-                if (init) child.flex().checkExpanded(expandAxis);
-                if (!resizeWidget(child, init, onOpen, isLayout)) {
+            for (ResizeNode child : resizer.getChildren()) {
+                if (init) child.checkExpanded(expandAxis);
+                if (!resize(child, init, onOpen, isLayout)) {
                     anotherResize.add(child);
                 }
             }
@@ -228,15 +223,16 @@ public class InternalWidgetTree {
             // we need to keep track of which widgets are not yet fully calculated, so we can call onResized on those
             // which later are fully calculated
             BitSet state = getCalculatedState(anotherResize, isLayout);
-            if (layout != null && shouldLayout) {
-                layoutSuccessful = layout.layoutWidgets();
+            if (isLayout && shouldLayout) {
+                layoutSuccessful = resizer.layoutChildren();
             }
 
             // post resize this widget if possible
-            resizer.postResize(widget);
+            resizer.postResize();
 
-            if (layout != null && shouldLayout) {
-                layoutSuccessful &= layout.postLayoutWidgets();
+            if (isLayout && shouldLayout) {
+                layoutSuccessful &= resizer.postLayoutChildren();
+                if (!selfFullyCalculated) resizer.postResize();
             }
             if (shouldLayout) resizer.setLayoutDone(layoutSuccessful);
             checkFullyCalculated(anotherResize, state, isLayout);
@@ -245,7 +241,7 @@ public class InternalWidgetTree {
         // now fully resize all children which needs it
         if (!anotherResize.isEmpty()) {
             for (int i = 0; i < anotherResize.size(); i++) {
-                if (resizeWidget(anotherResize.get(i), false, onOpen, isLayout)) {
+                if (resize(anotherResize.get(i), false, onOpen, isLayout)) {
                     anotherResize.remove(i--);
                 }
             }
@@ -253,58 +249,34 @@ public class InternalWidgetTree {
         resizer.setChildrenResized(anotherResize.isEmpty());
         selfFullyCalculated = resizer.isFullyCalculated(isParentLayout);
 
-        if (selfFullyCalculated && !alreadyCalculated) widget.onResized();
+        if (selfFullyCalculated && !alreadyCalculated) resizer.onResized();
 
         return selfFullyCalculated;
     }
 
-    private static BitSet getCalculatedState(List<IWidget> children, boolean isLayout) {
+    private static BitSet getCalculatedState(List<ResizeNode> children, boolean isLayout) {
         if (children.isEmpty()) return null;
         BitSet state = new BitSet();
         for (int i = 0; i < children.size(); i++) {
-            IWidget widget = children.get(i);
-            if (widget.resizer().isFullyCalculated(isLayout)) {
+            ResizeNode widget = children.get(i);
+            if (widget.isFullyCalculated(isLayout)) {
                 state.set(i);
             }
         }
         return state;
     }
 
-    private static void checkFullyCalculated(List<IWidget> children, BitSet state, boolean isLayout) {
+    private static void checkFullyCalculated(List<ResizeNode> children, BitSet state, boolean isLayout) {
         if (children.isEmpty() || state == null) return;
         int j = 0;
         for (int i = 0; i < children.size(); i++) {
-            IWidget widget = children.get(i);
-            if (!state.get(j) && widget.resizer().isFullyCalculated(isLayout)) {
+            ResizeNode widget = children.get(i);
+            if (!state.get(j) && widget.isFullyCalculated(isLayout)) {
                 widget.onResized();
                 state.set(j);
                 children.remove(i--);
             }
             j++;
-        }
-    }
-
-    static void getTree(IWidget root, IWidget parent, Predicate<IWidget> test, StringBuilder builder,
-                        WidgetTree.WidgetInfo additionalInfo, String indent, boolean hasNextSibling) {
-        if (!indent.isEmpty()) {
-            builder.append(indent).append(hasNextSibling ? "├ " : "└ ");
-        }
-        builder.append(parent);
-        if (additionalInfo != null) {
-            builder.append(" {");
-            additionalInfo.addInfo(root, parent, builder);
-            builder.append("}");
-        }
-        builder.append('\n');
-        if (parent.hasChildren()) {
-            List<IWidget> children = parent.getChildren();
-            for (int i = 0; i < children.size(); i++) {
-                IWidget child = children.get(i);
-                if (test.test(child)) {
-                    getTree(root, child, test, builder, additionalInfo, indent + (hasNextSibling ? "│ " : "  "),
-                            i < children.size() - 1);
-                }
-            }
         }
     }
 }

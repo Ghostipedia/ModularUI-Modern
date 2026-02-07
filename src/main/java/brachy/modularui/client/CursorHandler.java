@@ -30,6 +30,33 @@ public class CursorHandler {
         RESIZE_ALL,
     }
 
+    // the normal pointer cursor
+    private static long CURSOR_NORMAL;
+    // text input cursor
+    // usually I-beam shaped
+    private static long CURSOR_TEXT_INPUT;
+    // "hovering over a clickable object" cursor
+    // usually a pointing finger
+    private static long CURSOR_POINT_HOVERED;
+    // crosshair cursor
+    private static long CURSOR_CROSSHAIR;
+    // "operation not allowed" cursor
+    // usually a circle with a line through it
+    private static long CURSOR_NOT_ALLOWED;
+    // left to right resize cursor
+    private static long CURSOR_RESIZE_HORIZONTAL;
+    // top to down resize cursor
+    private static long CURSOR_RESIZE_VERTICAL;
+    // top right to bottom left resize cursor
+    private static long CURSOR_RESIZE_TR_BL;
+    // top-left to bottom right resize cursor
+    private static long CURSOR_RESIZE_TL_BR;
+    // omnidirectional resize cursor
+    // has arrows up-down and left-right
+    private static long CURSOR_RESIZE_ALL;
+
+    private static long windowHandle;
+
     public static void setCursorResizeIcon(@Nullable ResizeDragArea dragArea) {
         if (dragArea == null) {
             resetCursorIcon();
@@ -64,33 +91,6 @@ public class CursorHandler {
         setCursorIcon(CursorIcon.DEFAULT);
     }
 
-    // the normal pointer cursor
-    private static long CURSOR_NORMAL;
-    // text input cursor
-    // usually I-beam shaped
-    private static long CURSOR_TEXT_INPUT;
-    // "hovering over a clickable object" cursor
-    // usually a pointing finger
-    private static long CURSOR_POINT_HOVERED;
-    // crosshair cursor
-    private static long CURSOR_CROSSHAIR;
-    // "operation not allowed" cursor
-    // usually a circle with a line through it
-    private static long CURSOR_NOT_ALLOWED;
-    // left to right resize cursor
-    private static long CURSOR_RESIZE_HORIZONTAL;
-    // top to down resize cursor
-    private static long CURSOR_RESIZE_VERTICAL;
-    // top right to bottom left resize cursor
-    private static long CURSOR_RESIZE_TR_BL;
-    // top-left to bottom right resize cursor
-    private static long CURSOR_RESIZE_TL_BR;
-    // omnidirectional resize cursor
-    // has arrows up-down and left-right
-    private static long CURSOR_RESIZE_ALL;
-
-    private static long windowHandle;
-
     public static long createSafeCursor(int shape) {
         try (GLFWErrorCallback ignored = GLFW.glfwSetErrorCallback(null)) {
             long cursor = GLFW.glfwCreateStandardCursor(shape);
@@ -113,8 +113,8 @@ public class CursorHandler {
         // GLFW will switch to the default cursor when 0 is passed into glfwSetCursor
         CURSOR_NORMAL = createSafeCursor(GLFW.GLFW_ARROW_CURSOR);
         CURSOR_TEXT_INPUT = createSafeCursor(GLFW.GLFW_IBEAM_CURSOR);
-        CURSOR_POINT_HOVERED = createSafeCursor(GLFW.GLFW_POINTING_HAND_CURSOR);
         CURSOR_CROSSHAIR = createSafeCursor(GLFW.GLFW_CROSSHAIR_CURSOR);
+        CURSOR_POINT_HOVERED = createSafeCursor(GLFW.GLFW_POINTING_HAND_CURSOR);
         CURSOR_NOT_ALLOWED = createSafeCursor(GLFW.GLFW_NOT_ALLOWED_CURSOR);
 
         CURSOR_RESIZE_HORIZONTAL = createSafeCursor(GLFW.GLFW_RESIZE_EW_CURSOR);

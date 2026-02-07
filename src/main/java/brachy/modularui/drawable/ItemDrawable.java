@@ -4,6 +4,7 @@ import brachy.modularui.api.IJsonSerializable;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
+import brachy.modularui.utils.RegistryAccessContainer;
 import brachy.modularui.widget.Widget;
 
 import net.minecraft.core.component.DataComponentPatch;
@@ -20,18 +21,24 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import lombok.experimental.Tolerate;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
+@Accessors(chain = true)
 public class ItemDrawable implements IDrawable, IJsonSerializable<ItemDrawable> {
 
-    public static final Codec<ItemDrawable> CODEC = ExtraCodecs.optionalEmptyMap(ItemStack.SINGLE_ITEM_CODEC)
-            .xmap(stack -> stack.map(ItemDrawable::new).orElseGet(ItemDrawable::new),
-                    stack -> stack.item.isEmpty() ? Optional.empty() : Optional.of(stack.item));
+    private static final Codec<ItemStack> OPTIONAL_SINGLE_ITEM_CODEC = ExtraCodecs.optionalEmptyMap(ItemStack.SINGLE_ITEM_CODEC)
+            .xmap(stack -> stack.orElse(ItemStack.EMPTY), stack -> stack.isEmpty() ? Optional.empty() : Optional.of(stack));
+
+    public static final Codec<ItemDrawable> CODEC = OPTIONAL_SINGLE_ITEM_CODEC.xmap(ItemDrawable::new, ItemDrawable::getItem);
 
     @Getter
-    private ItemStack item = ItemStack.EMPTY;
+    @Setter
+    private @NotNull ItemStack item = ItemStack.EMPTY;
 
     public ItemDrawable() {}
 
@@ -85,29 +92,29 @@ public class ItemDrawable implements IDrawable, IJsonSerializable<ItemDrawable> 
         return IDrawable.super.asWidget().size(16);
     }
 
-    public ItemDrawable setItem(@NotNull ItemStack item) {
-        this.item = item;
-        return this;
-    }
-
+    @Tolerate
     public ItemDrawable setItem(@NotNull Item item) {
         return setItem(item, 1, DataComponentPatch.EMPTY);
     }
 
+    @Tolerate
     public ItemDrawable setItem(@NotNull Item item, int amount) {
         return setItem(item, amount, DataComponentPatch.EMPTY);
     }
 
+    @Tolerate
     public ItemDrawable setItem(@NotNull Item item, int amount, @NotNull DataComponentPatch componentPatch) {
         ItemStack stack = new ItemStack(item, amount);
         stack.applyComponents(componentPatch);
         return setItem(stack);
     }
 
+    @Tolerate
     public ItemDrawable setItem(@NotNull Block item) {
         return setItem(item, 1);
     }
 
+    @Tolerate
     public ItemDrawable setItem(@NotNull Block item, int amount) {
         return setItem(new ItemStack(item, amount));
     }
@@ -118,13 +125,22 @@ public class ItemDrawable implements IDrawable, IJsonSerializable<ItemDrawable> 
     }
 
     @Override
+    public void loadFromJson(JsonObject json) {
+        var jsonOps = RegistryAccessContainer.current().createSerializationContext(JsonOps.INSTANCE);
+
+        setItem(OPTIONAL_SINGLE_ITEM_CODEC.parse(jsonOps, json).getOrThrow(JsonParseException::new));
+    }
+
+    @Override
     public boolean saveToJson(JsonObject json) {
-        if (this.item == null || this.item.isEmpty()) {
+        if (this.item.isEmpty()) {
             return true;
         }
-        JsonElement saved = CODEC.encodeStart(JsonOps.INSTANCE, this).getOrThrow(JsonParseException::new);
+
+        var jsonOps = RegistryAccessContainer.current().createSerializationContext(JsonOps.INSTANCE);
+        JsonElement saved = OPTIONAL_SINGLE_ITEM_CODEC.encode(this.item, jsonOps, json).getOrThrow(JsonParseException::new);
         if (saved.isJsonObject()) {
-            saved.getAsJsonObject().asMap().forEach(json::add);
+            json.asMap().putAll(saved.getAsJsonObject().asMap());
         }
         return true;
     }

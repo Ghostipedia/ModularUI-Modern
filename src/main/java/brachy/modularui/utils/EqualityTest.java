@@ -12,6 +12,15 @@ import java.util.Objects;
 public interface EqualityTest<T> {
 
     /**
+     * Tests two objects for equality. Parameters are not null.
+     *
+     * @param t1 first object
+     * @param t2 second object
+     * @return true if objects are equal
+     */
+    boolean areEqual(@NotNull T t1, @NotNull T t2);
+
+    /**
      * Wraps a {@link EqualityTest} function to accept nullable parameters.
      *
      * @param equals equals function
@@ -29,13 +38,4 @@ public interface EqualityTest<T> {
     static <T> EqualityTest<T> defaultTester() {
         return Objects::equals;
     }
-
-    /**
-     * Tests two objects for equality. Parameters are not null.
-     *
-     * @param t1 first object
-     * @param t2 second object
-     * @return true if objects are equal
-     */
-    boolean areEqual(@NotNull T t1, @NotNull T t2);
 }

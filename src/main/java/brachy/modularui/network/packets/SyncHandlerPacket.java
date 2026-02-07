@@ -2,18 +2,16 @@ package brachy.modularui.network.packets;
 
 import brachy.modularui.ModularUI;
 import brachy.modularui.api.IPacketWriter;
+import brachy.modularui.core.extensions.IRegistryFriendlyByteBufExtension;
 import brachy.modularui.network.ModularNetwork;
-import brachy.modularui.network.NetworkUtils;
+import brachy.modularui.utils.NetworkUtils;
 
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-import io.netty.buffer.Unpooled;
-import net.neoforged.neoforge.network.connection.ConnectionType;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.Nullable;
 
@@ -67,11 +65,8 @@ public record SyncHandlerPacket(int networkId, String panel, String key, boolean
     }
 
     public void execute(IPayloadContext context) {
-        if (context.flow() == PacketFlow.CLIENTBOUND) {
-            ModularNetwork.CLIENT.receivePacket(this);
-        } else {
-            ModularNetwork.SERVER.receivePacket(this);
-        }
+        ModularNetwork.get(context.flow().isClientbound())
+                .receivePacket(this);
     }
 
     @Override

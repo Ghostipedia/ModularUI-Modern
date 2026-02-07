@@ -32,7 +32,6 @@ public class AbstractParentWidget<I extends IWidget, W extends AbstractParentWid
      * @return a view of all children.
      */
     @SuppressWarnings("unchecked")
-    @UnmodifiableView
     @NotNull
     @Override
     public List<IWidget> getChildren() {
@@ -48,7 +47,6 @@ public class AbstractParentWidget<I extends IWidget, W extends AbstractParentWid
      *
      * @return a view of all children.
      */
-    @UnmodifiableView
     public List<I> getTypeChildren() {
         return children;
     }
@@ -60,9 +58,9 @@ public class AbstractParentWidget<I extends IWidget, W extends AbstractParentWid
                 IDrawable.isVisible(getHoverOverlay()) ||
                 getTooltip() != null)
             return true;
-        WidgetThemeEntry<?> widgetTheme = getWidgetTheme(getContext().getTheme());
-        if (getBackground() == null && IDrawable.isVisible(widgetTheme.getTheme().getBackground())) return true;
-        return getHoverBackground() == null && IDrawable.isVisible(widgetTheme.getHoverTheme().getBackground());
+        WidgetThemeEntry<?> widgetTheme = getWidgetTheme(getPanel().getTheme());
+        if (getBackground() == null && IDrawable.isVisible(widgetTheme.theme().getBackground())) return true;
+        return getHoverBackground() == null && IDrawable.isVisible(widgetTheme.hoverTheme().getBackground());
     }
 
     @Override

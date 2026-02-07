@@ -31,7 +31,7 @@ public class AbstractContainerScreenMixin implements IClickableContainerScreen {
     public void mui$injectGetSlot(double mouseX, double mouseY, CallbackInfoReturnable<Slot> cir) {
         if (this.mui$clickedSlot != null) {
             cir.setReturnValue(this.mui$clickedSlot);
-        } else if (IMuiScreen.class.isAssignableFrom(this.getClass())) {
+        } else if (this instanceof IMuiScreen) {
             cir.setReturnValue(this.hoveredSlot);
         }
     }

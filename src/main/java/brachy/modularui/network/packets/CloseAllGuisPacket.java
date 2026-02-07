@@ -9,6 +9,8 @@ import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
+import brachy.modularui.network.ModularNetworkSide;
+
 import io.netty.buffer.ByteBuf;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -21,11 +23,8 @@ public record CloseAllGuisPacket() implements CustomPacketPayload {
     public static final StreamCodec<ByteBuf, CloseAllGuisPacket> CODEC = StreamCodec.unit(INSTANCE);
 
     public void execute(IPayloadContext context) {
-        if (context.flow() == PacketFlow.CLIENTBOUND) {
-            ModularNetwork.CLIENT.closeAll(MCHelper.getPlayer(), false);
-        } else {
-            ModularNetwork.SERVER.closeAll(context.player(), false);
-        }
+        ModularNetwork.get(context.flow().isClientbound())
+                .closeAll(context.player(), false);
     }
 
     @Override

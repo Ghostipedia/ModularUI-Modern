@@ -1,6 +1,7 @@
 package brachy.modularui.client;
 
 import brachy.modularui.ModularUI;
+import brachy.modularui.ModularUIMenuTypes;
 import brachy.modularui.animation.AnimatorManager;
 import brachy.modularui.drawable.DrawableSerialization;
 import brachy.modularui.factory.inventory.InventoryTypes;
@@ -9,6 +10,9 @@ import brachy.modularui.screen.ModularContainerMenu;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+
+import brachy.modularui.theme.ThemeManager;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import it.unimi.dsi.fastutil.floats.FloatUnaryOperator;
@@ -18,6 +22,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 @Mod(value = ModularUI.MOD_ID, dist = Dist.CLIENT)
@@ -40,9 +45,15 @@ public class ModularUIClient {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @SubscribeEvent
     public void registerScreens(final RegisterMenuScreensEvent event) {
-        event.<ModularContainerMenu, ContainerScreenWrapper>register(ModularUI.MODULAR_CONTAINER.get(),
+        event.<ModularContainerMenu, ContainerScreenWrapper>register(ModularUIMenuTypes.MODULAR_CONTAINER.get(),
                 ContainerScreenWrapper::new);
+    }
+
+    @SubscribeEvent
+    public void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener(ThemeManager.INSTANCE);
     }
 }

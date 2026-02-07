@@ -2,14 +2,14 @@ package brachy.modularui.widgets;
 
 import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.widget.IWidget;
-import brachy.modularui.widget.DelegatingSingleChildWidget;
+import brachy.modularui.widget.DelegatingWidget;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.function.Consumer;
 
-public class TransformWidget extends DelegatingSingleChildWidget<TransformWidget> {
+public class TransformWidget extends DelegatingWidget {
 
     private static final Vector3f sharedVec = new Vector3f();
 
@@ -17,15 +17,8 @@ public class TransformWidget extends DelegatingSingleChildWidget<TransformWidget
     private boolean hasConstTransform = false;
     private Consumer<IViewportStack> transform;
 
-    public TransformWidget() {}
-
     public TransformWidget(IWidget child) {
-        child(child);
-    }
-
-    private static Vector3f vec(float x, float y, float z) {
-        sharedVec.set(x, y, z);
-        return sharedVec;
+        super(child);
     }
 
     @Override
@@ -56,5 +49,10 @@ public class TransformWidget extends DelegatingSingleChildWidget<TransformWidget
         this.hasConstTransform = true;
         this.constTransform.scale(vec(x, y, 1));
         return this;
+    }
+
+    private static Vector3f vec(float x, float y, float z) {
+        sharedVec.set(x, y, z);
+        return sharedVec;
     }
 }

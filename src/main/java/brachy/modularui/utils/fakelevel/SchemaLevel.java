@@ -7,7 +7,6 @@ import brachy.modularui.utils.RegistryAccessContainer;
 import brachy.modularui.utils.sides.SidedAccessHelper;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -69,12 +68,16 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @MethodsReturnNonnullByDefault
 public class SchemaLevel extends Level implements ISchema {
 
-    public static final SchemaLevel INSTANCE = new SchemaLevel();
     private static final ResourceKey<Level> LEVEL_ID = ResourceKey.create(Registries.DIMENSION,
             ModularUI.id("fake_level"));
+
     private final TransientEntitySectionManager<Entity> entityStorage = new TransientEntitySectionManager<>(
             Entity.class, new EntityCallbacks());
+
     private final LongSet filledBlocks = new LongOpenHashSet();
+    @Getter
+    @Setter
+    private BiPredicate<BlockPos, BlockState> renderFilter = (pos, state) -> true;
     /**
      * Sections for which we prepared lighting.
      */
@@ -89,9 +92,8 @@ public class SchemaLevel extends Level implements ISchema {
     private final DummyChunkSource chunkSource = new DummyChunkSource(this);
     private final Holder<Biome> biome;
     private final DataLayer defaultDataLayer;
-    @Getter
-    @Setter
-    private BiPredicate<BlockPos, BlockState> renderFilter = (pos, state) -> true;
+
+    public static final SchemaLevel INSTANCE = new SchemaLevel();
 
     public SchemaLevel() {
         this(RegistryAccessContainer.current());
@@ -240,19 +242,6 @@ public class SchemaLevel extends Level implements ISchema {
     }
 
     @Override
-    public @Nullable MapItemSavedData getMapData(MapId mapId) {
-        return null;
-    }
-
-    @Override
-    public void setMapData(MapId mapId, MapItemSavedData mapData) {}
-
-    @Override
-    public MapId getFreeMapId() {
-        return new MapId(0);
-    }
-
-    @Override
     protected LevelEntityGetter<Entity> getEntities() {
         return entityStorage.getEntityGetter();
     }
@@ -265,24 +254,8 @@ public class SchemaLevel extends Level implements ISchema {
 
     @Override
     public PotionBrewing potionBrewing() {
-        return PotionBrewing.EMPTY;
+        return SidedAccessHelper.getPotionBrewing();
     }
-
-    @Override
-    public float getDayTimeFraction() {
-        return 0;
-    }
-
-    @Override
-    public void setDayTimeFraction(float dayTimeFraction) {}
-
-    @Override
-    public float getDayTimePerTick() {
-        return 0;
-    }
-
-    @Override
-    public void setDayTimePerTick(float dayTimePerTick) {}
 
     @Override
     public void playSeededSound(@Nullable Player player, double x, double y, double z, Holder<SoundEvent> sound,
@@ -308,6 +281,19 @@ public class SchemaLevel extends Level implements ISchema {
     @Override
     public String gatherChunkSourceStats() {
         return "";
+    }
+
+    @Override
+    public @Nullable MapItemSavedData getMapData(MapId mapId) {
+        return null;
+    }
+
+    @Override
+    public void setMapData(MapId mapId, MapItemSavedData mapData) {}
+
+    @Override
+    public MapId getFreeMapId() {
+        return new MapId(0);
     }
 
     @Override
@@ -363,12 +349,14 @@ public class SchemaLevel extends Level implements ISchema {
         return FeatureFlags.VANILLA_SET;
     }
 
-    private static class ClientCallWrapper {
+    // Neo: Variable day time code
 
-        private static RecipeManager getClientRecipeManager() {
-            return Minecraft.getInstance().level.getRecipeManager();
-        }
-    }
+    @Getter
+    @Setter
+    private float dayTimeFraction = 0.0f;
+    @Getter
+    @Setter
+    private float dayTimePerTick = -1.0f;
 
     private static class EntityCallbacks implements LevelCallback<Entity> {
 

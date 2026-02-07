@@ -21,12 +21,13 @@ import static net.minecraft.ChatFormatting.YELLOW;
 @SuppressWarnings("UnnecessaryUnicodeEscape")
 public class FormattingUtil {
 
+    private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance(Locale.ROOT);
     public static final DecimalFormat DECIMAL_FORMAT_0F = new DecimalFormat(",###");
     public static final DecimalFormat DECIMAL_FORMAT_1F = new DecimalFormat("#,##0.#");
     public static final DecimalFormat DECIMAL_FORMAT_2F = new DecimalFormat("#,##0.##");
     public static final DecimalFormat DECIMAL_FORMAT_SIC = new DecimalFormat("0E00");
     public static final DecimalFormat DECIMAL_FORMAT_SIC_2F = new DecimalFormat("0.00E00");
-    private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance(Locale.ROOT);
+
     private static final int SMALL_DOWN_NUMBER_BASE = '\u2080';
     private static final int SMALL_UP_NUMBER_BASE = '\u2070';
     private static final int SMALL_UP_NUMBER_ONE = '\u00B9';
@@ -77,7 +78,7 @@ public class FormattingUtil {
      *
      * <pre>
      *         <br>{@code "maragingSteel300" -> "maraging_steel_300"}
-     *         <br>{@code "gtceu:maraging_steel_300" -> "gtceu:maraging_steel_300"}
+     *         <br>{@code "modularui:maraging_steel_300" -> "modularui:maraging_steel_300"}
      *         <br>{@code "maragingSteel_300" -> "maraging_steel_300"}
      *         <br>{@code "maragingSTEEL_300" -> "maraging_steel_300"}
      *         <br>{@code "MARAGING_STEEL_300" -> "maraging_steel_300"}
@@ -100,7 +101,21 @@ public class FormattingUtil {
     }
 
     /**
-     * apple_orange.juice => Apple Orange Juice
+     * Check if {@code string} has any uppercase characters.
+     *
+     * @param string the string to check
+     * @return if the string has any uppercase characters.
+     */
+    public static boolean hasUpperCase(String string) {
+        for (int i = 0; i < string.length(); i++) {
+            char ch = string.charAt(i);
+            if (Character.isUpperCase(ch)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * apple_orange.juice => Apple Orange (Juice)
      */
     public static String toEnglishName(Object internalName) {
         return Arrays.stream(internalName.toString().toLowerCase(Locale.ROOT).split("_-\\s\\."))

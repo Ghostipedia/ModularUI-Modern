@@ -1,19 +1,22 @@
 package brachy.modularui.screen;
 
-import brachy.modularui.ModularUI;
 import brachy.modularui.api.IMuiScreen;
 import brachy.modularui.api.ITheme;
 import brachy.modularui.api.IThemeApi;
 import brachy.modularui.api.MCHelper;
+import brachy.modularui.api.widget.IFocusedWidget;
 import brachy.modularui.api.widget.IGuiAction;
 import brachy.modularui.api.widget.IWidget;
+import brachy.modularui.api.widget.Interactable;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.overlay.OverlayScreenWrapper;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.utils.Color;
 import brachy.modularui.value.sync.ModularSyncManager;
+import brachy.modularui.widget.Widget;
 import brachy.modularui.widget.WidgetTree;
 import brachy.modularui.widget.sizer.Area;
+import brachy.modularui.widget.sizer.ScreenResizeNode;
 import brachy.modularui.widget.wrapper.WidgetWrapper;
 
 import net.minecraft.client.Minecraft;
@@ -33,14 +36,15 @@ import net.minecraft.resources.ResourceLocation;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import lombok.Getter;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
@@ -63,7 +67,26 @@ import java.util.stream.StreamSupport;
 @OnlyIn(Dist.CLIENT)
 public class ModularScreen implements GuiEventListener, Renderable, LayoutElement, NarratableEntry {
 
-    private static final Component USAGE_NARRATION = Component.translatable("narrator.screen.usage");
+    public static boolean isScreen(@Nullable Screen guiScreen, String owner, String name) {
+        if (guiScreen instanceof IMuiScreen screenWrapper) {
+            ModularScreen screen = screenWrapper.screen();
+            return screen.getOwner().equals(owner) && screen.getName().equals(name);
+        }
+        return false;
+    }
+
+    public static boolean isActive(String owner, String name) {
+        return isScreen(Minecraft.getInstance().screen, owner, name);
+    }
+
+    @Nullable
+    public static ModularScreen getCurrent() {
+        if (MCHelper.getCurrentScreen() instanceof IMuiScreen screenWrapper) {
+            return screenWrapper.screen();
+        }
+        return null;
+    }
+
     /**
      * The owner of this screen. Usually a modid. This is mainly used to find theme overrides.
      */
@@ -85,9 +108,15 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
     private final Map<Class<?>, List<IGuiAction>> guiActionListeners = new Object2ObjectOpenHashMap<>();
     private final Object2ObjectArrayMap<IWidget, Runnable> frameUpdates = new Object2ObjectArrayMap<>();
     @Getter
+    private final ScreenResizeNode resizeNode = new ScreenResizeNode(this);
+    @Getter
     private boolean pauseScreen = false;
     @Getter
     private boolean openParentOnClose = false;
+
+    @Getter
+    @Nullable
+    private String themeOverride;
     private ITheme currentTheme;
     @Getter
     private IMuiScreen screenWrapper;
@@ -96,15 +125,6 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      */
     @Getter
     private boolean overlay = false;
-    private NarratableEntry lastNarratable = null;
-    /**
-     * Creates a new screen with a ModularUI as its owner and a given {@link ModularPanel}.
-     *
-     * @param mainPanel main panel of this screen
-     */
-    public ModularScreen(@NotNull ModularPanel mainPanel) {
-        this(ModularUI.MOD_ID, mainPanel);
-    }
 
     /**
      * Creates a new screen with a given owner and {@link ModularPanel}.
@@ -144,36 +164,6 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
         this(owner, null, false);
     }
 
-    public static boolean isScreen(@Nullable Screen guiScreen, String owner, String name) {
-        if (guiScreen instanceof IMuiScreen screenWrapper) {
-            ModularScreen screen = screenWrapper.getScreen();
-            return screen.getOwner().equals(owner) && screen.getName().equals(name);
-        }
-        return false;
-    }
-
-    public static boolean isActive(String owner, String name) {
-        return isScreen(Minecraft.getInstance().screen, owner, name);
-    }
-
-    @Nullable
-    public static ModularScreen getCurrent() {
-        if (MCHelper.getCurrentScreen() instanceof IMuiScreen screenWrapper) {
-            return screenWrapper.getScreen();
-        }
-        return null;
-    }
-
-    private static Class<?> getGuiActionClass(IGuiAction action) {
-        Class<?>[] classes = action.getClass().getInterfaces();
-        for (Class<?> clazz : classes) {
-            if (IGuiAction.class.isAssignableFrom(clazz)) {
-                return clazz;
-            }
-        }
-        throw new IllegalArgumentException();
-    }
-
     /**
      * Intended for use in {@link CustomModularScreen}
      */
@@ -191,7 +181,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
         if (this.screenWrapper != null) throw new IllegalStateException("ModularScreen is already constructed!");
         if (wrapper == null) throw new NullPointerException("ScreenWrapper must not be null!");
         this.screenWrapper = wrapper;
-        if (this.screenWrapper.getWrappedScreen() instanceof AbstractContainerScreen<?> containerScreen) {
+        if (this.screenWrapper.wrappedScreen() instanceof AbstractContainerScreen<?> containerScreen) {
             if (containerScreen.getMenu() instanceof ModularContainerMenu modular && !modular.isScreenInitialized()) {
                 modular.initializeClient(this);
             }
@@ -221,7 +211,6 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @param height height of the resized game window
      */
     @MustBeInvokedByOverriders
-    @ApiStatus.OverrideOnly
     public void onResize(int width, int height) {
         this.context.updateScreenArea(width, height);
         if (this.panelManager.tryInit()) {
@@ -229,9 +218,8 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
         }
 
         this.context.pushViewport(null, this.context.getScreenArea());
-        for (ModularPanel panel : this.panelManager.getReverseOpenPanels()) {
-            WidgetTree.resizeInternal(panel, true);
-        }
+        WidgetTree.verifyTree(this.resizeNode, new ReferenceOpenHashSet<>());
+        WidgetTree.resizeInternal(this.resizeNode, true);
 
         this.context.popViewport(null);
         if (!isOverlay()) {
@@ -395,7 +383,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
     /**
      * Called when a mouse button is pressed. Tries to invoke
-     * {@link brachy.modularui.api.widget.Interactable#onMousePressed(double, double, int)
+     * {@link Interactable#onMousePressed(double, double, int)
      * Interactable#onMousePressed(double, double, int)} on every widget under
      * the mouse after gui action listeners have been called. Will try to focus widgets that have been interacted with.
      * Focused widgets will be interacted with first in other interaction methods (mouse scroll, release and drag, key
@@ -426,7 +414,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
     /**
      * Called when a mouse button is released. Tries to invoke
-     * {@link brachy.modularui.api.widget.Interactable#onMouseReleased(double, double, int)
+     * {@link Interactable#onMouseReleased(double, double, int)
      * Interactable#onMouseRelease(int)} on every widget under
      * the mouse after gui action listeners have been called.
      *
@@ -456,7 +444,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
     /**
      * Called when a keyboard key is pressed. Tries to invoke
-     * {@link brachy.modularui.api.widget.Interactable#onKeyPressed(int, int, int)
+     * {@link Interactable#onKeyPressed(int, int, int)
      * Interactable#onKeyPressed(int, int, int)} on every
      * widget under the mouse after gui action listeners have been called.
      *
@@ -483,7 +471,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
     /**
      * Called when a keyboard key is released. Tries to invoke
-     * {@link brachy.modularui.api.widget.Interactable#onKeyReleased(int, int, int)
+     * {@link Interactable#onKeyReleased(int, int, int)
      * Interactable#onKeyRelease(int, int, int)} on every
      * widget under the mouse after gui action listeners have been called.
      *
@@ -510,7 +498,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
     /**
      * Called when a keyboard key is released. Tries to invoke
-     * {@link brachy.modularui.api.widget.Interactable#onCharTyped(char, int)
+     * {@link Interactable#onCharTyped(char, int)
      * Interactable#onCharTyped(char, int)} on every
      * widget under the mouse after gui action listeners have been called.
      *
@@ -536,7 +524,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
     /**
      * Called when a mouse button is released. Tries to invoke
-     * {@link brachy.modularui.api.widget.Interactable#onMouseScrolled(double, double, double, double)
+     * {@link Interactable#onMouseScrolled(double, double, double, double)
      * Interactable#onMouseScrolled(double, double, double)} on every widget under
      * the mouse after gui action listeners have been called.
      *
@@ -564,7 +552,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
     /**
      * Called every time the mouse pos changes and a mouse button is held down. Invokes
-     * {@link brachy.modularui.api.widget.Interactable#onMouseDrag(double, double, int, double, double)
+     * {@link Interactable#onMouseDrag(double, double, int, double, double)
      * Interactable#onMouseDrag(double, double, int, double, double)} on every widget
      * under the mouse after gui action listeners have been called.
      *
@@ -592,14 +580,9 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
         return false;
     }
 
-    @Override
-    public boolean isFocused() {
-        return this.screenWrapper.getWrappedScreen().isFocused();
-    }
-
     /**
      * Called with {@code true} after a widget which implements
-     * {@link brachy.modularui.api.widget.IFocusedWidget IFocusedWidget}
+     * {@link IFocusedWidget IFocusedWidget}
      * has consumed a mouse press and called with {@code false} if a widget is currently focused and anything else has
      * consumed a mouse
      * press. This is required for other mods like JEI/EMI to not interfere with inputs.
@@ -608,7 +591,12 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      */
     @ApiStatus.Internal
     public void setFocused(boolean focus) {
-        this.screenWrapper.getWrappedScreen().setFocused(focus);
+        this.screenWrapper.wrappedScreen().setFocused(focus);
+    }
+
+    @Override
+    public boolean isFocused() {
+        return this.screenWrapper.wrappedScreen().isFocused();
     }
 
     /**
@@ -652,7 +640,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
         if (isOverlay()) {
             throw new IllegalStateException("Can't get ModularContainer for overlay");
         }
-        if (this.screenWrapper.getWrappedScreen() instanceof AbstractContainerScreen<?> container) {
+        if (this.screenWrapper.wrappedScreen() instanceof AbstractContainerScreen<?> container) {
             return (ModularContainerMenu) container.getMenu();
         }
         throw new IllegalStateException("Screen does not extend AbstractContainerScreen!");
@@ -667,8 +655,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * Registers an interaction listener. This is useful when you want to listen to any GUI interactions and not just
      * for a specific widget. <br>
      * <b>Do NOT register listeners which are bound to a widget here!</b>
-     * Use {@link brachy.modularui.widget.Widget#listenGuiAction(IGuiAction)
-     * Widget#listenGuiAction(IGuiAction)} for that!
+     * Use {@link Widget#listenGuiAction(IGuiAction)} for that!
      *
      * @param action action listener
      */
@@ -733,9 +720,19 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
         this.frameUpdates.remove(widget);
     }
 
+    private static Class<?> getGuiActionClass(IGuiAction action) {
+        Class<?>[] classes = action.getClass().getInterfaces();
+        for (Class<?> clazz : classes) {
+            if (IGuiAction.class.isAssignableFrom(clazz)) {
+                return clazz;
+            }
+        }
+        throw new IllegalArgumentException();
+    }
+
     public ITheme getCurrentTheme() {
         if (this.currentTheme == null) {
-            useTheme(null);
+            useTheme(this.themeOverride);
         }
         return this.currentTheme;
     }
@@ -749,7 +746,8 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @return this for builder like usage
      */
     public ModularScreen useTheme(String theme) {
-        this.currentTheme = IThemeApi.get().getThemeForScreen(this, theme);
+        this.themeOverride = theme;
+        this.currentTheme = IThemeApi.get().getThemeForScreen(this, this.themeOverride);
         return this;
     }
 
@@ -772,23 +770,23 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
     }
 
     @Override
-    public int getX() {
-        return this.panelManager.getMainPanel().getArea().getX();
-    }
-
-    @Override
     public void setX(int x) {
         this.panelManager.getMainPanel().getArea().setX(x);
     }
 
     @Override
-    public int getY() {
-        return this.panelManager.getMainPanel().getArea().getY();
+    public void setY(int y) {
+        this.panelManager.getMainPanel().getArea().setY(y);
     }
 
     @Override
-    public void setY(int y) {
-        this.panelManager.getMainPanel().getArea().setY(y);
+    public int getX() {
+        return this.panelManager.getMainPanel().getArea().getX();
+    }
+
+    @Override
+    public int getY() {
+        return this.panelManager.getMainPanel().getArea().getY();
     }
 
     @Override
@@ -813,6 +811,10 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
             consumer.accept(wrapper);
         }
     }
+
+    private static final Component USAGE_NARRATION = Component.translatable("narrator.screen.usage");
+
+    private NarratableEntry lastNarratable = null;
 
     @Override
     public void updateNarration(@NotNull NarrationElementOutput output) {

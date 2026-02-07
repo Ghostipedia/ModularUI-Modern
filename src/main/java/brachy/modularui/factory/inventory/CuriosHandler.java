@@ -1,7 +1,7 @@
 package brachy.modularui.factory.inventory;
 
 import brachy.modularui.ModularUI;
-import brachy.modularui.network.NetworkUtils;
+import brachy.modularui.utils.NetworkUtils;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;

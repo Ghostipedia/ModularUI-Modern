@@ -7,7 +7,7 @@ import brachy.modularui.utils.math.SIPrefix;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import com.ezylang.evalex.BaseException;
 import com.ezylang.evalex.Expression;
@@ -32,10 +32,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 public class MathUtil {
 
-    public static final float PI = (float) Math.PI;
-    public static final float PI2 = 2f * PI;
-    public static final float PI_HALF = PI / 2f;
-    public static final float PI_QUART = PI / 4f;
+    public static final float PI_QUART = Mth.PI / 4f;
 
     public static final ExpressionConfiguration MATH_CFG = ExpressionConfiguration.builder()
             .arraysAllowed(false)
@@ -43,23 +40,20 @@ public class MathUtil {
             .stripTrailingZeros(true)
             .build()
             .withAdditionalOperators(Pair.of("%", new PostfixPercentOperator()));
-    public static final Vector3fc UNIT_X = new Vector3f(1f, 0f, 0f);
-    public static final Vector3fc UNIT_Y = new Vector3f(0f, 1f, 0f);
-    public static final Vector3fc UNIT_Z = new Vector3f(0f, 0f, 1f);
 
-    public static ParseResult parseExpression(String expression) {
-        return parseExpression(expression, Double.NaN, false);
+    public static ParseResult parseExpression(@Nullable String expression) {
+        return parseExpression(expression, true);
     }
 
-    public static ParseResult parseExpression(String expression, boolean useSiPrefixes) {
+    public static ParseResult parseExpression(@Nullable String expression, boolean useSiPrefixes) {
         return parseExpression(expression, Double.NaN, useSiPrefixes);
     }
 
-    public static ParseResult parseExpression(String expression, double defaultValue) {
+    public static ParseResult parseExpression(@Nullable String expression, double defaultValue) {
         return parseExpression(expression, defaultValue, true);
     }
 
-    public static ParseResult parseExpression(String expression, double defaultValue, boolean useSiPrefixes) {
+    public static ParseResult parseExpression(@Nullable String expression, double defaultValue, boolean useSiPrefixes) {
         if (expression == null || expression.isEmpty()) {
             return ParseResult.success(EvaluationValue.numberValue(new BigDecimal(defaultValue)));
         }
@@ -74,6 +68,10 @@ public class MathUtil {
             return ParseResult.failure(exception);
         }
     }
+
+    public static final Vector3fc UNIT_X = new Vector3f(1f, 0f, 0f);
+    public static final Vector3fc UNIT_Y = new Vector3f(0f, 1f, 0f);
+    public static final Vector3fc UNIT_Z = new Vector3f(0f, 0f, 1f);
 
     public static int lerpInt(double delta, int start, int end) {
         return start + Mth.floor(delta * (end - start));
@@ -133,19 +131,6 @@ public class MathUtil {
 
     public static float ratio(BigInteger a, BigInteger b) {
         return new BigDecimal(a).divide(new BigDecimal(b), MathContext.DECIMAL32).floatValue();
-    }
-
-    public static int ceilDiv(int x, int y) {
-        final int q = x / y;
-        // if the signs are the same and modulo not zero, round up
-        if ((x ^ y) >= 0 && (q * y != x)) {
-            return q + 1;
-        }
-        return q;
-    }
-
-    public static long clamp(long v, long min, long max) {
-        return Math.max(min, Math.min(max, v));
     }
 
     public static int cycler(int x, int min, int max) {

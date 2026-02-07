@@ -2,9 +2,9 @@ package brachy.modularui.screen;
 
 import brachy.modularui.ModularUI;
 import brachy.modularui.ModularUIMenuTypes;
-import brachy.modularui.core.mixins.client.AbstractContainerMenuAccessor;
+import brachy.modularui.core.mixins.AbstractContainerMenuAccessor;
 import brachy.modularui.factory.GuiData;
-import brachy.modularui.network.NetworkUtils;
+import brachy.modularui.utils.NetworkUtils;
 import brachy.modularui.value.sync.ModularSyncManager;
 import brachy.modularui.widgets.slot.ModularSlot;
 import brachy.modularui.widgets.slot.SlotGroup;

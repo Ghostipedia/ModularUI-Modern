@@ -11,18 +11,18 @@ import java.util.function.BooleanSupplier;
 
 public class BoolValue implements IBoolValue<Boolean>, IStringValue<Boolean> {
 
-    private boolean value;
-
-    public BoolValue(boolean value) {
-        this.value = value;
-    }
-
     public static Dynamic wrap(IBoolValue<?> val) {
         return new Dynamic(val::getBoolValue, val::setBoolValue);
     }
 
     public static Dynamic wrapAtomic(AtomicBoolean val) {
         return new Dynamic(val::get, val::set);
+    }
+
+    private boolean value;
+
+    public BoolValue(boolean value) {
+        this.value = value;
     }
 
     @Override

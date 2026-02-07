@@ -12,6 +12,10 @@ import org.jetbrains.annotations.Nullable;
 
 public class WidgetTheme {
 
+    public static WidgetThemeEntry<WidgetTheme> getDefault() {
+        return ThemeAPI.DEFAULT_THEME.getFallback();
+    }
+
     @Getter
     private final int defaultWidth;
     @Getter
@@ -27,6 +31,17 @@ public class WidgetTheme {
     private final boolean textShadow;
     @Getter
     private final int iconColor;
+
+    public static WidgetTheme whiteTextShadow(int defaultWidth, int defaultHeight, @Nullable IDrawable background) {
+        return new WidgetTheme(defaultWidth, defaultHeight, background, Color.WHITE.main,
+                Color.WHITE.main, true, Color.WHITE.main);
+    }
+
+    public static WidgetTheme darkTextNoShadow(int defaultWidth, int defaultHeight, @Nullable IDrawable background) {
+        return new WidgetTheme(defaultWidth, defaultHeight, background, Color.WHITE.main,
+                Color.TEXT_COLOR_DARK, false, Color.WHITE.main);
+    }
+
     public WidgetTheme(int defaultWidth, int defaultHeight, @Nullable IDrawable background,
                        int color, int textColor, boolean textShadow, int iconColor) {
         this.defaultWidth = defaultWidth;
@@ -54,20 +69,6 @@ public class WidgetTheme {
         int iconColor = JsonHelper.getColorWithFallback(json, inherits(json, IThemeApi.ICON_COLOR) ? null : fallback,
                 parent.getTextColor(), IThemeApi.TEXT_COLOR);
         this.iconColor = iconColor == 0 ? color : iconColor;
-    }
-
-    public static WidgetThemeEntry<WidgetTheme> getDefault() {
-        return ThemeAPI.DEFAULT_THEME.getFallback();
-    }
-
-    public static WidgetTheme whiteTextShadow(int defaultWidth, int defaultHeight, @Nullable IDrawable background) {
-        return new WidgetTheme(defaultWidth, defaultHeight, background, Color.WHITE.main,
-                Color.WHITE.main, true, Color.WHITE.main);
-    }
-
-    public static WidgetTheme darkTextNoShadow(int defaultWidth, int defaultHeight, @Nullable IDrawable background) {
-        return new WidgetTheme(defaultWidth, defaultHeight, background, Color.WHITE.main,
-                Color.TEXT_COLOR_DARK, false, Color.WHITE.main);
     }
 
     protected static boolean inherits(JsonObject json, String property) {

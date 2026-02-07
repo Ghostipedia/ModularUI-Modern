@@ -5,12 +5,11 @@ import brachy.modularui.ModularUI;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.alchemy.PotionBrewing;
 import net.minecraft.world.item.crafting.RecipeManager;
 
 import io.netty.buffer.ByteBuf;
-import net.neoforged.neoforge.common.extensions.ICommonPacketListener;
+
 import net.neoforged.neoforge.network.connection.ConnectionType;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.Nullable;
@@ -35,24 +34,16 @@ public final class SidedAccessHelper {
         }
     }
 
-    public static ICommonPacketListener getCommonPacketListener(Player player) {
-        if (player instanceof ServerPlayer serverPlayer) {
-            return serverPlayer.connection;
+    public static PotionBrewing getPotionBrewing() {
+        if (ModularUI.isClientThread()) {
+            return ClientCallWrapper.getClientPotionBrewing();
         } else {
-            return ClientCallWrapper.getCommonPacketListener();
+            return getServer().potionBrewing();
         }
     }
 
     public static RegistryFriendlyByteBuf makeRegistryByteBuf(ByteBuf buffer) {
-        return makeRegistryByteBuf(buffer, ConnectionType.NEOFORGE);
-    }
-
-    public static RegistryFriendlyByteBuf makeRegistryByteBuf(ByteBuf buffer, Player player) {
-        return makeRegistryByteBuf(buffer, getCommonPacketListener(player).getConnectionType());
-    }
-
-    public static RegistryFriendlyByteBuf makeRegistryByteBuf(ByteBuf buffer, ConnectionType connectionType) {
-        return new RegistryFriendlyByteBuf(buffer, getRegistries(), connectionType);
+        return new RegistryFriendlyByteBuf(buffer, getRegistries(), ConnectionType.NEOFORGE);
     }
 
     private static @Nullable MinecraftServer getServer() {

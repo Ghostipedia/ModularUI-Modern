@@ -1,6 +1,7 @@
 package brachy.modularui.utils.serialization.network;
 
-import brachy.modularui.network.NetworkUtils;
+import brachy.modularui.utils.EqualityTest;
+import brachy.modularui.utils.NetworkUtils;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -12,17 +13,14 @@ import net.minecraft.network.codec.StreamDecoder;
 import net.minecraft.network.codec.StreamEncoder;
 import net.minecraft.network.codec.StreamMemberEncoder;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import io.netty.buffer.ByteBuf;
-import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-
-import static net.minecraft.network.codec.ByteBufCodecs.BYTE_ARRAY;
-import static net.minecraft.network.codec.ByteBufCodecs.STRING_UTF8;
 
 public class ByteBufAdapters {
 
@@ -30,12 +28,12 @@ public class ByteBufAdapters {
     public static final IByteBufAdapter<RegistryFriendlyByteBuf, ItemStack> ITEM_STACK = makeAdapter(ItemStack.OPTIONAL_STREAM_CODEC, ItemStack::matches);
     public static final IByteBufAdapter<RegistryFriendlyByteBuf, FluidStack> FLUID_STACK = makeAdapter(FluidStack.OPTIONAL_STREAM_CODEC, FluidStack::matches);
     public static final IByteBufAdapter<ByteBuf, CompoundTag> NBT = makeAdapter(ByteBufCodecs.COMPOUND_TAG, null);
-    public static final IByteBufAdapter<ByteBuf, String> STRING = makeAdapter(STRING_UTF8, null);
+    public static final IByteBufAdapter<ByteBuf, String> STRING = makeAdapter(ByteBufCodecs.STRING_UTF8, null);
     public static final IByteBufAdapter<ByteBuf, ByteBuf> BYTE_BUF = makeAdapter(NetworkUtils::readByteBuf, NetworkUtils::writeByteBuf, null);
     public static final IByteBufAdapter<ByteBuf, FriendlyByteBuf> FRIENDLY_BYTE_BUF = makeAdapter(NetworkUtils::readFriendlyByteBuf, NetworkUtils::writeByteBuf, null);
     // @formatter:on
 
-    public static final IByteBufAdapter<ByteBuf, byte[]> BYTE_ARR = makeAdapter(BYTE_ARRAY, (t1, t2) -> {
+    public static final IByteBufAdapter<ByteBuf, byte[]> BYTE_ARR = makeAdapter(ByteBufCodecs.BYTE_ARRAY, (t1, t2) -> {
         if (t1.length != t2.length) return false;
         for (int i = 0; i < t1.length; i++) {
             if (t1[i] != t2[i]) return false;
@@ -112,8 +110,8 @@ public class ByteBufAdapters {
 
     public static <B, V> IByteBufAdapter<B, V> makeAdapter(@NotNull StreamDecoder<B, V> decoder,
                                                            @NotNull StreamEncoder<B, V> encoder,
-                                                           @Nullable IEquals<V> comparator) {
-        final IEquals<V> tester = comparator != null ? comparator : IEquals.defaultTester();
+                                                           @Nullable EqualityTest<V> comparator) {
+        final EqualityTest<V> tester = comparator != null ? comparator : EqualityTest.defaultTester();
         return new IByteBufAdapter<>() {
 
             @Override
@@ -134,13 +132,13 @@ public class ByteBufAdapters {
     }
 
     public static <B, V> IByteBufAdapter<B, V> makeAdapter(@NotNull StreamCodec<B, V> codec,
-                                                           @Nullable IEquals<V> comparator) {
+                                                           @Nullable EqualityTest<V> comparator) {
         return makeAdapter(codec, codec, comparator);
     }
 
     public static <B, V> IByteBufAdapter<B, V> makeMemberAdapter(@NotNull StreamDecoder<B, V> decoder,
                                                                  @NotNull StreamMemberEncoder<B, V> memberEncoder,
-                                                                 @Nullable IEquals<V> comparator) {
+                                                                 @Nullable EqualityTest<V> comparator) {
         return makeAdapter(decoder, (buffer, value) -> memberEncoder.encode(value, buffer), comparator);
     }
 }

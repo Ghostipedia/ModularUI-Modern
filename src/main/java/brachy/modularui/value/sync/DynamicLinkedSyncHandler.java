@@ -4,22 +4,25 @@ import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.widget.WidgetTree;
 import brachy.modularui.widgets.DynamicSyncedWidget;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
+import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?>> extends SyncHandler
+public class DynamicLinkedSyncHandler<B extends ByteBuf, S extends ValueSyncHandler<B, ?>> extends SyncHandler
         implements IDynamicSyncNotifiable {
 
-    private final S linkedValue;
-    private IWidgetProvider<S> widgetProvider;
+    private IWidgetProvider<B, S> widgetProvider;
     private Consumer<IWidget> onWidgetUpdate;
+
     private boolean updateQueued;
     private IWidget lastRejectedWidget;
+
+    private final S linkedValue;
 
     public DynamicLinkedSyncHandler(S linkedValue) {
         this.linkedValue = linkedValue;
@@ -27,14 +30,14 @@ public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?>> extends Syn
     }
 
     @Override
-    public void readOnClient(int id, FriendlyByteBuf buf) {
+    public void readOnClient(int id, RegistryFriendlyByteBuf buf) {
         if (id == 0) {
             updateWidget(parseWidget());
         }
     }
 
     @Override
-    public void readOnServer(int id, FriendlyByteBuf buf) {
+    public void readOnServer(int id, RegistryFriendlyByteBuf buf) {
         if (id == 0) {
             // do nothing with the widget on server side
             parseWidget();
@@ -108,7 +111,7 @@ public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?>> extends Syn
      * @return this
      * @see IWidgetProvider
      */
-    public DynamicLinkedSyncHandler<S> widgetProvider(IWidgetProvider<S> widgetProvider) {
+    public DynamicLinkedSyncHandler<B, S> widgetProvider(IWidgetProvider<B, S> widgetProvider) {
         this.widgetProvider = widgetProvider;
         return this;
     }
@@ -126,7 +129,7 @@ public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?>> extends Syn
         }
     }
 
-    public interface IWidgetProvider<S extends ValueSyncHandler<?>> {
+    public interface IWidgetProvider<B extends ByteBuf, S extends ValueSyncHandler<B, ?>> {
 
         /**
          * This is the function which creates a widget on client and server.

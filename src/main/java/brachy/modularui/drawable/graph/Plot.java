@@ -27,13 +27,13 @@ public class Plot {
             Color.LIME.main
     };
 
-    double[] xs = DoubleArrayMath.EMPTY;
-    double[] ys = DoubleArrayMath.EMPTY;
+    protected double[] xs = DoubleArrayMath.EMPTY;
+    protected double[] ys = DoubleArrayMath.EMPTY;
     @Getter
-    float thickness = 1f;
-    boolean defaultColor = true;
+    protected float thickness = 1f;
+    protected boolean defaultColor = true;
     @Getter
-    int color;
+    protected int color;
 
     private float[] vertexBuffer; // screen coords need to be way less accurate than graph coords, so float is fine
     private boolean dirty = true;

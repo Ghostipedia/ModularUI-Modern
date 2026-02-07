@@ -38,10 +38,6 @@ public class SortButtons extends Widget<SortButtons> {
         }
     }
 
-    private final ButtonWidget<?> sortButton = new ButtonWidget<>();
-    private final ButtonWidget<?> settingsButton = new ButtonWidget<>();
-    @Getter
-    private final @NotNull List<IWidget> children = Arrays.asList(sortButton, settingsButton);
     @Getter
     @Setter
     private String slotGroupName;
@@ -50,6 +46,10 @@ public class SortButtons extends Widget<SortButtons> {
     private SlotGroup slotGroup;
     @Setter
     private boolean horizontal = true;
+    private final ButtonWidget<?> sortButton = new ButtonWidget<>();
+    private final ButtonWidget<?> settingsButton = new ButtonWidget<>();
+    @Getter
+    private final @NotNull List<IWidget> children = Arrays.asList(sortButton, settingsButton);
 
     public SortButtons() {
         // TODO bogosort doesn't exist (yet), pick some other sorting mod to add compat for
@@ -102,7 +102,7 @@ public class SortButtons extends Widget<SortButtons> {
         SlotGroupWidget parent = WidgetTree.findParent(this, SlotGroupWidget.class);
         if (parent == null) {
             throw new IllegalArgumentException(
-                    "If the sort buttons widget doesn't have a SlotGroupWidget above itself in the widget tree, then it needs a slot group or name specified. Neither was found.");
+                    "If the sort buttons don't have a SlotGroupWidget above itself in the widget tree, then it needs a slot group or name specified. Both were not found.");
         }
         return parent;
     }

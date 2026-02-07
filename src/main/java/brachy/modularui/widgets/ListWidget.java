@@ -14,11 +14,13 @@ import brachy.modularui.widget.scroll.ScrollData;
 import brachy.modularui.widget.scroll.VerticalScrollData;
 import brachy.modularui.widget.sizer.Unit;
 import brachy.modularui.widgets.layout.Flow;
+import brachy.modularui.widgets.layout.SimpleFlow;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import lombok.Getter;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
@@ -33,10 +35,10 @@ import java.util.function.IntFunction;
 public class ListWidget<I extends IWidget, W extends ListWidget<I, W>> extends AbstractScrollWidget<I, W>
         implements ILayoutWidget, IParentWidget<I, W> {
 
-    private final IntList separatorPositions = new IntArrayList();
     @Getter
     private ScrollData scrollData;
     private IIcon childSeparator;
+    private final IntList separatorPositions = new IntArrayList();
     private boolean collapseDisabledChild = true;
     private boolean wrapTight = false;
     private Alignment.CrossAxis crossAxisAlignment = Alignment.CrossAxis.CENTER;
@@ -61,7 +63,7 @@ public class ListWidget<I extends IWidget, W extends ListWidget<I, W>> extends A
     public void beforeResize(boolean onOpen) {
         super.beforeResize(onOpen);
         if (this.mainAxisMaxSize != null) {
-            flex().setUnit(this.mainAxisMaxSize, getAxis(), Unit.State.SIZE);
+            resizer().setUnit(this.mainAxisMaxSize, getAxis(), Unit.State.SIZE);
         }
     }
 
@@ -102,7 +104,7 @@ public class ListWidget<I extends IWidget, W extends ListWidget<I, W>> extends A
                 widget.resizer().updateResized();
                 continue;
             }
-            if (widget.flex().hasPos(axis)) {
+            if (widget.resizer().hasPos(axis)) {
                 // this is required when the widget has a pos on the main axis, but not on the cross axis
                 widget.resizer().updateResized();
                 continue;
@@ -116,9 +118,6 @@ public class ListWidget<I extends IWidget, W extends ListWidget<I, W>> extends A
             widget.resizer().setMarginPaddingApplied(true);
             this.separatorPositions.add(p);
             p += separatorSize;
-            if (isValid()) {
-                widget.flex().applyPos(widget);
-            }
         }
         int size = p + getArea().getPadding().getEnd(axis);
         getScrollData().setScrollSize(size);
@@ -137,7 +136,10 @@ public class ListWidget<I extends IWidget, W extends ListWidget<I, W>> extends A
 
     @Override
     public boolean postLayoutWidgets() {
-        return Flow.layoutCrossAxisListLike(this, getAxis(), this.crossAxisAlignment, this.reverseLayout);
+        SimpleFlow flow = new SimpleFlow();
+        flow.widgets.addAll(getChildren());
+        return Flow.layoutCrossAxisListLike(this, Collections.singletonList(flow), getAxis(), this.crossAxisAlignment,
+                0);
     }
 
     @Override

@@ -10,18 +10,18 @@ import java.util.function.LongSupplier;
 
 public class LongValue implements ILongValue<Long>, IIntValue<Long>, IStringValue<Long> {
 
-    private long value;
-
-    public LongValue(long value) {
-        this.value = value;
-    }
-
     public static Dynamic wrap(ILongValue<?> val) {
         return new Dynamic(val::getLongValue, val::setLongValue);
     }
 
     public static Dynamic wrapAtomic(AtomicLong val) {
         return new Dynamic(val::get, val::set);
+    }
+
+    private long value;
+
+    public LongValue(long value) {
+        this.value = value;
     }
 
     @Override

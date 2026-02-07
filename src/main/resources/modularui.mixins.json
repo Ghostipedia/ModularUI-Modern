@@ -4,6 +4,7 @@
     "refmap": "modularui.refmap.json",
     "package": "brachy.modularui.core.mixins",
     "compatibilityLevel": "JAVA_17",
+    "plugin": "brachy.modularui.core.ModularUIMixinPlugin",
     "client": [
         "client.AbstractContainerScreenAccessor",
         "client.AbstractContainerScreenMixin",
@@ -11,15 +12,17 @@
         "client.GuiGraphicsMixin",
         "client.MinecraftMixin",
         "client.ScreenAccessor",
-        "client.StringSplitterAccessor"
+        "client.StringSplitterAccessor",
+        "client.SlotAccessor",
+        "jei.IngredientListOverlayAccessor"
     ],
     "mixins": [
+        "AbstractContainerMenuAccessor",
+        "RegistryFriendlyByteBufMixin",
         "ReloadableServerResourcesMixin",
         "ServerPlayerAccessor",
         "TransientCraftingContainerAccessor",
-        "WorldLoaderMixin",
-        "client.AbstractContainerMenuAccessor",
-        "client.SlotAccessor"
+        "WorldLoaderMixin"
     ],
     "injectors": {
         "defaultRequire": 1,

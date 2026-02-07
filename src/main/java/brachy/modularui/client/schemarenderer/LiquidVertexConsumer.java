@@ -69,16 +69,6 @@ public class LiquidVertexConsumer implements VertexConsumer {
     }
 
     @Override
-    public VertexConsumer setColor(float red, float green, float blue, float alpha) {
-        return delegate.setColor(red, green, blue, alpha);
-    }
-
-    @Override
-    public VertexConsumer setColor(int i) {
-        return delegate.setColor(i);
-    }
-
-    @Override
     public VertexConsumer setLight(int lightmapUV) {
         return delegate.setLight(lightmapUV);
     }
@@ -86,6 +76,16 @@ public class LiquidVertexConsumer implements VertexConsumer {
     @Override
     public VertexConsumer setOverlay(int overlayUV) {
         return delegate.setOverlay(overlayUV);
+    }
+
+    @Override
+    public VertexConsumer setColor(float red, float green, float blue, float alpha) {
+        return delegate.setColor(red, green, blue, alpha);
+    }
+
+    @Override
+    public VertexConsumer setColor(int i) {
+        return delegate.setColor(i);
     }
 
     @Override

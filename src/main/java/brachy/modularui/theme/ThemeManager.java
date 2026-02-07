@@ -6,12 +6,16 @@ import brachy.modularui.api.IThemeApi;
 import brachy.modularui.utils.serialization.json.JsonBuilder;
 import brachy.modularui.utils.serialization.json.JsonHelper;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.NeoForge;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -21,9 +25,6 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,112 +42,21 @@ import java.util.stream.Collectors;
 @OnlyIn(Dist.CLIENT)
 public class ThemeManager extends SimplePreparableReloadListener<Map<String, List<ResourceLocation>>> {
 
-    public static final String THEMES_PATH = "modularui/themes.json";
-    public static final FileToIdConverter THEME_LISTER = new FileToIdConverter("modularui/themes", ".json");
+    public static final ThemeManager INSTANCE = new ThemeManager();
+
+    public static final String THEMES_PATH = "themes.json";
+    public static final FileToIdConverter THEME_LISTER = FileToIdConverter.json("themes");
     protected static final WidgetThemeEntry<WidgetTheme> defaultFallbackWidgetTheme = IThemeApi.get().getDefaultTheme()
             .getWidgetTheme(IThemeApi.FALLBACK);
     private static final JsonObject emptyJson = new JsonObject();
 
-    public ThemeManager() {}
+    private ThemeManager() {}
 
-    private static void validateAncestorTree(Map<String, ThemeJson> themeMap) {
-        Set<ThemeJson> invalidThemes = new ObjectOpenHashSet<>();
-        for (ThemeJson theme : themeMap.values()) {
-            if (invalidThemes.contains(theme)) {
-                continue;
-            }
-            Set<ThemeJson> parents = new ObjectOpenHashSet<>();
-            parents.add(theme);
-            ThemeJson parent = theme;
-            do {
-                if (ThemeAPI.DEFAULT_ID.equals(parent.parent)) {
-                    break;
-                }
-                parent = themeMap.get(parent.parent);
-                if (parent == null) {
-                    ModularUI.LOGGER.error(
-                            "Can't find parent '{}' for theme '{}'! All children for '{}' are therefore invalid!",
-                            theme.parent, theme.id, theme.id);
-                    invalidThemes.addAll(parents);
-                    break;
-                }
-                if (parents.contains(parent)) {
-                    ModularUI.LOGGER.error(
-                            "Ancestor tree for themes can't be circular! All of the following make a circle or are children of the circle: {}",
-                            parents);
-                    invalidThemes.addAll(parents);
-                    break;
-                }
-                if (invalidThemes.contains(parent)) {
-                    ModularUI.LOGGER.error(
-                            "Parent '{}' was found to be invalid before. All following are children of it and are therefore invalid too: {}",
-                            theme.parent, parents);
-                    invalidThemes.addAll(parents);
-                    break;
-                }
-                parents.add(parent);
-            } while (true);
-        }
-        for (ThemeJson theme : invalidThemes) {
-            themeMap.remove(theme.id);
-        }
-    }
-
-    private static ThemeJson loadThemeJson(String id, List<ResourceLocation> paths,
-                                           @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller profiler) {
-        List<JsonObject> jsons = new ArrayList<>();
-        boolean override = false;
-        for (ResourceLocation path : paths) {
-            profiler.push(path.toString());
-            ResourceLocation rl = THEME_LISTER.idToFile(path);
-            Resource resource = resourceManager.getResource(rl).orElse(null);
-            if (resource == null) {
-                profiler.pop();
-                return null;
-            }
-            JsonElement element;
-            try (InputStream stream = resource.open()) {
-                element = JsonHelper.parse(stream);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            if (element.isJsonObject()) {
-                if (JsonHelper.getBoolean(element.getAsJsonObject(), false, "override")) {
-                    jsons.clear();
-                    override = true;
-                }
-                jsons.add(element.getAsJsonObject());
-            }
-            profiler.pop();
-        }
-        if (jsons.isEmpty()) {
-            ModularUI.LOGGER.throwing(new JsonParseException("Theme must be a JsonObject!"));
-            return null;
-        }
-        return new ThemeJson(id, jsons, override);
-    }
-
-    private static void loadScreenThemes(JsonObject json) {
-        for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
-            if (entry.getValue().isJsonPrimitive()) {
-                String theme = entry.getValue().getAsString();
-                ThemeAPI.INSTANCE.jsonScreenThemes.put(entry.getKey(), theme);
-            } else {
-                ModularUI.LOGGER.error("Theme screen definitions must be strings!");
-            }
-        }
-    }
-
-    private static void validateJsonScreenThemes() {
-        for (ObjectIterator<Object2ObjectMap.Entry<String, String>> iterator = ThemeAPI.INSTANCE.jsonScreenThemes
-                .object2ObjectEntrySet().fastIterator(); iterator.hasNext(); ) {
-            Map.Entry<String, String> entry = iterator.next();
-            if (!ThemeAPI.INSTANCE.hasTheme(entry.getValue())) {
-                ModularUI.LOGGER.error("Tried to register theme '{}' for screen '{}', but theme does not exist",
-                        entry.getValue(), entry.getKey());
-                iterator.remove();
-            }
-        }
+    public static void reload() {
+        // wtf is this hackery??
+        ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
+        ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
+        INSTANCE.apply(INSTANCE.prepare(resourceManager, profiler), resourceManager, profiler);
     }
 
     @Override
@@ -262,6 +172,107 @@ public class ThemeManager extends SimplePreparableReloadListener<Map<String, Lis
         NeoForge.EVENT_BUS.post(new ReloadThemeEvent.Post());
     }
 
+    private static void validateAncestorTree(Map<String, ThemeJson> themeMap) {
+        Set<ThemeJson> invalidThemes = new ObjectOpenHashSet<>();
+        for (ThemeJson theme : themeMap.values()) {
+            if (invalidThemes.contains(theme)) {
+                continue;
+            }
+            Set<ThemeJson> parents = new ObjectOpenHashSet<>();
+            parents.add(theme);
+            ThemeJson parent = theme;
+            do {
+                if (ThemeAPI.DEFAULT_ID.equals(parent.parent)) {
+                    break;
+                }
+                parent = themeMap.get(parent.parent);
+                if (parent == null) {
+                    ModularUI.LOGGER.error(
+                            "Can't find parent '{}' for theme '{}'! All children for '{}' are therefore invalid!",
+                            theme.parent, theme.id, theme.id);
+                    invalidThemes.addAll(parents);
+                    break;
+                }
+                if (parents.contains(parent)) {
+                    ModularUI.LOGGER.error(
+                            "Ancestor tree for themes can't be circular! All of the following make a circle or are children of the circle: {}",
+                            parents);
+                    invalidThemes.addAll(parents);
+                    break;
+                }
+                if (invalidThemes.contains(parent)) {
+                    ModularUI.LOGGER.error(
+                            "Parent '{}' was found to be invalid before. All following are children of it and are therefore invalid too: {}",
+                            theme.parent, parents);
+                    invalidThemes.addAll(parents);
+                    break;
+                }
+                parents.add(parent);
+            } while (true);
+        }
+        for (ThemeJson theme : invalidThemes) {
+            themeMap.remove(theme.id);
+        }
+    }
+
+    private static ThemeJson loadThemeJson(String id, List<ResourceLocation> paths,
+                                           @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller profiler) {
+        List<JsonObject> jsons = new ArrayList<>();
+        boolean override = false;
+        for (ResourceLocation path : paths) {
+            profiler.push(path.toString());
+            ResourceLocation rl = THEME_LISTER.idToFile(path);
+            Resource resource = resourceManager.getResource(rl).orElse(null);
+            if (resource == null) {
+                profiler.pop();
+                ModularUI.LOGGER.warn("Theme '{}' was not found at path '{}'", id, rl);
+                continue;
+            }
+            JsonElement element;
+            try (InputStream stream = resource.open()) {
+                element = JsonHelper.parse(stream);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            if (element.isJsonObject()) {
+                if (JsonHelper.getBoolean(element.getAsJsonObject(), false, "override")) {
+                    jsons.clear();
+                    override = true;
+                }
+                jsons.add(element.getAsJsonObject());
+            }
+            profiler.pop();
+        }
+        if (jsons.isEmpty()) {
+            ModularUI.LOGGER.throwing(new JsonParseException("Theme must be a JsonObject!"));
+            return null;
+        }
+        return new ThemeJson(id, jsons, override);
+    }
+
+    private static void loadScreenThemes(JsonObject json) {
+        for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
+            if (entry.getValue().isJsonPrimitive()) {
+                String theme = entry.getValue().getAsString();
+                ThemeAPI.INSTANCE.jsonScreenThemes.put(entry.getKey(), theme);
+            } else {
+                ModularUI.LOGGER.error("Theme screen definitions must be strings!");
+            }
+        }
+    }
+
+    private static void validateJsonScreenThemes() {
+        for (ObjectIterator<Object2ObjectMap.Entry<String, String>> iterator = ThemeAPI.INSTANCE.jsonScreenThemes
+                .object2ObjectEntrySet().fastIterator(); iterator.hasNext(); ) {
+            Map.Entry<String, String> entry = iterator.next();
+            if (!ThemeAPI.INSTANCE.hasTheme(entry.getValue())) {
+                ModularUI.LOGGER.error("Tried to register theme '{}' for screen '{}', but theme does not exist",
+                        entry.getValue(), entry.getKey());
+                iterator.remove();
+            }
+        }
+    }
+
     private static class ThemeJson {
 
         private final String id;
@@ -305,7 +316,7 @@ public class ThemeManager extends SimplePreparableReloadListener<Map<String, Lis
             WidgetThemeMap widgetThemes = new WidgetThemeMap();
             WidgetThemeEntry<?> parentWidgetTheme = parent.getFallback(); // fallback theme of parent
             // fallback theme of new theme
-            WidgetTheme fallback = new WidgetTheme(parentWidgetTheme.getTheme(), jsonBuilder.getJson(), null);
+            WidgetTheme fallback = new WidgetTheme(parentWidgetTheme.theme(), jsonBuilder.getJson(), null);
             WidgetTheme fallbackHover = fallback;
 
             JsonObject hoverJson = getJson(jsonBuilder.getJson(), IThemeApi.HOVER_SUFFIX);
@@ -340,7 +351,7 @@ public class ThemeManager extends SimplePreparableReloadListener<Map<String, Lis
                     if (key.isSubWidgetTheme()) {
                         // if it is a sub widget theme, we use the parent widget theme from this theme
                         WidgetThemeEntry<T> entry = map.getTheme(key.getParent());
-                        map.putTheme(key, new WidgetThemeEntry<>(key, entry.getTheme(), entry.getHoverTheme()));
+                        map.putTheme(key, new WidgetThemeEntry<>(key, entry.theme(), entry.hoverTheme()));
                         return;
                     }
                     // we still need to parse non inherited values (fallback)
@@ -352,12 +363,12 @@ public class ThemeManager extends SimplePreparableReloadListener<Map<String, Lis
             JsonObject fallback = key.isSubWidgetTheme() ? null : json.getJson();
             T widgetTheme;
             if (widgetThemeJson != null) {
-                T parentWidgetTheme = key.isSubWidgetTheme() ? map.getTheme(key.getParent()).getTheme() :
-                        parent.getWidgetTheme(key).getTheme();
+                T parentWidgetTheme = key.isSubWidgetTheme() ? map.getTheme(key.getParent()).theme() :
+                        parent.getWidgetTheme(key).theme();
                 // sub widget themes strictly only inherit from their parent widget theme and not the parent theme
                 widgetTheme = parser.parse(parentWidgetTheme, widgetThemeJson, fallback);
             } else {
-                widgetTheme = parent.getWidgetTheme(key).getTheme();
+                widgetTheme = parent.getWidgetTheme(key).theme();
             }
 
             if (!definedHover && definedStandard) {
@@ -368,7 +379,7 @@ public class ThemeManager extends SimplePreparableReloadListener<Map<String, Lis
 
             // only inherit from the widget theme if it was actually defined, otherwise use parent
             T parentWidgetHoverTheme = widgetThemeJson != null ? widgetTheme :
-                    parent.getWidgetTheme(key).getHoverTheme();
+                    parent.getWidgetTheme(key).hoverTheme();
             T widgetThemeHover = parser.parse(parentWidgetHoverTheme, widgetThemeHoverJson, fallback);
 
             map.putTheme(key, new WidgetThemeEntry<>(key, widgetTheme, widgetThemeHover));

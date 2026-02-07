@@ -1,8 +1,8 @@
 package brachy.modularui.value.sync;
 
+import brachy.modularui.utils.EqualityTest;
 import brachy.modularui.utils.ICopy;
 import brachy.modularui.utils.serialization.network.IByteBufAdapter;
-import brachy.modularui.utils.serialization.network.IEquals;
 
 import net.minecraft.network.VarInt;
 import net.minecraft.network.codec.StreamDecoder;
@@ -25,7 +25,7 @@ public class GenericMapSyncHandler<B extends ByteBuf, K, V> extends ValueSyncHan
     private final StreamDecoder<B, V> valueDeserializer;
     private final StreamEncoder<B, K> keySerializer;
     private final StreamEncoder<B, V> valueSerializer;
-    private final IEquals<V> equals;
+    private final EqualityTest<V> equals;
     private final ICopy<K> keyCopy;
     private final ICopy<V> valueCopy;
     private final Map<K, V> cache = new Object2ObjectOpenHashMap<>();
@@ -36,7 +36,7 @@ public class GenericMapSyncHandler<B extends ByteBuf, K, V> extends ValueSyncHan
                                  StreamDecoder<B, V> valueDeserializer,
                                  StreamEncoder<B, K> keySerializer,
                                  StreamEncoder<B, V> valueSerializer,
-                                 IEquals<V> equals,
+                                 EqualityTest<V> equals,
                                  ICopy<K> keyCopy,
                                  ICopy<V> valueCopy) {
         this.getter = getter;
@@ -45,10 +45,9 @@ public class GenericMapSyncHandler<B extends ByteBuf, K, V> extends ValueSyncHan
         this.valueDeserializer = valueDeserializer;
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
-        this.equals = equals != null ? IEquals.wrapNullSafe(equals) : Objects::equals;
+        this.equals = equals != null ? EqualityTest.wrapNullSafe(equals) : Objects::equals;
         this.keyCopy = keyCopy != null ? keyCopy : ICopy.ofSerializer(keySerializer, keyDeserializer);
         this.valueCopy = valueCopy != null ? valueCopy : ICopy.ofSerializer(valueSerializer, valueDeserializer);
-        ;
     }
 
     @Override
@@ -58,6 +57,10 @@ public class GenericMapSyncHandler<B extends ByteBuf, K, V> extends ValueSyncHan
             this.cache.put(this.keyCopy.createDeepCopy(entry.getKey()),
                     this.valueCopy.createDeepCopy(entry.getValue()));
         }
+        onSetCache(value, setSource, sync);
+    }
+
+    protected void onSetCache(Map<K, V> value, boolean setSource, boolean sync) {
         if (setSource && this.setter != null) {
             this.setter.accept(value);
         }
@@ -106,7 +109,7 @@ public class GenericMapSyncHandler<B extends ByteBuf, K, V> extends ValueSyncHan
         for (int i = 0; i < size; i++) {
             this.cache.put(this.keyDeserializer.decode(buffer), this.valueDeserializer.decode(buffer));
         }
-        this.setter.accept(getValue());
+        onSetCache(getValue(), true, false);
     }
 
     @Override
@@ -128,7 +131,7 @@ public class GenericMapSyncHandler<B extends ByteBuf, K, V> extends ValueSyncHan
         private StreamDecoder<B, V> valueDeserializer;
         private StreamEncoder<B, K> keySerializer;
         private StreamEncoder<B, V> valueSerializer;
-        private IEquals<V> equals;
+        private EqualityTest<V> equals;
         private ICopy<K> keyCopy;
         private ICopy<V> valueCopy;
 
@@ -170,7 +173,7 @@ public class GenericMapSyncHandler<B extends ByteBuf, K, V> extends ValueSyncHan
             return valueDeserializer(adapter).valueSerializer(adapter).equals(adapter);
         }
 
-        public Builder<B, K, V> equals(IEquals<V> equals) {
+        public Builder<B, K, V> equals(EqualityTest<V> equals) {
             this.equals = equals;
             return this;
         }

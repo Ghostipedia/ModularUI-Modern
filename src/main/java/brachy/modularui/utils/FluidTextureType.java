@@ -4,9 +4,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraftforge.fluids.FluidStack;
 
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.function.BiFunction;
 
@@ -25,7 +25,7 @@ public enum FluidTextureType {
         else return fluidTypeExtensions.getOverlayTexture();
     });
 
-    private static final ResourceLocation WATER_STILL = new ResourceLocation("minecraft", "block/water_still");
+    private static final ResourceLocation WATER_STILL = ResourceLocation.withDefaultNamespace("block/water_still");
 
     private final BiFunction<IClientFluidTypeExtensions, FluidStack, ResourceLocation> mapper;
 

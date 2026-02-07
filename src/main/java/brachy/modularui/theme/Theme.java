@@ -17,8 +17,8 @@ public class Theme extends AbstractTheme {
         this.widgetThemes.putAll(widgetThemes);
         if (parent instanceof Theme theme) {
             for (WidgetThemeEntry<?> entry : theme.widgetThemes.values()) {
-                if (!this.widgetThemes.containsKey(entry.getKey())) {
-                    this.widgetThemes.put(entry.getKey(), entry);
+                if (!this.widgetThemes.containsKey(entry.key())) {
+                    this.widgetThemes.put(entry.key(), entry);
                 }
             }
         } else if (parent == DefaultTheme.INSTANCE) {
@@ -26,8 +26,8 @@ public class Theme extends AbstractTheme {
                 this.widgetThemes.putTheme(IThemeApi.FALLBACK, ThemeManager.defaultFallbackWidgetTheme);
             }
             for (WidgetThemeEntry<?> entry : DefaultTheme.INSTANCE.getWidgetThemes()) {
-                if (!this.widgetThemes.containsKey(entry.getKey())) {
-                    this.widgetThemes.put(entry.getKey(), entry);
+                if (!this.widgetThemes.containsKey(entry.key())) {
+                    this.widgetThemes.put(entry.key(), entry);
                 }
             }
         }

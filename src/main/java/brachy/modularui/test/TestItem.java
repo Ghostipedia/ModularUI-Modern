@@ -1,17 +1,11 @@
 package brachy.modularui.test;
 
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
-
 import brachy.modularui.api.IPanelHandler;
 import brachy.modularui.api.IUIHolder;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.IKey;
 import brachy.modularui.drawable.GuiDraw;
+import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.drawable.Rectangle;
 import brachy.modularui.factory.PlayerInventoryGuiData;
 import brachy.modularui.factory.inventory.InventoryTypes;
@@ -33,7 +27,12 @@ import brachy.modularui.widgets.layout.Flow;
 import brachy.modularui.widgets.slot.ItemSlot;
 import brachy.modularui.widgets.slot.ModularSlot;
 
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.vertex.*;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -58,7 +57,7 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
 
         syncManager.registerSlotGroup("mixer_items", 2);
         // if the player slot is the slot with this item, then disallow any interaction
-        // if the item is not in the player inventory (bauble for example), then this items slot is not on the screen,
+        // if the item is not in the player inventory (curio for example), then this items slot is not on the screen,
         // and we don't need to limit accessibility
         if (data.getInventoryType() == InventoryTypes.PLAYER) {
             syncManager.bindPlayerInventory(data.getPlayer(), (inv, index) -> index == data.getSlotIndex() ?
@@ -67,21 +66,22 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
         }
         ModularPanel panel = ModularPanel.defaultPanel("knapping_gui").resizeableOnDrag(true);
         panel.child(new Column().margin(7)
-                .child(new ParentWidget<>().widthRel(1f).expanded()
-                        .child(SlotGroupWidget.builder()
-                                .row("I I")
-                                .row("  I")
-                                .row("   ")
-                                .row(" I ")
-                                .key('I', index -> new ItemSlot().slot(SyncHandlers.itemSlot(ihm, index)
-                                        .ignoreMaxStackSize(true)
-                                        .slotGroup("mixer_items")
-                                        // do not allow putting items which can hold other items into the item
-                                        // some mods don't do this on their backpacks, so it won't catch those cases
-                                        .filter(stack -> stack.getCapability(Capabilities.ItemHandler.ITEM) != null)))
-                                .build()
-                                .align(Alignment.TopLeft)))
-                .child(SlotGroupWidget.playerInventory(false)));
+                        .child(new ParentWidget<>().widthRel(1f).expanded()
+                                .child(SlotGroupWidget.builder()
+                                        .row("I I")
+                                        .row("  I")
+                                        .row("   ")
+                                        .row(" I ")
+                                        .key('I', index -> new ItemSlot().slot(SyncHandlers.itemSlot(ihm, index)
+                                                .ignoreMaxStackSize(true)
+                                                .slotGroup("mixer_items")
+                                                // do not allow putting items which can hold other items into the item
+                                                // some mods don't do this on their backpacks, so it won't catch those cases
+                                                .filter(stack -> stack.getCapability(Capabilities.ItemHandler.ITEM) == null)))
+                                        .build()
+                                        .align(Alignment.TopLeft)))
+                        .child(SlotGroupWidget.playerInventory(false)))
+                .child(GuiTextures.ANIMATED_TEXTURE_TEST.asWidget().size(32).align(Alignment.TopRight).margin(7));
 
         return panel;
     }
@@ -175,22 +175,7 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
                         .child(correctedGradient.asWidget().widthRel(1f).height(10)));
     }
 
-    /*
-     * @Override
-     * public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-     * return new ICapabilityProvider() {
-     *
-     * @Override
-     * public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-     * if (cap == ITEM_HANDLER) {
-     * var handler = new ItemStackHandler(4);
-     * return LazyOptional.of(() -> handler).cast();
-     * }
-     * return LazyOptional.empty();
-     * }
-     * };
-     * }
-     */
+    // capability registration moved to ModularUITestingRegistration
 
     @Override
     public boolean canEquip(SlotContext slotContext, ItemStack stack) {

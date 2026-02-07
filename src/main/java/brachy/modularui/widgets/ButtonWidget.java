@@ -14,17 +14,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class ButtonWidget<W extends ButtonWidget<W>> extends SingleChildWidget<W> implements Interactable {
 
-    private boolean playClickSound = true;
-    private Runnable clickSound;
-    private IGuiAction.MousePressed mousePressed;
-    private IGuiAction.MouseReleased mouseReleased;
-    private IGuiAction.MousePressed mouseTapped;
-    private IGuiAction.MouseScroll mouseScroll;
-    private IGuiAction.KeyPressed keyPressed;
-    private IGuiAction.KeyReleased keyReleased;
-    private IGuiAction.KeyPressed keyTapped;
-    private InteractionSyncHandler syncHandler;
-
     public static ButtonWidget<?> panelCloseButton() {
         ButtonWidget<?> buttonWidget = new ButtonWidget<>();
         return buttonWidget.widgetTheme(IThemeApi.CLOSE_BUTTON)
@@ -38,6 +27,18 @@ public class ButtonWidget<W extends ButtonWidget<W>> extends SingleChildWidget<W
                     return false;
                 });
     }
+
+    private boolean playClickSound = true;
+    private Runnable clickSound;
+    private IGuiAction.MousePressed mousePressed;
+    private IGuiAction.MouseReleased mouseReleased;
+    private IGuiAction.MousePressed mouseTapped;
+    private IGuiAction.MouseScroll mouseScroll;
+    private IGuiAction.KeyPressed keyPressed;
+    private IGuiAction.KeyReleased keyReleased;
+    private IGuiAction.KeyPressed keyTapped;
+
+    private InteractionSyncHandler syncHandler;
 
     @Override
     public WidgetThemeEntry<?> getWidgetThemeInternal(ITheme theme) {
@@ -130,7 +131,7 @@ public class ButtonWidget<W extends ButtonWidget<W>> extends SingleChildWidget<W
     @Override
     public boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         return (this.mouseScroll != null && this.mouseScroll.scroll(mouseX, mouseY, scrollX, scrollY)) ||
-                (this.syncHandler != null && this.syncHandler.onMouseScroll((int) scrollY));
+                (this.syncHandler != null && this.syncHandler.onMouseScroll(scrollX, scrollY));
     }
 
     public W onMousePressed(IGuiAction.MousePressed mousePressed) {

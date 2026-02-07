@@ -57,32 +57,6 @@ public class Stencil {
         RenderSystem.stencilMask(0x00);
     }
 
-    private static void drawRectangleStencilShape(GuiGraphics graphics, int x, int y, int w, int h) {
-        RenderSystem.disableDepthTest();
-        RenderSystem.enableBlend();
-        ShaderInstance lastShader = RenderSystem.getShader();
-        RenderSystem.setShader(GameRenderer::getPositionShader);
-        Matrix4f pose = graphics.pose().last().pose();
-        Tesselator tesselator = Tesselator.getInstance();
-        float x0 = x, x1 = x + w, y0 = y, y1 = y + h;
-
-        BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-        bufferbuilder.addVertex(pose, x0, y0, 0.0f);
-        bufferbuilder.addVertex(pose, x0, y1, 0.0f);
-        bufferbuilder.addVertex(pose, x1, y1, 0.0f);
-        bufferbuilder.addVertex(pose, x1, y0, 0.0f);
-
-        BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
-        RenderSystem.setShader(() -> lastShader);
-    }
-
-    public static boolean isInsideScissorArea(Area area, IViewportStack stack) {
-        if (stencils.isEmpty()) return true;
-        Area.SHARED.set(0, 0, area.width, area.height);
-        Area.SHARED.transformAndRectanglerize(stack);
-        return stencils.top().intersects(Area.SHARED);
-    }
-
     public void push(@NotNull Rectangle area) {
         push(area.x, area.y, area.width, area.height);
     }
@@ -154,6 +128,26 @@ public class Stencil {
         }
     }
 
+    private static void drawRectangleStencilShape(GuiGraphics graphics, int x, int y, int w, int h) {
+        RenderSystem.disableDepthTest();
+        RenderSystem.enableBlend();
+        ShaderInstance lastShader = RenderSystem.getShader();
+        RenderSystem.setShader(GameRenderer::getPositionShader);
+        Matrix4f pose = graphics.pose().last().pose();
+
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder bufferbuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+
+        float x0 = x, x1 = x + w, y0 = y, y1 = y + h;
+        bufferbuilder.addVertex(pose, x0, y0, 0.0f);
+        bufferbuilder.addVertex(pose, x0, y1, 0.0f);
+        bufferbuilder.addVertex(pose, x1, y1, 0.0f);
+        bufferbuilder.addVertex(pose, x1, y0, 0.0f);
+
+        BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
+        RenderSystem.setShader(() -> lastShader);
+    }
+
     /**
      * Removes the top most stencil
      */
@@ -177,5 +171,12 @@ public class Stencil {
         RenderSystem.stencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
         RenderSystem.stencilMask(0x00);
         this.context.getGraphics().flush();
+    }
+
+    public static boolean isInsideScissorArea(Area area, IViewportStack stack) {
+        if (stencils.isEmpty()) return true;
+        Area.SHARED.set(0, 0, area.width, area.height);
+        Area.SHARED.transformAndRectanglerize(stack);
+        return stencils.top().intersects(Area.SHARED);
     }
 }

@@ -79,13 +79,13 @@ public interface GuiTextures {
     UITexture CURSOR = icon("cursor", 32, 240);
 
     UITexture MUI_LOGO = UITexture.builder()
-            .location(ModularUI.MOD_ID, "modular_ui_logo")
+            .location(ModularUI.id("modular_ui_logo"))
             .imageSize(603, 603)
             .name("logo")
             .build();
 
     UITexture MC_BACKGROUND = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/background/vanilla_background")
+            .location(ModularUI.id("gui/background/vanilla_background"))
             .imageSize(195, 136)
             .adaptable(4)
             .name("vanilla_background")
@@ -93,7 +93,7 @@ public interface GuiTextures {
             .build();
 
     UITexture MENU_BACKGROUND = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/background/menu")
+            .location(ModularUI.id("gui/background/menu"))
             .imageSize(18, 18)
             .adaptable(1)
             .name("menu")
@@ -101,7 +101,7 @@ public interface GuiTextures {
             .build();
 
     UITexture MC_BUTTON = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/widgets/mc_button")
+            .location(ModularUI.id("gui/widgets/mc_button"))
             .imageSize(16, 32) // texture is 32x64, but this looks nicer
             .subAreaUV(0f, 0f, 1f, 0.5f)
             .adaptable(2).tiled()
@@ -110,7 +110,7 @@ public interface GuiTextures {
             .build();
 
     UITexture MC_BUTTON_PRESSED = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/widgets/mc_button")
+            .location(ModularUI.id("gui/widgets/mc_button"))
             .imageSize(16, 32)
             .subAreaUV(0f, 0.5f, 1f, 1f)
             .adaptable(2).tiled()
@@ -119,7 +119,7 @@ public interface GuiTextures {
             .build();
 
     UITexture MC_BUTTON_HOVERED = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/widgets/mc_button_hovered")
+            .location(ModularUI.id("gui/widgets/mc_button_hovered"))
             .imageSize(16, 32)
             .subAreaUV(0f, 0f, 1f, 0.5f)
             .adaptable(2).tiled()
@@ -127,7 +127,7 @@ public interface GuiTextures {
             .build();
 
     UITexture MC_BUTTON_HOVERED_PRESSED = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/widgets/mc_button_hovered")
+            .location(ModularUI.id("gui/widgets/mc_button_hovered"))
             .imageSize(16, 32)
             .subAreaUV(0f, 0.5f, 1f, 1f)
             .adaptable(2).tiled()
@@ -135,7 +135,7 @@ public interface GuiTextures {
             .build();
 
     UITexture MC_BUTTON_DISABLED = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/widgets/mc_button_disabled")
+            .location(ModularUI.id("gui/widgets/mc_button_disabled"))
             .imageSize(16, 16)
             .fullImage()
             .adaptable(1).tiled()
@@ -144,28 +144,28 @@ public interface GuiTextures {
             .build();
 
     UITexture BUTTON_CLEAN = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/widgets/base_button")
+            .location(ModularUI.id("gui/widgets/base_button"))
             .imageSize(18, 18)
             .adaptable(1)
             .name("vanilla_button").canApplyTheme()
             .build();
 
     UITexture DISPLAY = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/background/display")
+            .location(ModularUI.id("gui/background/display"))
             .imageSize(143, 75)
             .adaptable(2)
             .name("display")
             .build();
 
     UITexture DISPLAY_SMALL = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/background/display_small")
+            .location(ModularUI.id("gui/background/display_small"))
             .imageSize(18, 18)
             .adaptable(1)
             .name("display_small")
             .build();
 
     UITexture SLOT_ITEM = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/slot/item")
+            .location(ModularUI.id("gui/slot/item"))
             .imageSize(18, 18)
             .adaptable(1)
             .canApplyTheme()
@@ -173,7 +173,7 @@ public interface GuiTextures {
             .build();
 
     UITexture SLOT_FLUID = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/slot/fluid")
+            .location(ModularUI.id("gui/slot/fluid"))
             .imageSize(18, 18)
             .adaptable(1)
             .canApplyTheme()
@@ -181,32 +181,32 @@ public interface GuiTextures {
             .build();
 
     UITexture PROGRESS_ARROW = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/widgets/progress_bar_arrow")
+            .location(ModularUI.id("gui/widgets/progress_bar_arrow"))
             .imageSize(20, 40)
             .canApplyTheme()
             .build();
 
     UITexture PROGRESS_CYCLE = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/widgets/progress_bar_mixer")
+            .location(ModularUI.id("gui/widgets/progress_bar_mixer"))
             .imageSize(20, 40)
             .canApplyTheme()
             .build();
 
     UITexture CYCLE_BUTTON_DEMO = UITexture.builder()
-            .location(ModularUI.MOD_ID, "gui/widgets/cycle_button_demo")
+            .location(ModularUI.id("gui/widgets/cycle_button_demo"))
             .imageSize(18, 54)
             .build();
 
-    UITexture CHECK_BOX = UITexture.fullImage(ModularUI.MOD_ID, "gui/widgets/toggle_config");
-    UITexture CROSS = UITexture.fullImage(ModularUI.MOD_ID, "gui/icons/cross");
-    UITexture CROSS_TINY = UITexture.fullImage(ModularUI.MOD_ID, "gui/icons/cross_tiny");
+    UITexture CHECK_BOX = UITexture.fullImage(ModularUI.id("gui/widgets/toggle_config"));
+    UITexture CROSS = UITexture.fullImage(ModularUI.id("gui/icons/cross"));
+    UITexture CROSS_TINY = UITexture.fullImage(ModularUI.id("gui/icons/cross_tiny"));
     UITexture CHECK_BOX_EMPTY = CHECK_BOX.getSubArea(0, 0, 1f, 0.5f);
     UITexture CHECK_BOX_FULL = CHECK_BOX.getSubArea(0, 0.5f, 1f, 1f);
 
     UITexture ANIMATED_TEXTURE_TEST = UITexture.fullImage(ModularUI.id("gui/icons/animated_gradient"));
 
-    TabTexture TAB_TOP = TabTexture.of(UITexture.fullImage(ModularUI.MOD_ID, "gui/tab/tabs_top", ColorType.DEFAULT), GuiAxis.Y, false, 28, 32, 4);
-    TabTexture TAB_BOTTOM = TabTexture.of(UITexture.fullImage(ModularUI.MOD_ID, "gui/tab/tabs_bottom", ColorType.DEFAULT), GuiAxis.Y, true, 28, 32, 4);
-    TabTexture TAB_LEFT = TabTexture.of(UITexture.fullImage(ModularUI.MOD_ID, "gui/tab/tabs_left", ColorType.DEFAULT), GuiAxis.X, false, 32, 28, 4);
-    TabTexture TAB_RIGHT = TabTexture.of(UITexture.fullImage(ModularUI.MOD_ID, "gui/tab/tabs_right", ColorType.DEFAULT), GuiAxis.X, true, 32, 28, 4);
+    TabTexture TAB_TOP = TabTexture.of(UITexture.fullImage(ModularUI.id("gui/tab/tabs_top"), ColorType.DEFAULT), GuiAxis.Y, false, 28, 32, 4);
+    TabTexture TAB_BOTTOM = TabTexture.of(UITexture.fullImage(ModularUI.id("gui/tab/tabs_bottom"), ColorType.DEFAULT), GuiAxis.Y, true, 28, 32, 4);
+    TabTexture TAB_LEFT = TabTexture.of(UITexture.fullImage(ModularUI.id("gui/tab/tabs_left"), ColorType.DEFAULT), GuiAxis.X, false, 32, 28, 4);
+    TabTexture TAB_RIGHT = TabTexture.of(UITexture.fullImage(ModularUI.id("gui/tab/tabs_right"), ColorType.DEFAULT), GuiAxis.X, true, 32, 28, 4);
 }

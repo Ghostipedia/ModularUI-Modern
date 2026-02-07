@@ -1,6 +1,8 @@
 package brachy.modularui.widgets;
 
 import brachy.modularui.api.drawable.IDrawable;
+import brachy.modularui.api.value.IBoolValue;
+import brachy.modularui.api.value.IEnumValue;
 import brachy.modularui.api.value.IIntValue;
 import brachy.modularui.screen.RichTooltip;
 
@@ -12,8 +14,8 @@ import java.util.function.Consumer;
  * <p>
  * Note that you need to set the amount of states before setting any state backgrounds etc. The state count is
  * automatically set, if the passed {@link IIntValue} is a
- * {@link brachy.modularui.api.value.IEnumValue IEnumValue} or a
- * {@link brachy.modularui.api.value.IBoolValue IBoolValue}.
+ * {@link IEnumValue IEnumValue} or a
+ * {@link IBoolValue IBoolValue}.
  * </p>
  *
  * @see ToggleButton

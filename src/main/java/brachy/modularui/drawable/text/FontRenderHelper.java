@@ -167,9 +167,9 @@ public class FontRenderHelper {
         parts.removeIf(FontRenderHelper::isEmpty);
         // no need to join completely empty or single components
         if (parts.isEmpty()) return Component.empty();
-        else if (parts.size() == 1) return parts.get(0);
+        else if (parts.size() == 1) return parts.getFirst();
 
-        MutableComponent composite = parts.remove(0);
+        MutableComponent composite = parts.removeFirst();
         for (Component c : parts) {
             composite.append(c);
         }
@@ -186,7 +186,7 @@ public class FontRenderHelper {
         int size = chars.size();
         return switch (size) {
             case 0 -> FormattedCharSequence.EMPTY;
-            case 1 -> chars.get(0).asSequence();
+            case 1 -> chars.getFirst().asSequence();
             default -> (sink) -> {
                 for (int i = 0; i < size; i++) {
                     TextRenderer.FormattedChar ch = chars.get(i);

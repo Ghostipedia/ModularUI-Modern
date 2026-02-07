@@ -171,6 +171,11 @@ public class ImageUtil {
         return (inputStream.read() & 0xFF) | ((inputStream.read() & 0xFF) << 8);
     }
 
+    private interface SizeParser {
+
+        long parse(InputStream inputStream) throws IOException;
+    }
+
     private enum ImageType implements SizeParser {
 
         PNG(8, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A) {
@@ -234,10 +239,5 @@ public class ImageUtil {
             this.signatureLength = signatureLength;
             this.signatureStart = toBytes(signatureStart);
         }
-    }
-
-    private interface SizeParser {
-
-        long parse(InputStream inputStream) throws IOException;
     }
 }

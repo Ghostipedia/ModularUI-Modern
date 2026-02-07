@@ -12,9 +12,9 @@ import java.util.List;
 
 public abstract class ResizeNode implements IResizeable, ITreeNode<ResizeNode> {
 
-    private final List<ResizeNode> children = new ArrayList<>();
     private ResizeNode defaultParent;
     private ResizeNode parentOverride;
+    private final List<ResizeNode> children = new ArrayList<>();
     private boolean defaultParentIsDelegating = false;
     private boolean requiresResize = true;
 

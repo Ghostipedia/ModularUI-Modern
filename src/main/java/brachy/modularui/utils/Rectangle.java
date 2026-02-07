@@ -1,11 +1,11 @@
 package brachy.modularui.utils;
 
 import net.minecraft.client.renderer.Rect2i;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 public class Rectangle {
 

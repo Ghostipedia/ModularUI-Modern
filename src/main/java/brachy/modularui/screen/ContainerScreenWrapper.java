@@ -45,9 +45,8 @@ public class ContainerScreenWrapper extends AbstractContainerScreen<ModularConta
     }
 
     @Override
-    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // TODO fix handleDrawBackground
-        handleDrawBackground(guiGraphics, super::renderBackground);
+    public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        handleDrawBackground(guiGraphics, mouseX, mouseY, partialTick, super::renderBackground);
     }
 
     @Override

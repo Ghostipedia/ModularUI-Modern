@@ -60,26 +60,19 @@ public class BaseTextFieldWidget<W extends BaseTextFieldWidget<W>> extends Abstr
     protected int scrollOffset = 0;
     protected float scale = 1f;
     protected boolean focusOnGuiOpen;
+    private int cursorTimer;
     protected long lastClickTime = 0;
+
     protected Integer textColor;
     protected Integer markedColor;
     protected Component hintText = null;
     protected Integer hintTextColor;
-    private int cursorTimer;
 
     public BaseTextFieldWidget() {
         super(new HorizontalScrollData(false, 4), null);
         this.handler.setRenderer(this.renderer);
         this.handler.setScrollArea(getScrollArea());
         padding(4, 0);
-    }
-
-    public static char getDecimalSeparator() {
-        return format.getDecimalFormatSymbols().getDecimalSeparator();
-    }
-
-    public static char getGroupSeparator() {
-        return format.getDecimalFormatSymbols().getGroupingSeparator();
     }
 
     @Override
@@ -119,8 +112,8 @@ public class BaseTextFieldWidget<W extends BaseTextFieldWidget<W>> extends Abstr
     @Override
     public void preDraw(ModularGuiContext context, boolean transformed) {
         if (transformed) {
-            WidgetThemeEntry<TextFieldTheme> entry = getWidgetTheme(context.getTheme(), TextFieldTheme.class);
-            TextFieldTheme widgetTheme = entry.getTheme();
+            WidgetThemeEntry<TextFieldTheme> entry = getWidgetTheme(getPanel().getTheme(), TextFieldTheme.class);
+            TextFieldTheme widgetTheme = entry.theme();
             this.renderer.setColor(this.textColor != null ? this.textColor : widgetTheme.getTextColor());
             this.renderer.setCursorColor(this.textColor != null ? this.textColor : widgetTheme.getTextColor());
             this.renderer.setMarkedColor(this.markedColor != null ? this.markedColor : widgetTheme.getMarkedColor());
@@ -137,7 +130,7 @@ public class BaseTextFieldWidget<W extends BaseTextFieldWidget<W>> extends Abstr
             context.getStencil().pop();
             WidgetThemeEntry<WidgetTheme> scrollbarTheme = context.getTheme().getScrollbarTheme();
             getScrollArea().drawScrollbar(context, scrollbarTheme.getTheme(isHovering()),
-                    scrollbarTheme.getTheme().getBackground());
+                    scrollbarTheme.theme().getBackground());
         }
     }
 
@@ -381,5 +374,13 @@ public class BaseTextFieldWidget<W extends BaseTextFieldWidget<W>> extends Abstr
     public W hintColor(int color) {
         this.hintTextColor = color;
         return getThis();
+    }
+
+    public static char getDecimalSeparator() {
+        return format.getDecimalFormatSymbols().getDecimalSeparator();
+    }
+
+    public static char getGroupSeparator() {
+        return format.getDecimalFormatSymbols().getGroupingSeparator();
     }
 }

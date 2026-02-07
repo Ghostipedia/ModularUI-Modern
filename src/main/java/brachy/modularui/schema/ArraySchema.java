@@ -189,7 +189,7 @@ public class ArraySchema implements ISchema {
             }
             List<String> errors = new ArrayList<>();
             CharSet checkedChars = new CharArraySet();
-            int layerSize = this.tensor.get(0).length;
+            int layerSize = this.tensor.getFirst().length;
             for (int x = 0; x < this.tensor.size(); x++) {
                 String[] xLayer = this.tensor.get(x);
                 if (xLayer.length == 0) {
@@ -232,7 +232,7 @@ public class ArraySchema implements ISchema {
         public ArraySchema build() {
             validate();
             BlockState[][][] blocks = new BlockState[this.tensor
-                    .size()][this.tensor.get(0).length][this.tensor.get(0)[0]
+                    .size()][this.tensor.getFirst().length][this.tensor.getFirst()[0]
                     .length()];
             for (int x = 0; x < this.tensor.size(); x++) {
                 String[] xLayer = this.tensor.get(x);

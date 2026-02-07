@@ -4,7 +4,7 @@ import brachy.modularui.ModularUI;
 import brachy.modularui.api.UIFactory;
 import brachy.modularui.factory.GuiData;
 import brachy.modularui.factory.GuiManager;
-import brachy.modularui.network.NetworkUtils;
+import brachy.modularui.utils.NetworkUtils;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.VarInt;
@@ -28,7 +28,8 @@ public record OpenGuiPacket<T extends GuiData>(int windowId, int networkId, UIFa
         int networkId = VarInt.read(buf);
         // noinspection unchecked
         UIFactory<T> factory = (UIFactory<T>) GuiManager.getFactory(ResourceLocation.STREAM_CODEC.decode(buf));
-        RegistryFriendlyByteBuf data = new RegistryFriendlyByteBuf(NetworkUtils.readByteBuf(buf), buf.registryAccess(), buf.getConnectionType());
+        RegistryFriendlyByteBuf data = buf.mui$wrapByteBuf(NetworkUtils.readByteBuf(buf));
+
         return new OpenGuiPacket<>(windowId, networkId, factory, data);
     }
 

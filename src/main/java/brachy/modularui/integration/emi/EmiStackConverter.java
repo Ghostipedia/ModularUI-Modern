@@ -63,7 +63,7 @@ public class EmiStackConverter {
                 return EmiIngredient.of(tagList.getEntries().stream()
                         .map(ItemTagList.ItemTagEntry::stacks)
                         .map(stream -> toEMIIngredient(stream))
-                        .collect(Collectors.toList()), tagList.getEntries().get(0).amount()).setChance(chance);
+                        .collect(Collectors.toList()), tagList.getEntries().getFirst().amount()).setChance(chance);
             }
             return EmiStack.EMPTY;
         }

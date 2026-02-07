@@ -21,8 +21,10 @@ public abstract class AbstractGenericSyncValue<B extends ByteBuf, T> extends Val
         this.getter = Objects.requireNonNull(getter);
         this.setter = setter;
         this.cache = getter.get();
-        if (type == null && this.cache != null) {
-            // noinspection unchecked
+        if (type == null) {
+            if (this.cache == null) {
+                throw new IllegalArgumentException("If the value class is not give, then the getter must return a non null value!");
+            }
             type = (Class<T>) this.cache.getClass();
         }
         this.type = type;
@@ -43,8 +45,10 @@ public abstract class AbstractGenericSyncValue<B extends ByteBuf, T> extends Val
             this.setter = serverSetter != null ? serverSetter : clientSetter;
         }
         this.cache = this.getter.get();
-        if (type == null && this.cache != null) {
-            // noinspection unchecked
+        if (type == null) {
+            if (this.cache == null) {
+                throw new IllegalArgumentException("If the value class is not give, then the getter must return a non null value!");
+            }
             type = (Class<T>) this.cache.getClass();
         }
         this.type = type;
@@ -100,18 +104,9 @@ public abstract class AbstractGenericSyncValue<B extends ByteBuf, T> extends Val
         setValue(deserialize(buffer), true, false);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Class<T> getValueType() {
-        if (this.type != null) return type;
-        if (this.cache != null) {
-            return (Class<T>) this.cache.getClass();
-        }
-        T t = this.getter.get();
-        if (t != null) {
-            return (Class<T>) t.getClass();
-        }
-        return null;
+        return type;
     }
 
     @Override

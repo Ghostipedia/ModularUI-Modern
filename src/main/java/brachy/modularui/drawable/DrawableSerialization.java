@@ -4,7 +4,6 @@ import brachy.modularui.ModularUI;
 import brachy.modularui.api.IJsonSerializable;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.IKey;
-import brachy.modularui.utils.ObjectList;
 import brachy.modularui.utils.RegistryAccessContainer;
 import brachy.modularui.utils.serialization.json.JsonHelper;
 
@@ -184,7 +183,7 @@ public class DrawableSerialization implements JsonSerializer<IDrawable>, JsonDes
             }
             return JsonHelper.getBoolean(json, false, "lang", "translate") ? IKey.lang(s) : IKey.str(s);
         } else if (element.isJsonArray()) {
-            ObjectList<IKey> strings = ObjectList.create();
+            ObjectArrayList<IKey> strings = new ObjectArrayList<>();
             for (JsonElement element1 : element.getAsJsonArray()) {
                 strings.add(parseText(element1));
             }

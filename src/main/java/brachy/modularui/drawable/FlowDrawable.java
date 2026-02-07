@@ -41,7 +41,7 @@ public class FlowDrawable implements IDrawable {
     public void draw(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
         if (this.icons.isEmpty()) return;
         if (this.icons.size() == 1) {
-            this.icons.get(0).draw(context, x, y, width, height, widgetTheme);
+            this.icons.getFirst().draw(context, x, y, width, height, widgetTheme);
             return;
         }
 

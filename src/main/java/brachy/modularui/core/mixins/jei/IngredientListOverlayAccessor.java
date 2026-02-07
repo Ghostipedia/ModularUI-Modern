@@ -8,6 +8,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(value = IngredientListOverlay.class, remap = false)
 public interface IngredientListOverlayAccessor {
 
-    @Accessor
-    GuiTextFieldFilter getSearchField();
+    @Accessor("searchField")
+    GuiTextFieldFilter mui$getSearchField();
 }

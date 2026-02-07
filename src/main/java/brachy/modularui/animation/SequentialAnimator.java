@@ -73,7 +73,7 @@ public class SequentialAnimator extends BaseAnimator<SequentialAnimator> impleme
 
     @Override
     public boolean hasProgressed() {
-        return !this.animators.isEmpty() && this.animators.get(0).hasProgressed();
+        return !this.animators.isEmpty() && this.animators.getFirst().hasProgressed();
     }
 
     @Override

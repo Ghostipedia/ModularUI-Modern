@@ -18,6 +18,7 @@ import me.shedaniel.rei.api.client.gui.drag.DraggableStackVisitor;
 import me.shedaniel.rei.api.client.gui.drag.DraggedAcceptorResult;
 import me.shedaniel.rei.api.client.gui.drag.DraggingContext;
 import me.shedaniel.rei.api.client.gui.widgets.TextField;
+import me.shedaniel.rei.api.client.registry.screen.ExclusionZones;
 import me.shedaniel.rei.api.client.registry.screen.ExclusionZonesProvider;
 import me.shedaniel.rei.api.client.registry.screen.OverlayDecider;
 import me.shedaniel.rei.api.client.registry.screen.ScreenRegistry;
@@ -31,7 +32,12 @@ public class REIScreenHandler<T extends Screen & IMuiScreen> extends RecipeViewe
         implements DraggableStackProvider<T>, ExclusionZonesProvider<T> {
 
     private static final Map<Class<?>, REIScreenHandler<?>> CACHE = new Reference2ReferenceOpenHashMap<>();
-    protected static DraggableStack currentIngredient = null;
+
+    @SuppressWarnings("unchecked")
+    public static <T extends Screen & IMuiScreen> REIScreenHandler<T> of(Class<T> clazz) {
+        return (REIScreenHandler<T>) CACHE.computeIfAbsent(clazz, clz -> new REIScreenHandler<>((Class<T>) clz));
+    }
+
     protected final Class<T> clazz;
 
     @Getter
@@ -46,23 +52,22 @@ public class REIScreenHandler<T extends Screen & IMuiScreen> extends RecipeViewe
         this.overlayDecider = new MUIOverlayDecider(this.clazz);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T extends Screen & IMuiScreen> REIScreenHandler<T> of(Class<T> clazz) {
-        return (REIScreenHandler<T>) CACHE.computeIfAbsent(clazz, clz -> new REIScreenHandler<>((Class<T>) clz));
+    public void register(ScreenRegistry registry) {
+        registry.registerDraggableStackProvider(this);
+        registry.registerDraggableStackVisitor(this.getDraggableVisitor());
+        registry.registerDecider(this.getOverlayDecider());
     }
 
     public static <T extends Screen & IMuiScreen> void register(Class<T> clazz, ScreenRegistry registry) {
         of(clazz).register(registry);
     }
 
-    protected static me.shedaniel.math.Rectangle asREIRect(Rectangle rect) {
-        return new me.shedaniel.math.Rectangle(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+    public void register(ExclusionZones registry) {
+        registry.register(this.clazz, this);
     }
 
-    public void register(ScreenRegistry registry) {
-        registry.registerDraggableStackProvider(this);
-        registry.registerDraggableStackVisitor(this.getDraggableVisitor());
-        registry.registerDecider(this.getOverlayDecider());
+    public static <T extends Screen & IMuiScreen> void register(Class<T> clazz, ExclusionZones registry) {
+        of(clazz).register(registry);
     }
 
     @Override
@@ -86,7 +91,7 @@ public class REIScreenHandler<T extends Screen & IMuiScreen> extends RecipeViewe
                 @Override
                 public EntryStack<?> getStack() {
                     if (converted.isEmpty()) return EntryStack.empty();
-                    return converted.get(0);
+                    return converted.getFirst();
                 }
 
                 @Override
@@ -125,6 +130,12 @@ public class REIScreenHandler<T extends Screen & IMuiScreen> extends RecipeViewe
                 .map(REIScreenHandler::asREIRect)
                 .toList();
     }
+
+    protected static me.shedaniel.math.Rectangle asREIRect(Rectangle rect) {
+        return new me.shedaniel.math.Rectangle(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+    }
+
+    protected static DraggableStack currentIngredient = null;
 
     @Override
     public void setSearchFocused(boolean focused) {

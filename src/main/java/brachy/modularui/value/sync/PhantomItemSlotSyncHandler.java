@@ -6,8 +6,9 @@ import brachy.modularui.widgets.slot.ModularSlot;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import net.neoforged.api.distmarker.Dist;
+
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -77,7 +78,7 @@ public class PhantomItemSlotSyncHandler extends ItemSlotSyncHandler {
                 !ItemStack.isSameItemSameComponents(cursorStack, slotStack)) {
             if (!isItemValid(cursorStack)) return;
             stackToPut = cursorStack.copy();
-            if (mouseData.mouseButton() == 1) {
+            if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_RIGHT) {
                 stackToPut.setCount(1);
             }
             stackToPut.setCount(Math.min(stackToPut.getCount(), getSlot().getMaxStackSize(stackToPut)));
@@ -85,7 +86,7 @@ public class PhantomItemSlotSyncHandler extends ItemSlotSyncHandler {
             this.lastStoredPhantomItem = stackToPut.copy();
         } else if (slotStack.isEmpty()) {
             if (cursorStack.isEmpty()) {
-                if (mouseData.mouseButton() == 1 && !this.lastStoredPhantomItem.isEmpty()) {
+                if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_RIGHT && !this.lastStoredPhantomItem.isEmpty()) {
                     stackToPut = this.lastStoredPhantomItem.copy();
                 } else {
                     return;
@@ -94,20 +95,20 @@ public class PhantomItemSlotSyncHandler extends ItemSlotSyncHandler {
                 if (!isItemValid(cursorStack)) return;
                 stackToPut = cursorStack.copy();
             }
-            if (mouseData.mouseButton() == 1) {
+            if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_RIGHT) {
                 stackToPut.setCount(1);
             }
             stackToPut.setCount(Math.min(stackToPut.getCount(), getSlot().getMaxStackSize(stackToPut)));
             getSlot().set(stackToPut);
             this.lastStoredPhantomItem = stackToPut.copy();
         } else {
-            if (mouseData.mouseButton() == 0) {
+            if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_LEFT) {
                 if (mouseData.shift()) {
                     getSlot().set(ItemStack.EMPTY);
                 } else {
                     incrementStackCount(-1);
                 }
-            } else if (mouseData.mouseButton() == 1) {
+            } else if (mouseData.mouseButton() == InputConstants.MOUSE_BUTTON_RIGHT) {
                 incrementStackCount(1);
             }
         }

@@ -1,6 +1,7 @@
 package brachy.modularui;
 
 import brachy.modularui.screen.RichTooltip;
+import brachy.modularui.utils.Color;
 
 import net.minecraft.ChatFormatting;
 
@@ -123,6 +124,8 @@ public class ModularUIConfig {
             .define("showParentOutline", true);
 
     static {
+        BUILDER.pop();
+
         CONFIG = BUILDER.build();
     }
 
@@ -134,11 +137,11 @@ public class ModularUIConfig {
         return SMOOTH_PROGRESS_BARS.getAsBoolean();
     }
 
-    public static boolean isSmoothProgressBars() {
-        return SMOOTH_PROGRESS_BARS.getAsBoolean();
+    public static int animationTime() {
+        return ANIMATION_TIME.get();
     }
 
-    public static RichTooltip.Pos getTooltipPos() {
+    public static RichTooltip.Pos tooltipPos() {
         return TOOLTIP_POS.get();
     }
 
@@ -188,15 +191,15 @@ public class ModularUIConfig {
         }
 
         public static int textColor() {
-            return Long.decode(TEXT_COLOR.get()).intValue();
+            return Color.parseString(TEXT_COLOR.get());
         }
 
         public static int outlineColor() {
-            return Long.decode(OUTLINE_COLOR.get()).intValue();
+            return Color.parseString(OUTLINE_COLOR.get());
         }
 
         public static int cursorColor() {
-            return Long.decode(CURSOR_COLOR.get()).intValue();
+            return Color.parseString(CURSOR_COLOR.get());
         }
 
         public static float scale() {

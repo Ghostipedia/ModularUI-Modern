@@ -21,17 +21,19 @@ import java.util.Objects;
  */
 public abstract class AbstractWidget implements IWidget {
 
-    private final Area area = new Area();
     // gui context
     private boolean valid = false;
     private IWidget parent = null;
     private ModularPanel panel = null;
     private ModularGuiContext context = null;
+
     @Nullable
     private String name;
     private boolean enabled = true;
     private int timeHovered = -1;
     private int timeBelowMouse = -1;
+
+    private final Area area = new Area();
     private StandardResizer resizer;
 
     /**

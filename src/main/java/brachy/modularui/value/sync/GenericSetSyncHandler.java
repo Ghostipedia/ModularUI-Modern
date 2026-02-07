@@ -28,10 +28,6 @@ public class GenericSetSyncHandler<B extends ByteBuf, T> extends GenericCollecti
         setCache(getter.get());
     }
 
-    public static <B extends ByteBuf, T> Builder<B, T> builder() {
-        return new Builder<>();
-    }
-
     @Override
     protected void setCache(Set<T> value) {
         this.cache.clear();
@@ -65,6 +61,10 @@ public class GenericSetSyncHandler<B extends ByteBuf, T> extends GenericCollecti
     @Override
     public Class<Set<T>> getValueType() {
         return (Class<Set<T>>) (Object) Set.class;
+    }
+
+    public static <B extends ByteBuf, T> Builder<B, T> builder() {
+        return new Builder<>();
     }
 
     public static class Builder<B extends ByteBuf, T> extends GenericCollectionSyncHandler.Builder<B, T, Set<T>, Builder<B, T>> {

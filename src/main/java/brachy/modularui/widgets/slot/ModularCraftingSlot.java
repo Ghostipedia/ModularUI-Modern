@@ -6,11 +6,11 @@ import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.inventory.RecipeCraftingHolder;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
-
-import lombok.Setter;
 import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.items.IItemHandler;
+
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 /**

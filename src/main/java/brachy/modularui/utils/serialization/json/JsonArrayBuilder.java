@@ -2,18 +2,10 @@ package brachy.modularui.utils.serialization.json;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import lombok.Getter;
 
 import java.util.function.Consumer;
 
-public class JsonArrayBuilder {
-
-    @Getter
-    private final JsonArray json;
-
-    public JsonArrayBuilder(JsonArray json) {
-        this.json = json;
-    }
+public record JsonArrayBuilder(JsonArray json) {
 
     public JsonArrayBuilder() {
         this(new JsonArray());
@@ -49,7 +41,7 @@ public class JsonArrayBuilder {
     }
 
     public JsonArrayBuilder add(JsonArrayBuilder element) {
-        return add(element.getJson());
+        return add(element.json());
     }
 
     public JsonArrayBuilder addObject(Consumer<JsonBuilder> builderConsumer) {
@@ -61,7 +53,7 @@ public class JsonArrayBuilder {
     public JsonArrayBuilder addArray(Consumer<JsonArrayBuilder> builderConsumer) {
         JsonArrayBuilder builder = new JsonArrayBuilder();
         builderConsumer.accept(builder);
-        return add(builder.getJson());
+        return add(builder.json());
     }
 
     public JsonArrayBuilder addAllOf(JsonArray json) {
@@ -72,6 +64,6 @@ public class JsonArrayBuilder {
     }
 
     public JsonArrayBuilder addAllOf(JsonArrayBuilder json) {
-        return addAllOf(json.getJson());
+        return addAllOf(json.json());
     }
 }

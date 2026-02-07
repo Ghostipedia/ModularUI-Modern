@@ -2,7 +2,7 @@ package brachy.modularui.value.sync;
 
 import brachy.modularui.utils.ICopy;
 import brachy.modularui.utils.serialization.network.IByteBufAdapter;
-import brachy.modularui.utils.serialization.network.IEquals;
+import brachy.modularui.utils.EqualityTest;
 
 import net.minecraft.network.VarInt;
 import net.minecraft.network.codec.StreamDecoder;
@@ -23,20 +23,20 @@ public abstract class GenericCollectionSyncHandler<B extends ByteBuf, T, C exten
     private final Consumer<C> setter;
     private final StreamDecoder<B, T> deserializer;
     private final StreamEncoder<B, T> serializer;
-    private final IEquals<T> equals;
+    private final EqualityTest<T> equals;
     private final ICopy<T> copy;
 
     protected GenericCollectionSyncHandler(@NotNull Supplier<C> getter,
                                            @Nullable Consumer<C> setter,
                                            @NotNull StreamDecoder<B, T> deserializer,
                                            @NotNull StreamEncoder<B, T> serializer,
-                                           @Nullable IEquals<T> equals,
+                                           @Nullable EqualityTest<T> equals,
                                            @Nullable ICopy<T> copy) {
         this.getter = getter;
         this.setter = setter;
         this.deserializer = deserializer;
         this.serializer = serializer;
-        this.equals = equals != null ? IEquals.wrapNullSafe(equals) : Objects::equals;
+        this.equals = equals != null ? EqualityTest.wrapNullSafe(equals) : Objects::equals;
         this.copy = copy != null ? copy : ICopy.ofSerializer(serializer, deserializer);
     }
 
@@ -103,7 +103,7 @@ public abstract class GenericCollectionSyncHandler<B extends ByteBuf, T, C exten
         protected Consumer<C> setter;
         protected StreamDecoder<B, T> deserializer;
         protected StreamEncoder<B, T> serializer;
-        protected IEquals<T> equals;
+        protected EqualityTest<T> equals;
         protected ICopy<T> copy;
 
         public S getter(Supplier<C> getter) {
@@ -127,7 +127,7 @@ public abstract class GenericCollectionSyncHandler<B extends ByteBuf, T, C exten
         }
 
         // protected, because for sets the objects equals and hash code is used
-        protected S equals(IEquals<T> equals) {
+        protected S equals(EqualityTest<T> equals) {
             this.equals = equals;
             return getSelf();
         }

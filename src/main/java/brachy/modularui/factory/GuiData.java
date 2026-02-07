@@ -1,6 +1,6 @@
 package brachy.modularui.factory;
 
-import brachy.modularui.network.NetworkUtils;
+import brachy.modularui.utils.NetworkUtils;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
