@@ -1,16 +1,13 @@
 package brachy.modularui.utils;
 
+import brachy.modularui.core.extensions.IRegistryFriendlyByteBufExtension;
 import brachy.modularui.utils.serialization.network.IByteBufAdapter;
 
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamDecoder;
 import net.minecraft.network.codec.StreamEncoder;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import net.neoforged.neoforge.network.connection.ConnectionType;
 
 public interface ICopy<T> {
 
@@ -21,8 +18,8 @@ public interface ICopy<T> {
     @SuppressWarnings("unchecked")
     static <B extends ByteBuf, T> ICopy<T> ofSerializer(StreamEncoder<B, T> serializer, StreamDecoder<B, T> deserializer) {
         return t -> {
-            RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(),
-                    RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY), ConnectionType.NEOFORGE);
+            // the lowest subclass of ByteBuf is RegistryFriendlyByteBuf so this *should* work
+            RegistryFriendlyByteBuf buf = IRegistryFriendlyByteBufExtension.createEmpty(RegistryAccessContainer.current());
             serializer.encode((B) buf, t);
             return deserializer.decode((B) buf);
         };

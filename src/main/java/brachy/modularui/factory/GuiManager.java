@@ -5,6 +5,7 @@ import brachy.modularui.api.IMuiScreen;
 import brachy.modularui.api.MCHelper;
 import brachy.modularui.api.RecipeViewerSettings;
 import brachy.modularui.api.UIFactory;
+import brachy.modularui.core.extensions.IRegistryFriendlyByteBufExtension;
 import brachy.modularui.core.mixins.ServerPlayerAccessor;
 import brachy.modularui.network.ModularNetwork;
 import brachy.modularui.network.packets.OpenGuiPacket;
@@ -96,7 +97,7 @@ public class GuiManager {
         menu.construct(player, msm, settings, panel.getName(), guiData);
 
         // sync to client
-        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), player.registryAccess(), ConnectionType.NEOFORGE);
+        RegistryFriendlyByteBuf buffer = IRegistryFriendlyByteBufExtension.createEmpty(player.registryAccess());
         factory.writeGuiData(guiData, buffer);
         int nid = ModularNetwork.SERVER.activate(msm);
         PacketDistributor.sendToPlayer(player, new OpenGuiPacket<>(windowId, nid, factory, buffer));
@@ -142,7 +143,7 @@ public class GuiManager {
     public static <T extends GuiData> void openFromClient(@NotNull UIFactory<T> factory, @NotNull T guiData) {
         // notify server to open the gui
         // server will send packet back to actually open the gui
-        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), MCHelper.getMc().getConnection().registryAccess(), ConnectionType.NEOFORGE);
+        RegistryFriendlyByteBuf buffer = IRegistryFriendlyByteBufExtension.createEmpty(MCHelper.getMc().getConnection().registryAccess());
         factory.writeGuiData(guiData, buffer);
         PacketDistributor.sendToServer(new OpenGuiPacket<>(0, 0, factory, buffer));
     }

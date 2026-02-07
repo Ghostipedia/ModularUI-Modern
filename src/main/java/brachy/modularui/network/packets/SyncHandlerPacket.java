@@ -18,8 +18,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.Nullable;
 
 public record SyncHandlerPacket(int networkId, String panel, String key, boolean action,
-                                @Nullable("Nullable on the sending side") RegistryFriendlyByteBuf packet,
-                                @Nullable("Nullable on the receiving side") IPacketWriter<? super RegistryFriendlyByteBuf> packetWriter)
+                                @Nullable("null on the sending side") RegistryFriendlyByteBuf packet,
+                                @Nullable("null on the receiving side") IPacketWriter<? super RegistryFriendlyByteBuf> packetWriter)
         implements CustomPacketPayload {
 
     public static final ResourceLocation ID = ModularUI.id("sync_message");
@@ -41,8 +41,7 @@ public record SyncHandlerPacket(int networkId, String panel, String key, boolean
         String panel = NetworkUtils.readStringSafe(buf);
         String key = NetworkUtils.readStringSafe(buf);
         boolean action = buf.readBoolean();
-        RegistryFriendlyByteBuf packet = RegistryFriendlyByteBuf.decorator(buf.registryAccess(), buf.getConnectionType())
-                .apply(NetworkUtils.readFriendlyByteBuf(buf));
+        RegistryFriendlyByteBuf packet = buf.mui$wrapByteBuf(NetworkUtils.readByteBuf(buf));
 
         return new SyncHandlerPacket(networkId, panel, key, action, packet);
     }
@@ -52,14 +51,14 @@ public record SyncHandlerPacket(int networkId, String panel, String key, boolean
         NetworkUtils.writeStringSafe(buf, this.panel);
         NetworkUtils.writeStringSafe(buf, this.key, 64, true);
         buf.writeBoolean(this.action);
-        NetworkUtils.writeByteBuf(buf, processPacketWriter(buf.registryAccess(), buf.getConnectionType()));
+        NetworkUtils.writeByteBuf(buf, processPacketWriter(buf.registryAccess()));
     }
 
-    private RegistryFriendlyByteBuf processPacketWriter(RegistryAccess registryAccess, ConnectionType connectionType) {
+    private RegistryFriendlyByteBuf processPacketWriter(RegistryAccess registryAccess) {
         if (this.packet != null) {
             return packet;
         } else {
-            RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), registryAccess, connectionType);
+            RegistryFriendlyByteBuf buffer = IRegistryFriendlyByteBufExtension.createEmpty(registryAccess);
             if (this.packetWriter != null) {
                 this.packetWriter.write(buffer);
             }
