@@ -25,6 +25,8 @@ import brachy.modularui.utils.Color;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -56,6 +58,7 @@ public class TestHandler {
         }
     }.asIcon().height(3);
 
+    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onItemUse(PlayerInteractEvent.RightClickItem event) {
         if (event.getEntity().level().isClientSide && ModularUI.isDev()) {
@@ -66,6 +69,7 @@ public class TestHandler {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onRichTooltip(RichTooltipEvent.Pre event) {
         if (enabledRichTooltipEventTest && ModularUI.isDev()) {
@@ -81,6 +85,7 @@ public class TestHandler {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onThemeReload(ReloadThemeEvent.Pre event) {
         if (ModularUI.isDev()) {
@@ -88,6 +93,7 @@ public class TestHandler {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onOpenScreen(OpenScreenEvent event) {
         if (ModularUIConfig.enableTestOverlays()) {
@@ -123,6 +129,7 @@ public class TestHandler {
                                 })));
     }*/
 
+    @OnlyIn(Dist.CLIENT)
     private static ModularScreen getContainerOverlayTest(AbstractContainerScreen<?> gui) {
         return new CustomModularScreen(ModularUI.MOD_ID) {
 

@@ -8,9 +8,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 import org.jetbrains.annotations.ApiStatus;
 
@@ -55,17 +55,17 @@ public abstract class ModularNetwork {
             player.containerMenu = player.inventoryMenu;
         }
 
-        @SideOnly(Side.CLIENT)
+        @OnlyIn(Dist.CLIENT)
         public void closeContainer(int networkId, boolean dispose, Player player) {
             closeContainer(networkId, dispose, player, true);
         }
 
-        @SideOnly(Side.CLIENT)
+        @OnlyIn(Dist.CLIENT)
         public void closeAll() {
             closeAll(Minecraft.getInstance().player);
         }
 
-        @SideOnly(Side.CLIENT)
+        @OnlyIn(Dist.CLIENT)
         public void reopenSyncerOf(Screen guiScreen) {
             if (guiScreen instanceof IMuiScreen ms && !ms.screen().isClientOnly()) {
                 ModularSyncManager msm = ms.screen().getSyncManager();
