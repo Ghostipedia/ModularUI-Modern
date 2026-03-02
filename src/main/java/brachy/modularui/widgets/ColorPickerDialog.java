@@ -16,9 +16,7 @@ import brachy.modularui.widgets.layout.Column;
 import brachy.modularui.widgets.layout.Row;
 import brachy.modularui.widgets.textfield.TextFieldWidget;
 
-import java.util.function.Consumer;
-
-public class ColorPickerDialog extends Dialog<Integer> {
+public class ColorPickerDialog extends Dialog<Integer, ColorPickerDialog> {
 
     private static final IDrawable handleBackground = new Rectangle().color(Color.WHITE.main);
 
@@ -41,12 +39,8 @@ public class ColorPickerDialog extends Dialog<Integer> {
     private final Rectangle sliderBackgroundS = new Rectangle();
     private final Rectangle sliderBackgroundV = new Rectangle();
 
-    public ColorPickerDialog(Consumer<Integer> resultConsumer, int startColor, boolean controlAlpha) {
-        this("color_picker", resultConsumer, startColor, controlAlpha);
-    }
-
-    public ColorPickerDialog(String name, Consumer<Integer> resultConsumer, int startColor, boolean controlAlpha) {
-        super(name, resultConsumer);
+    public ColorPickerDialog(String name, int startColor, boolean controlAlpha) {
+        super(name);
 
         this.controlAlpha = controlAlpha;
         this.alpha = Color.getAlpha(startColor);

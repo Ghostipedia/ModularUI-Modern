@@ -55,7 +55,7 @@ public abstract class ModularUIRecipeCategory<T extends Recipe<?>, W extends IWi
                         W widget = wrapperFunction.apply(recipe);
                         ResourceLocation recipeId = recipeIdGetter.apply(recipe);
 
-                        ModularPanel panel = ModularPanel.defaultPanel(recipeId.toString(),
+                        ModularPanel<?> panel = ModularPanel.defaultPanel(recipeId.toString(),
                                 widget.getArea().width, widget.getArea().height);
                         panel.child(widget);
                         return new ModularScreen(recipeId.getNamespace(), panel);

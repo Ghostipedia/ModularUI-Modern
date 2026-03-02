@@ -29,7 +29,6 @@ import brachy.modularui.widget.EmptyWidget;
 import brachy.modularui.widget.ParentWidget;
 import brachy.modularui.widgets.ButtonWidget;
 import brachy.modularui.widgets.CycleButtonWidget;
-import brachy.modularui.widgets.Dialog;
 import brachy.modularui.widgets.DynamicSyncedWidget;
 import brachy.modularui.widgets.Expandable;
 import brachy.modularui.widgets.ItemDisplayWidget;
@@ -113,12 +112,12 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
     }
 
     @Override
-    public ModularScreen createScreen(PosGuiData data, ModularPanel mainPanel) {
+    public ModularScreen createScreen(PosGuiData data, ModularPanel<?> mainPanel) {
         return new ModularScreen(ModularUI.MOD_ID, mainPanel);
     }
 
     @Override
-    public ModularPanel buildUI(PosGuiData guiData, PanelSyncManager syncManager, UISettings settings) {
+    public ModularPanel<?> buildUI(PosGuiData guiData, PanelSyncManager syncManager, UISettings settings) {
         //settings.customContainer(() -> new CraftingModularContainer(3, 3, this.craftingInventory));
         //settings.customGui(() -> TestGuiContainer::new);
 
@@ -164,7 +163,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                             .name("synced number col");
                 });
 
-        ModularPanel panel = new ModularPanel("test_tile");
+        ModularPanel<?> panel = new ModularPanel<>("test_tile");
         IPanelHandler panelSyncHandler = syncManager.syncedPanel("other_panel", true, this::openSecondWindow);
 
         PagedWidget.Controller tabController = new PagedWidget.Controller();
@@ -335,11 +334,11 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
         return panel;
     }
 
-    public ModularPanel openSecondWindow(PanelSyncManager syncManager, IPanelHandler syncHandler) {
-        ModularPanel panel = new Dialog<>("second_window", null)
-                .setDisablePanelsBelow(false)
-                .setCloseOnOutOfBoundsClick(false)
-                .setDraggable(true)
+    public ModularPanel<?> openSecondWindow(PanelSyncManager syncManager, IPanelHandler syncHandler) {
+        ModularPanel<?> panel = new ModularPanel<>("second_window")
+                .disablePanelsBelow(false)
+                .closeOnOutOfBoundsClick(false)
+                .draggable(true)
                 .size(100, 100);
         SlotGroup slotGroup = new SlotGroup("small_inv", 2);
         IntSyncValue timeSync = new IntSyncValue(() -> (int) java.lang.System.currentTimeMillis());
@@ -378,11 +377,11 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
         return panel;
     }
 
-    public ModularPanel openThirdWindow(PanelSyncManager syncManager, IPanelHandler syncHandler, AtomicInteger integer) {
-        ModularPanel panel = new Dialog<>("third_window", null)
-                .setDisablePanelsBelow(false)
-                .setCloseOnOutOfBoundsClick(false)
-                .setDraggable(true)
+    public ModularPanel<?> openThirdWindow(PanelSyncManager syncManager, IPanelHandler syncHandler, AtomicInteger integer) {
+        ModularPanel<?> panel = new ModularPanel<>("third_window")
+                .disablePanelsBelow(false)
+                .closeOnOutOfBoundsClick(false)
+                .draggable(true)
                 .size(50, 50);
         panel.child(ButtonWidget.panelCloseButton())
                 .child(IKey.str("3rd Panel: " + integer.get())

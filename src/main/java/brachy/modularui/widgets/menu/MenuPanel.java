@@ -6,7 +6,7 @@ import brachy.modularui.screen.ModularPanel;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Experimental
-public class MenuPanel extends ModularPanel {
+public class MenuPanel extends ModularPanel<MenuPanel> {
 
     public MenuPanel(String name, IWidget menu) {
         super(name);

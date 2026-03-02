@@ -23,7 +23,7 @@ public interface IUIHolder<T extends GuiData> {
      * @return a modular screen instance with the given panel
      */
     @OnlyIn(Dist.CLIENT)
-    ModularScreen createScreen(T data, ModularPanel mainPanel);
+    ModularScreen createScreen(T data, ModularPanel<?> mainPanel);
 
     /**
      * Called on server and client. Create only the main panel here. Only here you can add sync handlers to widgets
@@ -36,5 +36,5 @@ public interface IUIHolder<T extends GuiData> {
      * @param syncManager sync handler where widget sync handlers should be registered
      * @param settings    settings which apply to the whole ui and not just this panel
      */
-    ModularPanel buildUI(T data, PanelSyncManager syncManager, UISettings settings);
+    ModularPanel<?> buildUI(T data, PanelSyncManager syncManager, UISettings settings);
 }

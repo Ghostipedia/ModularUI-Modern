@@ -81,7 +81,7 @@ public class AbstractParentWidget<I extends IWidget, W extends AbstractParentWid
         }
         if (child instanceof ModularPanel) {
             throw new IllegalArgumentException(
-                    "ModularPanel should not be added as child widget; Use ModularScreen#openPanel instead");
+                    "ModularPanel<?> should not be added as child widget; Use ModularScreen#openPanel instead");
         }
         if (!isChildValid(child)) {
             throw new IllegalArgumentException("Child '" + child + "' is not valid for parent '" + this + "'!");

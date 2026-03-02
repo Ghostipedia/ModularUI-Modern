@@ -75,7 +75,7 @@ public abstract class ModularUIEmiRecipe<T extends Recipe<?>, W extends IWidget>
 
         this.screen = Memoizer.memoize(() -> {
             W widget = widgetSupplier.get();
-            ModularPanel panel = ModularPanel.defaultPanel(recipe.getId().toString(), widget.getArea().w(), widget.getArea().h());
+            ModularPanel<?> panel = ModularPanel.defaultPanel(recipe.getId().toString(), widget.getArea().w(), widget.getArea().h());
             panel.child(widget);
             return new ModularScreen(recipe.getId().getNamespace(), panel);
         }, Duration.ofSeconds(10));

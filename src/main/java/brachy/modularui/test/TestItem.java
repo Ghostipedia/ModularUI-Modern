@@ -1,31 +1,19 @@
 package brachy.modularui.test;
 
 import brachy.modularui.ModularUI;
-import brachy.modularui.api.IPanelHandler;
 import brachy.modularui.api.IUIHolder;
-import brachy.modularui.api.drawable.IDrawable;
-import brachy.modularui.api.drawable.IKey;
-import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.GuiTextures;
-import brachy.modularui.drawable.Rectangle;
 import brachy.modularui.factory.PlayerInventoryGuiData;
 import brachy.modularui.factory.inventory.InventoryTypes;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
 import brachy.modularui.screen.UISettings;
-import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.utils.Alignment;
-import brachy.modularui.utils.Color;
-import brachy.modularui.utils.ColorShade;
 import brachy.modularui.value.sync.PanelSyncManager;
 import brachy.modularui.value.sync.SyncHandlers;
 import brachy.modularui.widget.ParentWidget;
-import brachy.modularui.widgets.ButtonWidget;
-import brachy.modularui.widgets.ColorPickerDialog;
-import brachy.modularui.widgets.CycleButtonWidget;
 import brachy.modularui.widgets.SlotGroupWidget;
 import brachy.modularui.widgets.layout.Column;
-import brachy.modularui.widgets.layout.Flow;
 import brachy.modularui.widgets.slot.ItemSlot;
 import brachy.modularui.widgets.slot.ModularSlot;
 
@@ -33,10 +21,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
@@ -44,15 +28,11 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemStackHandler;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.type.capability.ICurioItem;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER;
 
@@ -64,12 +44,12 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
     }
 
     @Override
-    public ModularScreen createScreen(PlayerInventoryGuiData<?> data, ModularPanel mainPanel) {
+    public ModularScreen createScreen(PlayerInventoryGuiData<?> data, ModularPanel<?> mainPanel) {
         return new ModularScreen(ModularUI.MOD_ID, mainPanel);
     }
 
     @Override
-    public ModularPanel buildUI(PlayerInventoryGuiData<?> data, PanelSyncManager syncManager, UISettings settings) {
+    public ModularPanel<?> buildUI(PlayerInventoryGuiData<?> data, PanelSyncManager syncManager, UISettings settings) {
         var cap = data.getUsedItemStack().getCapability(ITEM_HANDLER);
         if (!cap.isPresent() || cap.resolve().isEmpty()) return null;
         IItemHandler itemHandler = cap.resolve().get();
@@ -84,7 +64,7 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
                     new ModularSlot(inv, index).accessibility(false, false) :
                     new ModularSlot(inv, index));
         }
-        ModularPanel panel = ModularPanel.defaultPanel("knapping_gui").resizeableOnDrag(true);
+        ModularPanel<?> panel = ModularPanel.defaultPanel("knapping_gui").resizeableOnDrag(true);
         panel.child(new Column().margin(7)
                         .child(new ParentWidget<>().widthRel(1f).expanded()
                                 .child(SlotGroupWidget.builder()
@@ -104,96 +84,6 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
                 .child(GuiTextures.ANIMATED_TEXTURE_TEST.asWidget().size(32).align(Alignment.TopRight).margin(7));
 
         return panel;
-    }
-
-    public @NotNull ModularPanel buildColorUI(ModularGuiContext context) {
-        List<Pair<Integer, Float>> colors = new ArrayList<>();
-        for (ColorShade shade : ColorShade.getAll()) {
-            for (int c : shade) {
-                colors.add(Pair.of(c, Color.getLuminance(c)));
-            }
-        }
-        colors.sort((a, b) -> Float.compare(a.getRight(), b.getRight()));
-
-        IDrawable luminanceSortedColors = (context1, x, y, width, height, widgetTheme) -> {
-            float w = (float) width / colors.size();
-            float x0 = x;
-            for (Pair<Integer, Float> c : colors) {
-                GuiDraw.drawRect(context.getGraphics(), x0, y, w, height, c.getLeft());
-                x0 += w;
-            }
-        };
-
-        Rectangle color1 = new Rectangle().color(Color.BLACK.main);
-        Rectangle color2 = new Rectangle().color(Color.WHITE.main);
-
-        IDrawable gradient = (context1, x, y, width, height, widgetTheme) -> GuiDraw.drawHorizontalGradientRect(
-                context1.getGraphics(), x, y, width, height, color1.getColor(), color2.getColor());
-        IDrawable correctedGradient = (context1, x, y, width, height, widgetTheme) -> {
-            int points = 500;
-            Tesselator tesselator = Tesselator.getInstance();
-            BufferBuilder buffer = tesselator.getBuilder();
-
-            buffer.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
-            float x0 = x;
-            float w = (float) width / points;
-            for (int i = 0; i < points; i++) {
-                int color = Color.lerp(color1.getColor(), color2.getColor(), (float) i / points);
-                int r = Color.getRed(color), g = Color.getGreen(color), b = Color.getBlue(color), a = 0xFF;
-                buffer.vertex(x0, y, 0).color(r, g, b, a).endVertex();
-                buffer.vertex(x0, y + height, 0).color(r, g, b, a).endVertex();
-                x0 += w;
-            }
-            tesselator.end();
-        };
-
-        ModularPanel panel = new ModularPanel("colors").width(300).coverChildrenHeight().padding(7);
-
-        IPanelHandler colorPicker1 = IPanelHandler.simple(panel,
-                (mainPanel, player) -> new ColorPickerDialog("color_picker1", color1::color, color1.getColor(), true)
-                        .setDraggable(true)
-                        .relative(panel)
-                        .top(0)
-                        .rightRel(1f),
-                true);
-        IPanelHandler colorPicker2 = IPanelHandler.simple(panel,
-                (mainPanel, player) -> new ColorPickerDialog("color_picker2", color2::color, color2.getColor(), true)
-                        .setDraggable(true)
-                        .relative(panel)
-                        .top(0)
-                        .leftRel(1f),
-                true);
-
-        return panel
-                .child(Flow.column()
-                        .coverChildrenHeight()
-                        .child(IKey.str("Colors sorted by luminance").asWidget().margin(1))
-                        .child(luminanceSortedColors.asWidget().widthRel(1f).height(10))
-                        .child(IKey.str("Blending color").asWidget().margin(1).marginTop(2))
-                        .child(Flow.row()
-                                .coverChildrenHeight()
-                                .mainAxisAlignment(Alignment.MainAxis.SPACE_BETWEEN)
-                                .child(new ButtonWidget<>()
-                                        .name("color picker button 1")
-                                        .background(color1)
-                                        .disableHoverBackground()
-                                        .onMousePressed((mouseX, mouseY, mouseButton) -> {
-                                            colorPicker1.openPanel();
-                                            return true;
-                                        }))
-                                .child(new CycleButtonWidget())
-                                .child(new ButtonWidget<>()
-                                        .name("color picker button 2")
-                                        .background(color2)
-                                        .disableHoverBackground()
-                                        .onMousePressed((mouseX, mouseY, mouseButton) -> {
-                                            colorPicker2.openPanel();
-                                            return true;
-                                        })))
-                        .child(IKey.str("OpenGL color gradient").asWidget().margin(1))
-                        .child(gradient.asWidget().widthRel(1f).height(10))
-                        .child(IKey.str("Gamma corrected gradient").asWidget().margin(1))
-                        .child(correctedGradient.asWidget().widthRel(1f).height(10)));
     }
 
     @Override
