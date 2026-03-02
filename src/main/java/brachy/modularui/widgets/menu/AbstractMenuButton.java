@@ -50,11 +50,13 @@ public abstract class AbstractMenuButton<W extends AbstractMenuButton<W>> extend
      */
     private Menu<?> menu;
     /**
-     * @return true if the menu is currently open (soft or hard)
+     * true if the menu is currently open (soft or hard)
      */
-    @Getter
-    private boolean open;
-    private boolean softOpen; // state, soft means opened by hovering
+    @Getter private boolean open;
+    /**
+     * true if the menu is currently soft open (opened by hovering)
+     */
+    @Getter private boolean softOpen; // state, soft means opened by hovering
     private IPanelHandler panelHandler;
     private final String panelName;
 
@@ -66,14 +68,7 @@ public abstract class AbstractMenuButton<W extends AbstractMenuButton<W>> extend
         name(panelName);
     }
 
-    /**
-     * @return true if the menu is currently soft open (opened by hovering)
-     */
-    protected boolean isSoftOpen() {
-        return softOpen;
-    }
-
-    protected void toggleMenu(boolean soft) {
+    public void toggleMenu(boolean soft) {
         if (this.open) {
             if (this.softOpen) {
                 if (soft) {
@@ -93,7 +88,7 @@ public abstract class AbstractMenuButton<W extends AbstractMenuButton<W>> extend
         }
     }
 
-    protected void openMenu(boolean soft) {
+    public void openMenu(boolean soft) {
         if (this.open) {
             if (this.softOpen && !soft) {
                 this.softOpen = false;
@@ -109,11 +104,11 @@ public abstract class AbstractMenuButton<W extends AbstractMenuButton<W>> extend
         this.softOpen = soft;
     }
 
-    protected void closeMenu(boolean soft) {
+    public void closeMenu(boolean soft) {
         if (!this.open || (!this.softOpen && soft)) return;
-        if (getPanel() instanceof MenuPanel menuPanel) {
+        if (isValid() && getPanel() instanceof MenuPanel menuPanel) {
             menuPanel.remove(getMenu());
-        } else {
+        } else if (getPanelHandler().isPanelOpen()) {
             getPanelHandler().closePanel();
         }
         this.open = false;
@@ -190,15 +185,15 @@ public abstract class AbstractMenuButton<W extends AbstractMenuButton<W>> extend
     @Override
     public void onMouseLeaveArea() {
         super.onMouseLeaveArea();
-        checkClose();
+        checkClose(true, true);
     }
 
-    protected void checkClose() {
-        if (this.openOnHover && !isSelfOrChildHovered()) {
-            closeMenu(true);
+    protected void checkClose(boolean soft, boolean requireNoHover) {
+        if ((this.openOnHover || !soft) && !isSelfOrChildHovered()) {
+            closeMenu(soft);
             Menu<?> menuParent = WidgetTree.findParent(this, Menu.class);
             if (menuParent != null) {
-                menuParent.checkClose();
+                menuParent.checkClose(soft, requireNoHover);
             }
         }
     }

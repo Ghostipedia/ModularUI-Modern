@@ -13,7 +13,7 @@ import brachy.modularui.value.sync.PanelSyncManager;
 import brachy.modularui.value.sync.SyncHandlers;
 import brachy.modularui.widget.ParentWidget;
 import brachy.modularui.widgets.SlotGroupWidget;
-import brachy.modularui.widgets.layout.Column;
+import brachy.modularui.widgets.layout.Flow;
 import brachy.modularui.widgets.slot.ItemSlot;
 import brachy.modularui.widgets.slot.ModularSlot;
 
@@ -65,7 +65,7 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
                     new ModularSlot(inv, index));
         }
         ModularPanel<?> panel = ModularPanel.defaultPanel("knapping_gui").resizeableOnDrag(true);
-        panel.child(new Column().margin(7)
+        panel.child(Flow.col().margin(7)
                         .child(new ParentWidget<>().widthRel(1f).expanded()
                                 .child(SlotGroupWidget.builder()
                                         .row("I I")

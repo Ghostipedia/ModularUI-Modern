@@ -11,7 +11,7 @@ import brachy.modularui.api.widget.IVanillaSlot;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.core.mixins.client.SlotAccessor;
 import brachy.modularui.utils.Alignment;
-
+import brachy.modularui.utils.TreeUtil;
 import brachy.modularui.widgets.layout.IExpander;
 
 import lombok.Getter;
@@ -483,6 +483,13 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
     @Override
     public StandardResizer relativeToScreen() {
         this.relativeToScreen = true;
+        if (getParent() != null) {
+            // if this is currently part of a tree, try to find the root and attach ourselves to it
+            ScreenResizeNode root = TreeUtil.findParent(this, ScreenResizeNode.class);
+            if (root != null) {
+                setParentOverride(root);
+            }
+        }
         return this;
     }
 

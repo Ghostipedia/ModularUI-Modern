@@ -37,9 +37,7 @@ import brachy.modularui.widgets.PagedWidget;
 import brachy.modularui.widgets.ProgressWidget;
 import brachy.modularui.widgets.SlotGroupWidget;
 import brachy.modularui.widgets.ToggleButton;
-import brachy.modularui.widgets.layout.Column;
 import brachy.modularui.widgets.layout.Flow;
-import brachy.modularui.widgets.layout.Row;
 import brachy.modularui.widgets.slot.FluidSlot;
 import brachy.modularui.widgets.slot.ItemSlot;
 import brachy.modularui.widgets.slot.ModularCraftingSlot;
@@ -155,7 +153,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
         DynamicLinkedSyncHandler<GenericListSyncHandler<Integer>> dynamicLinkedSyncHandler = new DynamicLinkedSyncHandler<>(numberListSyncHandler)
                 .widgetProvider((syncManager1, value1) -> {
                     List<Integer> vals = value1.getValue();
-                    return new Row()
+                    return Flow.row()
                             .widthRel(1f)
                             .coverChildrenHeight()
                             .mainAxisAlignment(Alignment.MainAxis.SPACE_AROUND)
@@ -171,7 +169,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                 .size(176, 210)       // set a static size for the main panel
                 .align(Alignment.Center);    // center the panel in the screen
         panel
-                .child(new Row()
+                .child(Flow.row()
                         .name("Tab row")
                         .coverChildren()
                         .topRel(0f, 4, 1f)
@@ -256,7 +254,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                                                                     return true;
                                                                 })
                                                                 .overlay(IKey.str("Open Sub Panel").scale(0.75f)))
-                                                        .child(new Row()
+                                                        .child(Flow.row()
                                                                 .name("cycle_button_row")
                                                                 .coverChildrenWidth().height(18)
                                                                 .reverseLayout(false)
@@ -269,7 +267,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                                                                 .child(new ToggleButton()
                                                                         .valueWrapped(cycleStateValue, 2)
                                                                         .overlay(GuiTextures.CYCLE_BUTTON_DEMO.getSubArea(0, 2 / 3f, 1, 1))))
-                                                        .child(new Row()
+                                                        .child(Flow.row()
                                                                 .name("progress_row")
                                                                 .height(18)
                                                                 .mainAxisAlignment(Alignment.MainAxis.SPACE_AROUND)
@@ -311,7 +309,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                                 .addPage(new ParentWidget<>()
                                         .name("dynamic_sync_page")
                                         .sizeRel(1f)
-                                        .child(new Column()
+                                        .child(Flow.col()
                                                 .name("page 4 col, dynamic widgets")
                                                 .child(IKey.str("Dynamic synced widget demo. Items act as keys to a unique storage with different amount of slots.").asWidget().scale(0.7f))
                                                 .child(new ItemSlot()

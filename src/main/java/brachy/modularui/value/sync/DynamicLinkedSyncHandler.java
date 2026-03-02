@@ -18,7 +18,6 @@ public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?>> extends Syn
     private IWidgetProvider<S> widgetProvider;
     private Consumer<IWidget> onWidgetUpdate;
 
-    private boolean updateQueued;
     private IWidget lastRejectedWidget;
 
     private final S linkedValue;
@@ -46,10 +45,7 @@ public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?>> extends Syn
     @Override
     public void init(String key, PanelSyncManager syncManager) {
         super.init(key, syncManager);
-        if (this.updateQueued) {
-            notifyUpdate(true);
-            this.updateQueued = false;
-        }
+        notifyUpdate(false);
     }
 
     private IWidget parseWidget() {
@@ -59,7 +55,7 @@ public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?>> extends Syn
         // collects any unregistered sync handlers
         // since the sync manager is currently locked and we no longer allow bypassing the lock it will crash if it
         // finds any
-        int unregistered = WidgetTree.countUnregisteredSyncHandlers(widget);
+        int unregistered = WidgetTree.countUnregisteredSyncHandlers(getSyncManager(), widget);
         if (unregistered > 0) {
             throw new IllegalStateException(
                     "Widgets created by DynamicSyncHandler can't have implicitly registered sync handlers. All" +
@@ -87,11 +83,7 @@ public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?>> extends Syn
      * initialised is effective.
      */
     private void notifyUpdate(boolean sync) {
-        if (!isValid()) {
-            // sync handler not yet initialised
-            this.updateQueued = true;
-            return;
-        }
+        if (!isValid()) return;
         IWidget widget = parseWidget();
         if (getSyncManager().isClient()) {
             updateWidget(widget);

@@ -27,9 +27,9 @@ import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.utils.Alignment;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.ColorShade;
-import brachy.modularui.utils.math.DAM;
 import brachy.modularui.utils.Interpolation;
 import brachy.modularui.utils.Interpolations;
+import brachy.modularui.utils.math.DAM;
 import brachy.modularui.value.BoolValue;
 import brachy.modularui.value.IntValue;
 import brachy.modularui.value.ObjectValue;
@@ -43,10 +43,8 @@ import brachy.modularui.widgets.SchemaWidget;
 import brachy.modularui.widgets.ScrollingTextWidget;
 import brachy.modularui.widgets.ToggleButton;
 import brachy.modularui.widgets.TransformWidget;
-import brachy.modularui.widgets.layout.Column;
 import brachy.modularui.widgets.layout.Flow;
 import brachy.modularui.widgets.layout.Grid;
-import brachy.modularui.widgets.layout.Row;
 import brachy.modularui.widgets.menu.ContextMenuButton;
 import brachy.modularui.widgets.menu.DropdownWidget;
 import brachy.modularui.widgets.textfield.TextFieldWidget;
@@ -56,13 +54,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import com.google.common.base.CaseFormat;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-
-import net.minecraftforge.registries.ForgeRegistries;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
@@ -228,10 +224,10 @@ public class TestGuis extends CustomModularScreen {
         Random rnd = new Random();
         return new ModularPanel<>("main")
                 .coverChildren()
-                .child(new Column()
+                .child(Flow.col()
                         .margin(12)
                         .coverChildren()
-                        .child(new Row()
+                        .child(Flow.row()
                                 .coverChildren()
                                 .child(IKey.str("Post ").asWidget()
                                         .transform((widget, stack) -> stack.translate(post.getValue(), 0)))
@@ -616,7 +612,7 @@ public class TestGuis extends CustomModularScreen {
         return new ModularPanel<>("aspect_ratio")
                 .coverChildren()
                 .padding(10)
-                .child(new Row()
+                .child(Flow.row()
                         .childPadding(10)
                         .coverChildren()
                         .child(new Rectangle().color(Color.BLUE_ACCENT.main)

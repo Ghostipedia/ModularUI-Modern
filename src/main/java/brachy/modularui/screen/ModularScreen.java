@@ -19,6 +19,8 @@ import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widget.sizer.ScreenResizeNode;
 import brachy.modularui.widget.wrapper.WidgetWrapper;
 
+import brachy.modularui.widgets.menu.MenuPanel;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -395,12 +397,21 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @return true if the action was consumed and further processing should be canceled
      */
     public boolean onMousePressed(double mouseX, double mouseY, int button) {
+        // call all action listeners
         for (IGuiAction.MousePressed action : getGuiActionListeners(IGuiAction.MousePressed.class)) {
             action.press(mouseX, mouseY, button);
         }
+        // check if any context menu is open and close them if they or their children are not hovered
+        for (ModularPanel<?> panel : this.panelManager.getOpenPanels()) {
+            if (panel instanceof MenuPanel menuPanel) {
+                menuPanel.closeAllMenus(false, true);
+            }
+        }
+        // handle dragging of draggable widgets
         if (this.context.onMousePressed(mouseX, mouseY, button)) {
             return true;
         }
+        // finally click hovered widgets
         for (ModularPanel<?> panel : this.panelManager.getOpenPanels()) {
             if (panel.onMousePressed(mouseX, mouseY, button)) {
                 return true;
