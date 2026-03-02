@@ -161,8 +161,8 @@ jobs:
           files: |
             build/libs/*[0-9].jar
             build/libs/*-@(dev|sources|javadoc).jar
-          name: 'ModularUI ${{ env.MC_VERSION }} - ${{ inputs.version }}'
-          version: 'mc${{ env.MC_VERSION }}-${{ inputs.version }}'
+          name: 'ModularUI ${{ inputs.version }} - mc${{ env.MC_VERSION }}'
+          version: '${{ inputs.version }}-mc${{ env.MC_VERSION }}'
           version-type: ${{ inputs.release-type }}
           changelog-file: ${{ env.CHANGELOG_LOCATION }}
           loaders: forge
@@ -179,8 +179,8 @@ jobs:
           files: |
             build/libs/*[0-9].jar
             build/libs/*-@(dev|sources).jar
-          name: 'ModularUI ${{ env.MC_VERSION }} - ${{ inputs.version }}'
-          version: 'mc${{ env.MC_VERSION }}-${{ inputs.version }}'
+          name: 'ModularUI ${{ inputs.version }} - mc${{ env.MC_VERSION }}'
+          version: '${{ inputs.version }}-mc${{ env.MC_VERSION }}'
           version-type: ${{ inputs.release-type }}
           changelog-file: ${{ env.CHANGELOG_LOCATION }}
           loaders: forge
