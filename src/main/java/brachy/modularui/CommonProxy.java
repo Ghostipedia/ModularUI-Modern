@@ -5,7 +5,6 @@ import brachy.modularui.factory.UIFactories;
 import brachy.modularui.factory.inventory.InventoryTypes;
 import brachy.modularui.network.NetworkHandler;
 import brachy.modularui.screen.ModularContainerMenu;
-import brachy.modularui.test.TestHandler;
 import brachy.modularui.test.TestRegistration;
 import brachy.modularui.theme.ThemeManager;
 
@@ -17,6 +16,7 @@ import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
@@ -44,6 +44,7 @@ public class CommonProxy {
         }
     }
 
+    @SubscribeEvent
     public void preInit(FMLConstructModEvent event) {}
 
     public void onTick(TickEvent.PlayerTickEvent event) {
