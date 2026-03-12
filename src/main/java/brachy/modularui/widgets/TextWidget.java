@@ -21,17 +21,12 @@ import java.util.function.IntSupplier;
 
 public class TextWidget<W extends TextWidget<W>> extends Widget<W> {
 
-    @Getter
-    private final IKey key;
-    @Getter
-    private Alignment alignment = Alignment.CenterLeft;
-    @Getter
-    private IntSupplier color = null;
-    @Getter
-    private Boolean shadow = null;
-    @Getter
-    private float scale = 1f;
-    private int maxWidth = -1;
+    @Getter private final IKey key;
+    @Getter private Alignment alignment = Alignment.CenterLeft;
+    @Getter private IntSupplier color = null;
+    @Getter private Boolean shadow = null;
+    @Getter private float scale = 1f;
+    @Getter private int maxWidth = -1;
 
     private Component lastText = null;
     private Component textForDefaultSize = null;

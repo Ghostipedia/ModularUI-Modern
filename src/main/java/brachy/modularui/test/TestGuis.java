@@ -408,7 +408,7 @@ public class TestGuis extends CustomModularScreen {
                 .padding(7)
                 .child(new ListWidget<>()
                         .sizeRel(1f)
-                        .collapseDisabledChild()
+                        .collapseDisabledChildren()
                         .children(12, i -> new Widget<>()
                                 .widthRel(1f)
                                 .height(16)
@@ -432,7 +432,7 @@ public class TestGuis extends CustomModularScreen {
                                 .widthRel(1f)
                                 .autoUpdateOnChange(true))
                         .child(new ListWidget<>()
-                                .collapseDisabledChild()
+                                .collapseDisabledChildren()
                                 .expanded()
                                 .widthRel(1f)
                                 .children(ForgeRegistries.ITEMS, item -> {

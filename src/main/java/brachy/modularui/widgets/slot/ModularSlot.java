@@ -36,8 +36,8 @@ public class ModularSlot extends SlotItemHandler {
     @Getter
     @Setter(onMethod_ = {@ApiStatus.Internal})
     private boolean enabled = true;
-    private boolean canTake = true, canPut = true, canDragInto = true;
-    private Predicate<ItemStack> filter = stack -> true;
+    @Getter private boolean canTake = true, canPut = true, canDragInto = true;
+    @Getter private Predicate<ItemStack> filter = stack -> true;
     private IOnSlotChanged changeListener = IOnSlotChanged.DEFAULT;
     @Getter
     private boolean ignoreMaxStackSize = false;
@@ -186,7 +186,7 @@ public class ModularSlot extends SlotItemHandler {
     /**
      * Sets if this slots accepts items which are dragged across the screen. This is useful to disable when the filter depends on the items
      * in the other slots. When dragging, the item in the slot is not real and its only updated once the dragging is completed.
-     * This method is by default called from {@link com.cleanroommc.modularui.screen.ModularContainer#canDragIntoSlot(Slot) ModularContainer.canDragIntoSlot(Slot)} which can be
+     * This method is by default called from {@link brachy.modularui.screen.ModularContainerMenu#canDragTo(Slot) ModularContainerMenu.canDragTo(Slot)} which can be
      * overridden for other custom behavior.
      *
      * @param canDragInto if items can be dragged into this slot

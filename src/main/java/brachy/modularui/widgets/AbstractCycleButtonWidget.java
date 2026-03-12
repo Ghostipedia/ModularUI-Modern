@@ -18,6 +18,7 @@ import brachy.modularui.utils.Alignment;
 import brachy.modularui.value.IntValue;
 import brachy.modularui.widget.SingleChildWidget;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,10 +29,10 @@ public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> e
 
     private static final RichTooltip[] EMPTY_TOOLTIP = new RichTooltip[0];
 
-    private int stateCount = 1;
+    @Getter private int stateCount = 1;
     private boolean explicitStateCount = false;
     private boolean hasCount = false;
-    private IIntValue<?> intValue;
+    @Getter private IIntValue<?> intValue;
     private int lastValue = -1;
     protected IDrawable[] background = null;
     protected IDrawable[] hoverBackground = null;

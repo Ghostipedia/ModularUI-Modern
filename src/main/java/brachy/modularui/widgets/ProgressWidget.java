@@ -4,6 +4,7 @@ import brachy.modularui.ModularUIConfig;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.value.IDoubleValue;
 import brachy.modularui.api.value.ISyncOrValue;
+import brachy.modularui.api.value.IValue;
 import brachy.modularui.drawable.UITexture;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.screen.viewport.ModularGuiContext;
@@ -13,11 +14,14 @@ import brachy.modularui.utils.Color;
 import brachy.modularui.value.DoubleValue;
 import brachy.modularui.widget.Widget;
 
+import lombok.Getter;
+
 import net.minecraft.util.Mth;
 
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.DoubleSupplier;
 
@@ -26,10 +30,10 @@ public class ProgressWidget extends Widget<ProgressWidget> {
 
     private final UITexture[] fullTexture = new UITexture[4];
     private UITexture emptyTexture;
-    private Direction direction = Direction.RIGHT;
+    @Getter private Direction direction = Direction.RIGHT;
     private int imageSize = -1;
 
-    private IDoubleValue<?> doubleValue;
+    @Getter private IDoubleValue<?> doubleValue;
 
     private IDrawable label;
     private int labelWidth, labelHeight;
@@ -170,6 +174,12 @@ public class ProgressWidget extends Widget<ProgressWidget> {
                 progressScaled, halfHeight,
                 1.0f - progressScaled / halfWidth, 0.0f,
                 1.0f, 1.0f, widgetTheme); // BR, draw LEFT
+    }
+
+
+    @Override
+    public @Nullable IDoubleValue<?> getValue() {
+        return doubleValue;
     }
 
     public ProgressWidget value(IDoubleValue<?> value) {
