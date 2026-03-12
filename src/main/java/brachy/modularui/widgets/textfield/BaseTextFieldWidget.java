@@ -124,16 +124,6 @@ public class BaseTextFieldWidget<W extends BaseTextFieldWidget<W>> extends Abstr
         }
     }
 
-    @Override
-    public void postDraw(ModularGuiContext context, boolean transformed) {
-        if (!transformed) {
-            context.getStencil().pop();
-            WidgetThemeEntry<WidgetTheme> scrollbarTheme = context.getTheme().getScrollbarTheme();
-            getScrollArea().drawScrollbar(context, scrollbarTheme.getTheme(isHovering()),
-                    scrollbarTheme.theme().getBackground());
-        }
-    }
-
     protected void setupDrawText(ModularGuiContext context, TextFieldTheme widgetTheme) {
         this.renderer.setSimulate(false);
         this.renderer.setPos(getArea().getPadding().left(), getArea().getPadding().top());

@@ -543,7 +543,7 @@ public class TestGuis extends CustomModularScreen {
     public static @NotNull ModularPanel<?> buildViewportTransformUI() {
         return new TestPanel("viewport_transform")
                 .child(new Widget<>()
-                        .align(Alignment.Center)
+                        .center()
                         .size(50, 50)
                         .background(GuiTextures.MC_BUTTON)
                         .hoverBackground(GuiTextures.MC_BUTTON_HOVERED));
@@ -671,7 +671,7 @@ public class TestGuis extends CustomModularScreen {
         public TestPanel(String name) {
             super(name);
             //background(GuiTextures.BACKGROUND);
-            align(Alignment.Center).size(100, 100);
+            size(100, 100);
         }
 
         @Override
