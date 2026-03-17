@@ -62,7 +62,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -388,9 +387,8 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
     public void update() {
         if (!getLevel().isClientSide) {
             if (this.time++ % 20 == 0) {
-                Collection<Item> vals = ForgeRegistries.ITEMS.getValues();
-                Item item = vals.stream().skip(new Random().nextInt(vals.size())).findFirst().orElse(Items.DIAMOND);
-                this.displayItem = new ItemStack(item, 26735987);
+                this.displayItem = TestHandler.getRandomItem();
+                this.displayItem.setCount(26735987);
             }
             if (++this.time % 60 == 0) {
                 Random rnd = new Random();

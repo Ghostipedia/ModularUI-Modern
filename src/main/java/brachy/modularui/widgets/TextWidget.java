@@ -24,7 +24,7 @@ public class TextWidget<W extends TextWidget<W>> extends Widget<W> {
     @Getter private final IKey key;
     @Getter private Alignment alignment = Alignment.CenterLeft;
     @Getter private IntSupplier color = null;
-    @Getter private Boolean shadow = null;
+    @Getter private Boolean textShadow = null;
     @Getter private float scale = 1f;
     @Getter private int maxWidth = -1;
 
@@ -46,7 +46,7 @@ public class TextWidget<W extends TextWidget<W>> extends Widget<W> {
         WidgetTheme theme = getActiveWidgetTheme(widgetTheme, isHovering());
         renderer.setColor(this.color != null ? this.color.getAsInt() : theme.getTextColor());
         renderer.setAlignment(this.alignment, getArea().paddedWidth() + this.scale, getArea().paddedHeight());
-        renderer.setShadow(this.shadow != null ? this.shadow : theme.isTextShadow());
+        renderer.setShadow(this.textShadow != null ? this.textShadow : theme.isTextShadow());
         renderer.setPos(getArea().getPadding().left(), getArea().getPadding().top());
         renderer.setScale(this.scale);
         renderer.setSimulate(false);
@@ -162,7 +162,7 @@ public class TextWidget<W extends TextWidget<W>> extends Widget<W> {
     }
 
     public W shadow(@Nullable Boolean shadow) {
-        this.shadow = shadow;
+        this.textShadow = shadow;
         return getThis();
     }
 
@@ -177,6 +177,6 @@ public class TextWidget<W extends TextWidget<W>> extends Widget<W> {
     }
 
     public Boolean isShadow() {
-        return this.getShadow();
+        return this.getTextShadow();
     }
 }
