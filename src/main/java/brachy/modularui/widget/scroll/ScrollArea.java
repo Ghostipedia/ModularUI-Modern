@@ -33,6 +33,7 @@ public class ScrollArea extends Area {
     @Getter
     @Setter
     private VerticalScrollData scrollY;
+    @Getter
     private final ScrollPadding scrollPadding = new ScrollPadding();
     @Getter
     @Setter
@@ -45,12 +46,7 @@ public class ScrollArea extends Area {
     public ScrollArea() {}
 
     @Override
-
     public Box getPadding() {
-        return this.scrollPadding;
-    }
-
-    public ScrollPadding getScrollPadding() {
         return this.scrollPadding;
     }
 
