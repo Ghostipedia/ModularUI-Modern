@@ -7,6 +7,8 @@ import brachy.modularui.widget.sizer.ResizeNode;
 import brachy.modularui.widget.sizer.StandardResizer;
 import brachy.modularui.widget.sizer.Unit;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 
@@ -32,17 +34,45 @@ public interface IPositioned<W extends IPositioned<W>> {
     }
 
     default W coverChildrenWidth() {
-        resizer().coverChildrenWidth();
-        return getThis();
+        return coverChildrenWidth(8);
     }
 
     default W coverChildrenHeight() {
-        resizer().coverChildrenHeight();
+        return coverChildrenHeight(8);
+    }
+
+    default W coverChildrenWidth(int minWidth) {
+        resizer().coverChildrenWidth(minWidth);
+        return getThis();
+    }
+
+    default W coverChildrenHeight(int minHeight) {
+        resizer().coverChildrenHeight(minHeight);
         return getThis();
     }
 
     default W coverChildren() {
         return coverChildrenWidth().coverChildrenHeight();
+    }
+
+    default W coverChildren(int minSize) {
+        return coverChildren(minSize, minSize);
+    }
+
+    default W coverChildren(int minWidth, int minHeight) {
+        return coverChildrenWidth(minWidth).coverChildrenHeight(minHeight);
+    }
+
+    default W disableCoverChildrenWidth() {
+        return coverChildrenWidth(-1);
+    }
+
+    default W disableCoverChildrenHeight() {
+        return coverChildrenWidth(-1);
+    }
+
+    default W disableCoverChildren() {
+        return disableCoverChildrenWidth().disableCoverChildrenHeight();
     }
 
     /**

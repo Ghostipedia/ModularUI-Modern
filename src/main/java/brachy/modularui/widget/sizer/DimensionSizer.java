@@ -26,8 +26,10 @@ public class DimensionSizer {
     private Unit start, end, size;
     private Unit next = p1;
 
+    @Getter
+    private int coverChildrenMinSize = -1;
     @Setter
-    private boolean coverChildren = false, expanded = false;
+    private boolean expanded = false;
     @Setter
     private boolean cancelAutoMovement = false;
 
@@ -80,9 +82,9 @@ public class DimensionSizer {
         }
     }
 
-    public void setCoverChildren(boolean coverChildren, IWidget widget) {
+    public void setCoverChildren(int minSize, IWidget widget) {
         getSize(widget);
-        this.coverChildren = coverChildren;
+        this.coverChildrenMinSize = minSize;
     }
 
     public void setUnit(Unit unit, Unit.State pos) {
@@ -128,17 +130,19 @@ public class DimensionSizer {
     }
 
     public boolean dependsOnChildren() {
-        return this.coverChildren;
+        return this.coverChildrenMinSize >= 0;
     }
 
     public boolean dependsOnParent() {
-        if (this.coverChildren) {
-            // if we cover children we ignore size config
-            return this.end != null || (this.start != null && this.start.isRelative());
-        }
-        return this.end != null ||
-                (this.start != null && this.start.isRelative()) ||
-                (this.size != null && this.size.isRelative());
+        return posDependsOnParent() || sizeDependsOnParent();
+    }
+
+    public boolean sizeDependsOnParent() {
+        return this.coverChildrenMinSize < 0 && this.size != null && this.size.isRelative();
+    }
+
+    public boolean posDependsOnParent() {
+        return this.end != null || (this.start != null && this.start.isRelative());
     }
 
     public void setResized(boolean all) {
@@ -191,7 +195,7 @@ public class DimensionSizer {
                 p = 0;
                 if (this.size == null) {
                     s = defaultSize.getAsInt();
-                    this.sizeCalculated = s > 0 && !this.expanded && !this.coverChildren;
+                    this.sizeCalculated = s > 0 && !this.expanded && this.coverChildrenMinSize < 0;
                 } else {
                     s = calcSize(this.size, padding, parentSize, calcParent);
                 }
@@ -279,7 +283,7 @@ public class DimensionSizer {
     }
 
     public void coverChildrenForEmpty(ResizeNode resizer, Area relativeTo) {
-        int s = 0;
+        int s = this.coverChildrenMinSize;
         Area area = resizer.getArea();
         area.setSize(this.axis, s);
         this.sizeCalculated = true;
@@ -338,7 +342,7 @@ public class DimensionSizer {
 
     private int calcSize(Unit s, Box padding, int parentSize, boolean parentSizeCalculated) {
         // placeholder value, size is calculated externally
-        if (this.coverChildren || this.expanded) return 18;
+        if (this.coverChildrenMinSize >= 0 || this.expanded) return 18;
         float val = s.getValue();
         if (s.isRelative()) {
             if (!parentSizeCalculated) return (int) val;
@@ -376,7 +380,7 @@ public class DimensionSizer {
     }
 
     public void detectConflictingConfiguration() {
-        if (this.expanded && this.coverChildren) {
+        if (this.expanded && this.coverChildrenMinSize >= 0) {
             ModularUI.LOGGER.warn("Resizer '{}' has expanded() and coverChildren() on {} axis. This conflicts and may cause layout issues.", this.resizer, this.axis);
         }
         // TODO detect when this depends and all siblings depend on parent and parent depends on all children
