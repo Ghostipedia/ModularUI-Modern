@@ -519,8 +519,9 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
         return this.y.dependsOnChildren();
     }
 
-    public StandardResizer expanded() {
-        this.expanded = true;
+    @Override
+    public StandardResizer expanded(boolean expanded) {
+        this.expanded = expanded;
         scheduleResize();
         return this;
     }

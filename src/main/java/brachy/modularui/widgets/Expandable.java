@@ -101,7 +101,7 @@ public class Expandable extends Widget<Expandable> implements Interactable, IVie
     }
 
     public void toggle() {
-        expanded(!expanded);
+        setExpanded(!expanded);
     }
 
     @Override
@@ -124,7 +124,7 @@ public class Expandable extends Widget<Expandable> implements Interactable, IVie
         }
     }
 
-    public Expandable expanded(boolean expanded) {
+    public Expandable setExpanded(boolean expanded) {
         if (this.expanded == expanded) return this;
         this.expanded = expanded;
         if (expanded) {
