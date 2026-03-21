@@ -1,6 +1,6 @@
 package brachy.modularui.widgets.slot;
 
-import brachy.modularui.core.mixins.client.CombinedInvWrapperAccessor;
+import brachy.modularui.core.mixins.common.CombinedInvWrapperAccessor;
 import brachy.modularui.value.sync.ItemSlotSyncHandler;
 
 import net.minecraft.resources.ResourceLocation;
@@ -103,9 +103,16 @@ public class ModularSlot extends SlotItemHandler {
     }
 
     @Override
-    public void setChanged() {}
+    public void setChanged() {
+        if (this.syncHandler != null) {
+            this.syncHandler.checkUpdate();
+        }
+    }
 
     public void onSlotChangedReal(ItemStack itemStack, boolean onlyChangedAmount, boolean client, boolean init) {
+        if (this.slotGroup != null) {
+            this.slotGroup.slotChanged(this);
+        }
         this.changeListener.onChange(itemStack, onlyChangedAmount, client, init);
         if (!init && isInitialized()) {
             getSyncHandler().getSyncManager().getContainer().onSlotChanged(this, itemStack, onlyChangedAmount);
@@ -113,13 +120,6 @@ public class ModularSlot extends SlotItemHandler {
     }
 
     public void onCraftShiftClick(Player playerIn, ItemStack itemStack) {}
-
-    @Override
-    public void set(@NotNull ItemStack stack) {
-        if (ItemStack.matches(stack, getItem())) return;
-        super.set(stack);
-        if (this.syncHandler != null) this.syncHandler.checkUpdate();
-    }
 
     @Override
     public @Nullable Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
@@ -140,6 +140,11 @@ public class ModularSlot extends SlotItemHandler {
 
     protected Player getPlayer() {
         return getSyncHandler().getSyncManager().getPlayer();
+    }
+
+    @Override
+    public boolean isSameInventory(@NotNull Slot other) {
+        return other instanceof SlotItemHandler slotItemHandler && slotItemHandler.getItemHandler() == this.getItemHandler();
     }
 
     /**
@@ -187,10 +192,11 @@ public class ModularSlot extends SlotItemHandler {
     }
 
     /**
-     * Sets if this slots accepts items which are dragged across the screen. This is useful to disable when the filter depends on the items
-     * in the other slots. When dragging, the item in the slot is not real and its only updated once the dragging is completed.
-     * This method is by default called from {@link brachy.modularui.screen.ModularContainerMenu#canDragTo(Slot) ModularContainerMenu.canDragTo(Slot)} which can be
-     * overridden for other custom behavior.
+     * Sets if this slots accepts items which are dragged across the screen.
+     * This is useful to disable when the filter depends on the items in the other slots.
+     * When dragging, the item in the slot is not real and its only updated once the dragging is completed.
+     * This method is by default called from {@link brachy.modularui.screen.ModularContainerMenu#canDragTo(Slot)}, 
+     * which can be overridden for other custom behavior.
      *
      * @param canDragInto if items can be dragged into this slot
      * @return this
