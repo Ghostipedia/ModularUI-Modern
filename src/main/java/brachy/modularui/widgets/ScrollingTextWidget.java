@@ -4,7 +4,6 @@ import brachy.modularui.animation.Animator;
 import brachy.modularui.animation.IAnimator;
 import brachy.modularui.animation.SequentialAnimator;
 import brachy.modularui.animation.Wait;
-import brachy.modularui.api.drawable.IKey;
 import brachy.modularui.drawable.text.TextRenderer;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetTheme;
@@ -25,7 +24,7 @@ public class ScrollingTextWidget extends TextWidget<ScrollingTextWidget> {
 
     private int speed = 15;
 
-    public ScrollingTextWidget(IKey key) {
+    public ScrollingTextWidget(Component key) {
         super(key);
         tooltipBuilder(tooltip -> {
             tooltip.showUpTimer(10);
@@ -63,7 +62,7 @@ public class ScrollingTextWidget extends TextWidget<ScrollingTextWidget> {
             animator(new Animator().curve(Interpolation.SINE_INOUT));
         }
         if (this.line == null) {
-            updateLine(getKey().getFormatted());
+            updateLine(getKey());
         }
         checkString();
         WidgetTheme theme = getActiveWidgetTheme(widgetTheme, isHovering());

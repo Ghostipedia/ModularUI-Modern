@@ -1,6 +1,6 @@
 package brachy.modularui.widgets;
 
-import brachy.modularui.api.drawable.IKey;
+import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.widget.Interactable;
 import brachy.modularui.client.schemarenderer.BaseSchemaRenderer;
 import brachy.modularui.schema.ISchema;
@@ -143,8 +143,8 @@ public class SchemaWidget extends Widget<SchemaWidget> implements Interactable {
         public LayerButton(ISchema schema, int minLayer, int maxLayer) {
             this.minLayer = minLayer;
             this.maxLayer = maxLayer;
-            overlay(IKey.dynamic(() -> currentLayer > Integer.MIN_VALUE ?
-                    Component.literal(Integer.toString(currentLayer)) : Component.literal("ALL")).scale(0.5f));
+            overlay(Text.dynamic(() -> currentLayer > Integer.MIN_VALUE ?
+                    Component.literal(Integer.toString(currentLayer)) : Component.literal("ALL"))/*.scale(0.5f)*/); // TODO
 
             onMousePressed((context, button) -> {
                 if (button == 0 || button == 1) {

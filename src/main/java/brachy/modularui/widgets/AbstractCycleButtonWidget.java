@@ -3,7 +3,7 @@ package brachy.modularui.widgets;
 import brachy.modularui.ModularUI;
 import brachy.modularui.api.ITheme;
 import brachy.modularui.api.drawable.IDrawable;
-import brachy.modularui.api.drawable.IKey;
+import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.drawable.ITextLine;
 import brachy.modularui.api.value.IBoolValue;
 import brachy.modularui.api.value.IEnumValue;
@@ -334,7 +334,7 @@ public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> e
      */
     protected W addTooltip(int state, IDrawable tooltip) {
         updateStateCount(state + 1, false);
-        this.tooltip[state].addLine(tooltip);
+        this.tooltip[state].addDrawableLine(tooltip);
         return getThis();
     }
 
@@ -342,7 +342,7 @@ public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> e
      * Adds a line to the tooltip
      */
     protected W addTooltip(int state, String tooltip) {
-        return addTooltip(state, IKey.str(tooltip));
+        return addTooltip(state, Text.str(tooltip));
     }
 
     /**
@@ -385,7 +385,7 @@ public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> e
     public W addTooltipElement(IDrawable drawable) {
         expectCount();
         for (RichTooltip tooltip : this.tooltip) {
-            tooltip.add(drawable);
+            tooltip.addDrawable(drawable);
         }
         return getThis();
     }
@@ -415,7 +415,7 @@ public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> e
     public W addTooltipLine(IDrawable drawable) {
         expectCount();
         for (RichTooltip tooltip : this.tooltip) {
-            tooltip.addLine(drawable);
+            tooltip.addDrawableLine(drawable);
         }
         return getThis();
     }

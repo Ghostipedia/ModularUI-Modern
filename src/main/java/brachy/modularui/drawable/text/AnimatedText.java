@@ -1,24 +1,7 @@
 package brachy.modularui.drawable.text;
 
-import brachy.modularui.api.drawable.IKey;
-import brachy.modularui.screen.viewport.GuiContext;
-import brachy.modularui.theme.WidgetTheme;
-import brachy.modularui.utils.Alignment;
-
-import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
-import lombok.Setter;
-import lombok.experimental.Accessors;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.function.IntSupplier;
-
+// TODO turn into ComponentsContents
+/*
 @Accessors(fluent = true, chain = true)
 public class AnimatedText extends StyledText {
 
@@ -28,7 +11,7 @@ public class AnimatedText extends StyledText {
     private int currentIndex;
     /**
      * How fast the characters appear
-     */
+     *//*
     @Setter
     private int speed = 40; // ms per char
     private long timeLastDraw;
@@ -142,4 +125,4 @@ public class AnimatedText extends StyledText {
     public @NotNull AnimatedText shadow(@Nullable Boolean shadow) {
         return (AnimatedText) super.shadow(shadow);
     }
-}
+}*/
