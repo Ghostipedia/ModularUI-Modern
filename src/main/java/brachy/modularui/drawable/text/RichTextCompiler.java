@@ -3,8 +3,8 @@ package brachy.modularui.drawable.text;
 import brachy.modularui.ModularUI;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.IIcon;
-import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.drawable.ITextLine;
+import brachy.modularui.api.drawable.Text;
 import brachy.modularui.drawable.DelegateIcon;
 import brachy.modularui.drawable.Icon;
 import brachy.modularui.screen.viewport.GuiContext;
@@ -124,7 +124,7 @@ public class RichTextCompiler {
                 subStyle = this.lineBreakFinder.lineBreakStyle;
                 if (this.lineBreakFinder.count != 0 || !this.lineBreakFinder.styleChanged) {
                     String sub = content.substring(skip, this.lineBreakFinder.lineBreak);
-                    addLineElement(sub, subStyle, this.lineBreakFinder.width);
+                    addLineElement(sub, subStyle, this.lineBreakFinder.lineBreakWidth);
                 }
                 skip = this.lineBreakFinder.nextChar;
                 if (skip < 0) break;
@@ -217,24 +217,26 @@ public class RichTextCompiler {
     private class LineBreakFinder implements FormattedCharSink, FontRenderHelper.StyleSink {
 
         private float width = 0;
-        private Style lastCharStyle = null;
         private boolean styleChanged = false;
         private int lineBreak = -1;
         private Style lineBreakStyle = Style.EMPTY;
+        private float lineBreakWidth = 0;
         private int lastSpace = -1;
         private Style lastSpaceStyle = Style.EMPTY;
+        private float lastSpaceWidth = 0;
         private int nextChar;
         private int count;
         private int stylePos = -1;
 
         public boolean reset(Style style) {
             this.width = 0;
-            this.lastCharStyle = style;
             this.lineBreak = -1;
             this.lineBreakStyle = Style.EMPTY;
+            this.lineBreakWidth = 0;
             this.width = 0;
             this.lastSpace = -1;
             this.lastSpaceStyle = Style.EMPTY;
+            this.lastSpaceWidth = 0;
             this.nextChar = 0;
             this.count = 0;
             this.stylePos = -1;
@@ -248,11 +250,12 @@ public class RichTextCompiler {
             switch (codePoint) {
                 case '\n':
                     this.nextChar = i + 1;
-                    return finishIteration(i, style);
+                    return finishIteration(i, style, this.width);
                 case ' ':
                     if (this.lastSpace != i - 1 && i > 0) {
                         this.lastSpace = i;
                         this.lastSpaceStyle = style;
+                        this.lastSpaceWidth = this.width;
                     }
                 default:
                     float f = FontRenderHelper.getCharWidth(RichTextCompiler.this.fr, codePoint, style);
@@ -265,11 +268,11 @@ public class RichTextCompiler {
                         }
                         if (this.lastSpace < 0) {
                             // no space found, cut string right here
-                            return finishIteration(i, style);
+                            return finishIteration(i, style, this.width);
                         }
                         // go back to last space
                         this.nextChar = this.lastSpace + 1;
-                        return finishIteration(this.lastSpace, this.lastSpaceStyle);
+                        return finishIteration(this.lastSpace, this.lastSpaceStyle, this.lastSpaceWidth);
                     }
                     this.nextChar = i + Character.charCount(codePoint);
                     this.count++;
@@ -281,16 +284,16 @@ public class RichTextCompiler {
         public boolean accept(int stylePos, int nextPos, Style style) {
             this.styleChanged = true;
             this.stylePos = stylePos;
-            this.lastCharStyle = style;
             this.nextChar = nextPos;
             this.lineBreak = nextPos;
             this.lineBreakStyle = style;
             return nextPos < 0;
         }
 
-        private boolean finishIteration(int lineBreak, Style lineBreakStyle) {
+        private boolean finishIteration(int lineBreak, Style lineBreakStyle, float width) {
             this.lineBreak = lineBreak;
             this.lineBreakStyle = lineBreakStyle;
+            this.lineBreakWidth = width;
             return false;
         }
 
