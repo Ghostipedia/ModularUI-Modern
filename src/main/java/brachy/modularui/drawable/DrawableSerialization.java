@@ -38,7 +38,7 @@ public class DrawableSerialization implements JsonSerializer<IDrawable>, JsonDes
     private static final Map<String, UITexture> TEXTURES = new Object2ObjectOpenHashMap<>();
     private static final Map<UITexture, String> REVERSE_TEXTURES = new Object2ObjectOpenHashMap<>();
 
-    private static void registerTextureInternal(String name, UITexture texture) {
+    private static synchronized void registerTextureInternal(String name, UITexture texture) {
         if (texture == null) return;
         UITexture current = TEXTURES.put(name, texture);
         REVERSE_TEXTURES.put(texture, name);
@@ -47,7 +47,7 @@ public class DrawableSerialization implements JsonSerializer<IDrawable>, JsonDes
         }
     }
 
-    public static void registerTexture(String name, UITexture texture) {
+    public static synchronized void registerTexture(String name, UITexture texture) {
         String current = REVERSE_TEXTURES.get(texture);
         if (current != null) {
             if (name != null && !current.equals(name)) {
