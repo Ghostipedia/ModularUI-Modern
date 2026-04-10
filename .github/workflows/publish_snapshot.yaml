@@ -3,7 +3,7 @@
 # Then it generates a log, based on commits.
 # After that builds a jar and uploads it to curseforge/modrinth/GitHub releases
 
-name: Build and Publish mod
+name: Publish Snapshot
 
 on:
   workflow_dispatch:
@@ -29,7 +29,7 @@ jobs:
           commit=$(git rev-parse --short HEAD)
           echo "Current mod version: -$mod_version-, Last commit: -$commit-"
           snapshot_ver="$mod_version-SNAPSHOT+$commit"
-          echo "snapshot_ver-gh=$snapshot_ver" >> $GITHUB_OUTPUT
+          echo "snapshot_ver=$snapshot_ver" >> $GITHUB_OUTPUT
           sed -i "s/^mod_version.*/mod_version = $snapshot_ver/" gradle.properties
 
       - name: Setup Java
