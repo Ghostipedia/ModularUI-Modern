@@ -161,6 +161,11 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                             .name("synced number col");
                 });
 
+        syncManager.registerSyncedAction("inventorySend", packet -> {
+            boolean toPlayer = packet.readBoolean();
+            ModularUI.LOGGER.info("Sync action value: {}", toPlayer);
+        });
+
         ModularPanel<?> panel = new ModularPanel<>("test_tile");
         IPanelHandler panelSyncHandler = syncManager.syncedPanel("other_panel", true, this::openSecondWindow);
 
@@ -251,7 +256,8 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                                                                             .pos(RichTooltip.Pos.LEFT);
                                                                 })
                                                                 .onMousePressed((context, mouseButton) -> {
-                                                                    panelSyncHandler.openPanel();
+                                                                    syncManager.callSyncedAction("inventorySend", b -> b.writeBoolean(false));
+                                                                    //panelSyncHandler.openPanel();
                                                                     return true;
                                                                 })
                                                                 .overlay(Text.str("Open Sub Panel").scale(0.75f)))
