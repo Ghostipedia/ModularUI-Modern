@@ -45,7 +45,7 @@ import java.util.Random;
 @Mod.EventBusSubscriber(modid = ModularUI.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TestHandler {
 
-    public static boolean enabledRichTooltipEventTest = true;
+    public static boolean enabledRichTooltipEventTest = false;
     public static final String TEST_THEME = "mui:test_theme";
     private static final ThemeBuilder<?> testTheme = new ThemeBuilder<>(TEST_THEME)
             .defaultColor(Color.BLUE_ACCENT.brighter(0))
