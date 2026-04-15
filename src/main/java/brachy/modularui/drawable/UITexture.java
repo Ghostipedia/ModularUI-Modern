@@ -605,11 +605,11 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
                     throw new IllegalArgumentException("UV values must be 0 - 1");
                 if (this.bl > 0 || this.bt > 0 || this.br > 0 || this.bb > 0) {
                     return new AdaptableUITexture(this.location, this.u0, this.v0, this.u1, this.v1, this.colorType,
-                            this.nonOpaque, this.iw, this.ih, this.bl, this.bt, this.br, this.bb, this.tiled);
+                            this.nonOpaque, 0, this.iw, this.ih, this.bl, this.bt, this.br, this.bb, this.tiled);
                 }
                 if (this.tiled) {
-                    return new TiledUITexture(this.location, this.u0, this.v0, this.u1, this.v1, this.iw, this.ih,
-                            this.colorType, this.nonOpaque);
+                    return new TiledUITexture(this.location, this.u0, this.v0, this.u1, this.v1,
+                            this.colorType, this.nonOpaque, 0, this.iw, this.ih);
                 }
                 return new UITexture(this.location, this.u0, this.v0, this.u1, this.v1, this.colorType, this.nonOpaque);
             }
