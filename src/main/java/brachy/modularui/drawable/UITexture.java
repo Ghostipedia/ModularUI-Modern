@@ -242,6 +242,9 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         } else if (JsonHelper.getBoolean(json, false, "canApplyTheme")) {
             builder.canApplyTheme();
         }
+        if (JsonHelper.getBoolean(json, false, "nonOpaque")) {
+            builder.nonOpaque();
+        }
         UITexture uiTexture = builder.build();
         uiTexture.colorOverride = JsonHelper.getColor(json, 0, "colorOverride");
         return uiTexture;
@@ -265,6 +268,7 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         json.addProperty("u1", this.u1);
         json.addProperty("v1", this.v1);
         if (this.colorType != null) json.addProperty("colorType", this.colorType.getName());
+        json.addProperty("nonOpaque", this.nonOpaque);
         json.addProperty("colorOverride", this.colorOverride);
     }
 
