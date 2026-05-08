@@ -56,11 +56,11 @@ import brachy.modularui.widgets.menu.DropdownWidget;
 import brachy.modularui.widgets.textfield.TextFieldWidget;
 
 import net.minecraft.Util;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import com.google.common.base.CaseFormat;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -448,7 +448,7 @@ public class TestGuis extends CustomModularScreen {
                                 .collapseDisabledChildren()
                                 .expanded()
                                 .widthRel(1f)
-                                .children(ForgeRegistries.ITEMS, item -> {
+                                .children(BuiltInRegistries.ITEM, item -> {
                                     ItemStack stack = new ItemStack(item);
                                     String text = stack.getHoverName().getString();
                                     return Flow.row()

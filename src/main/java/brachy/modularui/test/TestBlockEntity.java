@@ -45,21 +45,25 @@ import brachy.modularui.widgets.slot.ModularSlot;
 import brachy.modularui.widgets.slot.PhantomItemSlot;
 import brachy.modularui.widgets.slot.SlotGroup;
 
+import io.netty.buffer.ByteBuf;
+
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.VarInt;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+
+import net.neoforged.neoforge.items.ItemStackHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,7 +108,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
     private final Map<Item, ItemStackHandler> stackHandlerMap = new Object2ObjectOpenHashMap<>();
 
     public TestBlockEntity(BlockPos pos, BlockState blockState) {
-        super(TestRegistration.BE_TYPE.get(), pos, blockState);
+        super(TestRegistration.TEST_BLOCK_ENTITY.get(), pos, blockState);
 
     }
 
@@ -124,11 +128,11 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
         syncManager.getHyperVisor().syncValue("cycle_state", cycleStateValue);
         syncManager.syncValue("progress", new DoubleSyncValue(() -> (double) this.progress / this.duration));
         syncManager.syncValue("display_item", GenericSyncValue.forItem(() -> this.displayItem, null));
-        GenericListSyncHandler<Integer> numberListSyncHandler = GenericListSyncHandler.<Integer>builder()
+        GenericListSyncHandler<ByteBuf, Integer> numberListSyncHandler = GenericListSyncHandler.<ByteBuf, Integer>builder()
                 .getter(() -> this.serverInts)
                 .setter(v -> this.serverInts = v)
-                .serializer(FriendlyByteBuf::writeVarInt)
-                .deserializer(FriendlyByteBuf::readVarInt)
+                .serializer(VarInt::write)
+                .deserializer(VarInt::read)
                 .immutableCopy()
                 .build();
         syncManager.syncValue("number_list", numberListSyncHandler);
@@ -136,11 +140,12 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
 
         DynamicSyncHandler dynamicSyncHandler = new DynamicSyncHandler()
                 .widgetProvider((syncManager1, packet) -> {
-                    ItemStack itemStack = packet.readItem();
+                    ItemStack itemStack = ItemStack.OPTIONAL_STREAM_CODEC.decode(packet);
                     if (itemStack.isEmpty()) return new EmptyWidget();
                     Item item = itemStack.getItem();
                     ItemStackHandler handler = stackHandlerMap.computeIfAbsent(item, k -> new ItemStackHandler(handlerSizeMap.getInt(k)));
-                    String name = ForgeRegistries.ITEMS.getKey(item).toString();
+
+                    String name = BuiltInRegistries.ITEM.getKey(item).toString();
                     Flow flow = Flow.row();
                     for (int i = 0; i < handler.getSlots(); i++) {
                         int finalI = i;
@@ -150,7 +155,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                     return flow;
                 });
 
-        DynamicLinkedSyncHandler<GenericListSyncHandler<Integer>> dynamicLinkedSyncHandler = new DynamicLinkedSyncHandler<>(numberListSyncHandler)
+        DynamicLinkedSyncHandler<ByteBuf, GenericListSyncHandler<ByteBuf, Integer>> dynamicLinkedSyncHandler = new DynamicLinkedSyncHandler<>(numberListSyncHandler)
                 .widgetProvider((syncManager1, value1) -> {
                     List<Integer> vals = value1.getValue();
                     return Flow.row()
@@ -181,7 +186,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                         .top(0)
                         .leftRelOffset(1f, 1)
                         .background(GuiTextures.MC_BACKGROUND)
-                        .excludeAreaInRecipeViewer()
+                        .recipeViewerExclusionArea()
                         .stencilTransform((r, expanded) -> {
                             r.width = Math.max(20, r.width - 5);
                             r.height = Math.max(20, r.height - 5);
@@ -317,7 +322,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                                                         .slot(new ModularSlot(this.storageInventory0, 0)
                                                                 .changeListener(((newItem, onlyAmountChanged, client, init) -> {
                                                                     if (client && !onlyAmountChanged) {
-                                                                        dynamicSyncHandler.notifyUpdate(packet -> packet.writeItemStack(newItem, false));
+                                                                        dynamicSyncHandler.notifyUpdate(packet -> ItemStack.OPTIONAL_STREAM_CODEC.encode(packet, newItem));
                                                                     }
                                                                 }))))
                                                 .child(new DynamicSyncedWidget<>()
@@ -408,17 +413,15 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
         }
     }
 
-
     @Override
-    public CompoundTag serializeNBT() {
-        CompoundTag t = super.serializeNBT();
-        t.put("item_inv", this.storage.serializeNBT());
-        return t;
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        tag.put("item_inv", this.storage.serializeNBT(registries));
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
-        super.deserializeNBT(nbt);
-        this.storage.deserializeNBT(nbt.getCompound("item_inv"));
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        this.storage.deserializeNBT(registries, tag.getCompound("item_inv"));
     }
 }

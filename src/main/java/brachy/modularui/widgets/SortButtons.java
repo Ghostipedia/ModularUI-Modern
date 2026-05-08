@@ -39,9 +39,9 @@ public class SortButtons extends Widget<SortButtons> {
     }
 
     @Getter private String slotGroupName;
-    @Getter private SlotGroup slotGroup;
+    @Getter @Setter private SlotGroup slotGroup;
 
-    @Getter private boolean horizontal = true;
+    private boolean horizontal = true;
     private final ButtonWidget<?> sortButton = new ButtonWidget<>();
     private final ButtonWidget<?> settingsButton = new ButtonWidget<>();
     @Getter

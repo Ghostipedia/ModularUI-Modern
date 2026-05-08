@@ -1,10 +1,11 @@
 package brachy.modularui;
 
+import brachy.modularui.api.drawable.Text;
 import brachy.modularui.factory.UIFactories;
 import brachy.modularui.factory.inventory.InventoryTypes;
 import brachy.modularui.network.ModularNetwork;
 import brachy.modularui.screen.ModularContainerMenu;
-import brachy.modularui.test.ModularUITestingRegistration;
+import brachy.modularui.test.TestRegistration;
 import brachy.modularui.theme.ThemeManager;
 import brachy.modularui.utils.RegistryAccessContainer;
 
@@ -62,7 +63,7 @@ public class ModularUI {
 
         ModularUIMenuTypes.register(modBus);
         if (ModularUI.isDev()) {
-            ModularUITestingRegistration.register(modBus);
+            TestRegistration.register(modBus);
         }
     }
 
@@ -165,7 +166,7 @@ public class ModularUI {
                         .executes(ctx -> {
                             ThemeManager.reload();
                             // TODO translations for this
-                            ctx.getSource().sendSuccess(() -> Component.literal("ModularUI Themes reloaded").withStyle(IKey.GREEN), true);
+                            ctx.getSource().sendSuccess(() -> Component.literal("ModularUI Themes reloaded").withStyle(Text.GREEN), true);
                             return Command.SINGLE_SUCCESS;
                         }));
         event.getDispatcher().register(command);

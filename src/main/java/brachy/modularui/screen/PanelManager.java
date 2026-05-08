@@ -36,7 +36,7 @@ public class PanelManager {
     /**
      * List of all open panels from top to bottom.
      */
-    private final List<ModularPanel> panels = new ObjectArrayList<>();
+    private final List<ModularPanel<?>> panels = new ObjectArrayList<>();
     // a clone of the list to avoid CMEs
     private final List<ModularPanel<?>> panelsClone = new ArrayList<>();
     private final List<ModularPanel<?>> panelsView = Collections.unmodifiableList(this.panelsClone);

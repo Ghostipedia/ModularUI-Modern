@@ -24,17 +24,22 @@ import brachy.modularui.utils.Color;
 
 import com.mojang.datafixers.util.Either;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderTooltipEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
-import net.minecraftforge.registries.ForgeRegistries;
-
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @EventBusSubscriber(modid = ModularUI.MOD_ID, value = Dist.CLIENT)
 public class TestHandler {
@@ -62,15 +67,17 @@ public class TestHandler {
     }.asIcon().height(3);
 
     private static List<ItemStack> allItems = null;
+    private static final RandomSource random = RandomSource.createThreadSafe();
 
     public static ItemStack getRandomItem() {
+
         if (allItems == null) {
             allItems = new ArrayList<>();
-            for (Item item : ForgeRegistries.ITEMS) {
+            for (Item item : BuiltInRegistries.ITEM) {
                 allItems.add(new ItemStack(item));
             }
         }
-        return allItems.get(new Random().nextInt(allItems.size())).copy();
+        return allItems.get(random.nextInt(allItems.size())).copy();
     }
 
     @OnlyIn(Dist.CLIENT)

@@ -1,13 +1,13 @@
 package brachy.modularui.test;
 
-import brachy.modularui.api.IPanelHandler;
+import brachy.modularui.ModularUI;
 import brachy.modularui.api.IUIHolder;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.factory.PlayerInventoryGuiData;
 import brachy.modularui.factory.inventory.InventoryTypes;
 import brachy.modularui.screen.ModularPanel;
+import brachy.modularui.screen.ModularScreen;
 import brachy.modularui.screen.UISettings;
-import brachy.modularui.utils.Alignment;
 import brachy.modularui.value.sync.PanelSyncManager;
 import brachy.modularui.value.sync.SyncHandlers;
 import brachy.modularui.widget.ParentWidget;
@@ -18,22 +18,13 @@ import brachy.modularui.widgets.slot.ModularSlot;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
-import org.jetbrains.annotations.NotNull;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.type.capability.ICurioItem;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInventoryGuiData<?>> {
 
@@ -48,7 +39,7 @@ public class TestItem extends Item implements ICurioItem, IUIHolder<PlayerInvent
     }
 
     @Override
-    public ModularPanel buildUI(PlayerInventoryGuiData<?> data, PanelSyncManager syncManager, UISettings settings) {
+    public ModularPanel<?> buildUI(PlayerInventoryGuiData<?> data, PanelSyncManager syncManager, UISettings settings) {
         IItemHandler itemHandler = data.getUsedItemStack().getCapability(Capabilities.ItemHandler.ITEM);
         if (!(itemHandler instanceof IItemHandlerModifiable ihm)) return null;
 

@@ -55,7 +55,7 @@ public class PhantomItemSlotSyncHandler extends ItemSlotSyncHandler {
         if (id == SYNC_CLICK) {
             phantomClick(MouseData.readPacket(buf));
         } else if (id == SYNC_SCROLL) {
-            phantomScroll(MouseData.readPacket(buf));
+            phantomScroll(MouseData.readPacket(buf), buf.readDouble(), buf.readDouble());
         } else if (id == SYNC_ITEM_SIMPLE) {
             if (!isPhantom()) return;
             phantomClick(new MouseData(Dist.DEDICATED_SERVER, 0, false, false, false),
@@ -114,12 +114,13 @@ public class PhantomItemSlotSyncHandler extends ItemSlotSyncHandler {
         }
     }
 
-    protected void phantomScroll(MouseData mouseData) {
+    protected void phantomScroll(MouseData mouseData, double scrollX, double scrollY) {
         ItemStack currentItem = getSlot().getItem();
-        int amount = mouseData.mouseButton();
+        int amount = (int) scrollY;
         if (mouseData.shift()) amount *= 4;
         if (mouseData.ctrl()) amount *= 16;
         if (mouseData.alt()) amount *= 64;
+
         if (amount > 0 && currentItem.isEmpty() && !this.lastStoredPhantomItem.isEmpty()) {
             ItemStack stackToPut = this.lastStoredPhantomItem.copy();
             stackToPut.setCount(amount);

@@ -736,7 +736,7 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
 
     public boolean isAnyHovered() {
         if (this.hovering.isEmpty()) return false;
-        if (this.hovering.size() == 1 && this.hovering.getFirst().getElement() instanceof ModularPanel panel) {
+        if (this.hovering.size() == 1 && this.hovering.getFirst().getElement() instanceof ModularPanel<?> panel) {
             return panel.canHover();
         }
         return true;

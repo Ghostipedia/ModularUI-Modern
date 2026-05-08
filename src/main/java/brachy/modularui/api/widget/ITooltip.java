@@ -135,7 +135,7 @@ public interface ITooltip<W extends ITooltip<W>> {
 
     /**
      * Sets if the tooltip text should have shadow enabled by default.
-     * Can be overridden with {@link StyledText} lines.
+     * Can be overridden with {@link brachy.modularui.drawable.text.RichText} lines.
      *
      * @param textShadow true if text should have a shadow
      * @return this

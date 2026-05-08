@@ -8,6 +8,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.ICancellableEvent;
 import net.neoforged.neoforge.client.event.RenderTooltipEvent;
 
@@ -28,8 +29,7 @@ public class RichTooltipEvent {
      * {@link Gather.Post} is invoked after the vanilla event.
      * Both can be canceled and edited.
      */
-    @Cancelable
-    public static class Gather extends Event {
+    public static class Gather extends Event implements ICancellableEvent {
 
         @Getter private final IRichTextBuilder<?> tooltip;
         @Getter protected final ItemStack itemStack;
@@ -54,8 +54,7 @@ public class RichTooltipEvent {
             this.maxWidth = maxWidth;
         }
 
-        @Cancelable
-        public static class Pre extends Gather {
+        public static class Pre extends Gather implements ICancellableEvent {
 
             public Pre(IRichTextBuilder<?> tooltip, ItemStack stack, GuiContext guiContext,
                        int x, int y, int screenWidth, int screenHeight, int maxWidth) {
@@ -63,8 +62,7 @@ public class RichTooltipEvent {
             }
         }
 
-        @Cancelable
-        public static class Post extends Gather {
+        public static class Post extends Gather implements ICancellableEvent {
 
             public Post(IRichTextBuilder<?> tooltip, ItemStack stack, GuiContext guiContext,
                         int x, int y, int screenWidth, int screenHeight, int maxWidth) {
@@ -73,7 +71,6 @@ public class RichTooltipEvent {
         }
     }
 
-    @Cancelable
     public static class Pre extends RenderTooltipEvent.Pre implements ICancellableEvent {
 
         @Getter

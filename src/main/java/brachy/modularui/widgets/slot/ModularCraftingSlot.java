@@ -5,9 +5,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.inventory.RecipeCraftingHolder;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
@@ -222,12 +224,12 @@ public class ModularCraftingSlot extends ModularSlot {
         Level level = player.level();
         ItemStack result = ItemStack.EMPTY;
 
-        Optional<CraftingRecipe> possibleRecipe = player.getServer().getRecipeManager()
+        Optional<RecipeHolder<CraftingRecipe>> possibleRecipe = player.getServer().getRecipeManager()
                 .getRecipeFor(RecipeType.CRAFTING, getCraftSlots().asCraftInput(), level);
         if (possibleRecipe.isPresent()) {
-            CraftingRecipe recipe = possibleRecipe.get();
+            RecipeHolder<CraftingRecipe> recipe = possibleRecipe.get();
             if (setRecipeUsed(getItemHandler(), player, recipe)) {
-                result = recipe.assemble(getCraftSlots(), level.registryAccess());
+                result = recipe.value().assemble(getCraftSlots().asCraftInput(), level.registryAccess());
                 if (!result.isItemEnabled(level.enabledFeatures())) {
                     result = ItemStack.EMPTY;
                 }
@@ -237,14 +239,16 @@ public class ModularCraftingSlot extends ModularSlot {
         set(result);
     }
 
-    protected boolean setRecipeUsed(@Nullable Object possibleRecipeHolder, ServerPlayer player, Recipe<?> recipe) {
-        if (!recipe.isSpecial() && player.level().getGameRules().getBoolean(GameRules.RULE_LIMITED_CRAFTING) &&
+    protected boolean setRecipeUsed(@Nullable Object possibleRecipeHolder, ServerPlayer player, RecipeHolder<CraftingRecipe> recipe) {
+        if (!recipe.value().isSpecial() && player.level().getGameRules().getBoolean(GameRules.RULE_LIMITED_CRAFTING) &&
                 !player.getRecipeBook().contains(recipe)) {
             return false;
         }
-        if (possibleRecipeHolder instanceof RecipeHolder recipeHolder) {
+
+        if (possibleRecipeHolder instanceof RecipeCraftingHolder recipeHolder) {
             recipeHolder.setRecipeUsed(recipe);
         }
+
         return true;
     }
 }

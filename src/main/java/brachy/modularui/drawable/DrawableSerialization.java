@@ -9,6 +9,8 @@ import brachy.modularui.drawable.text.ModularComponent;
 import brachy.modularui.utils.RegistryAccessContainer;
 import brachy.modularui.utils.serialization.json.JsonHelper;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
@@ -28,6 +30,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -206,7 +209,7 @@ public class DrawableSerialization implements JsonSerializer<IDrawable>, JsonDes
     }
 
     private static ModularComponent parseText(JsonObject json) throws JsonParseException {
-        JsonParseException exception;
+        JsonParseException exception = new JsonParseException("Could not parse Text from %s".formatted(json));
         try {
             MutableComponent component = Component.Serializer.fromJson(json, RegistryAccessContainer.current());
             if (component != null) {
@@ -225,9 +228,9 @@ public class DrawableSerialization implements JsonSerializer<IDrawable>, JsonDes
             }
             return JsonHelper.getBoolean(json, false, "lang", "translate") ? Text.lang(s) : Text.str(s);
         } else if (element.isJsonArray()) {
-            List<Component> strings = new ObjectArrayList<>();
-            for (JsonElement element1 : element.getAsJsonArray()) {
-                strings.add(parseText(element1));
+            ObjectArrayList<Component> strings = new ObjectArrayList<>();
+            for (JsonElement childElement : element.getAsJsonArray()) {
+                strings.add(parseText(childElement));
             }
             strings.trim();
             return Text.comp(strings.elements());
@@ -236,7 +239,7 @@ public class DrawableSerialization implements JsonSerializer<IDrawable>, JsonDes
     }
 
     private static Component parseText(JsonElement element) throws JsonParseException {
-        JsonParseException exception = new JsonParseException("Could not parse IKey from %s".formatted(element));
+        JsonParseException exception = new JsonParseException("Could not parse Text from %s".formatted(element));
         try {
             MutableComponent component = Component.Serializer.fromJson(element, RegistryAccessContainer.current());
             if (component != null) {

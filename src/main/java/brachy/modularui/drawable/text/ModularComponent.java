@@ -15,8 +15,8 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.chat.contents.DataSource;
 import net.minecraft.network.chat.contents.KeybindContents;
-import net.minecraft.network.chat.contents.LiteralContents;
 import net.minecraft.network.chat.contents.NbtContents;
+import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.chat.contents.ScoreContents;
 import net.minecraft.network.chat.contents.SelectorContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -35,7 +35,7 @@ import java.util.function.UnaryOperator;
 public class ModularComponent extends MutableComponent implements Text {
 
     public static ModularComponent literal(String text) {
-        return ModularComponent.create(new LiteralContents(text));
+        return ModularComponent.create(PlainTextContents.create(text));
     }
 
     public static ModularComponent translatable(String key) {
@@ -55,7 +55,7 @@ public class ModularComponent extends MutableComponent implements Text {
     }
 
     public static ModularComponent empty() {
-        return ModularComponent.create(ComponentContents.EMPTY);
+        return ModularComponent.create(PlainTextContents.EMPTY);
     }
 
     public static ModularComponent keybind(String name) {

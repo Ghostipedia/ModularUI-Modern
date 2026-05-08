@@ -66,7 +66,7 @@ public record SyncHandlerPacket(int networkId, String panel, String key, boolean
 
     public void execute(IPayloadContext context) {
         ModularNetwork.get(context.flow().isClientbound())
-                .receivePacket(context.getPlayer(), this);
+                .receivePacket(context.player(), this);
     }
 
     @Override

@@ -1,8 +1,8 @@
 package brachy.modularui.utils;
 
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidTank;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
 import org.jetbrains.annotations.NotNull;
 

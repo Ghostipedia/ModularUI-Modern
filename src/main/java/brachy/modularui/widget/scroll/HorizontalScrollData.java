@@ -9,6 +9,8 @@ import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.math.MathUtils;
 
+import net.minecraft.util.Mth;
+
 public class HorizontalScrollData extends ScrollData {
 
     /**
@@ -106,13 +108,13 @@ public class HorizontalScrollData extends ScrollData {
         final int maxShadowSizeLimit = (area.w() - sp.horizontalScrollPadding()) / 3;
 
         if (s > min) {
-            float prog = MathUtils.clamp(s / maxOpacityScroll, 0, 1);
+            float prog = Mth.clamp(s / maxOpacityScroll, 0, 1);
             int startColor = Color.withAlpha(startColorFull, prog * 0.8f);
             int size = Math.min((int) (prog * maxShadowSize), maxShadowSizeLimit);
             GuiDraw.drawHorizontalGradientRect(context.getGraphics(), sp.getScrollPaddingLeft(), y, size, h, startColor, endColor);
         }
         if (s < max) {
-            float prog = MathUtils.clamp((max - s) / maxOpacityScroll, 0, 1);
+            float prog = Mth.clamp((max - s) / maxOpacityScroll, 0, 1);
             int startColor = Color.withAlpha(startColorFull, prog * 0.8f);
             int size = Math.min((int) (prog * maxShadowSize), maxShadowSizeLimit);
             GuiDraw.drawHorizontalGradientRect(context.getGraphics(), area.w() - size - sp.getScrollPaddingRight(), y, size, h, endColor, startColor);

@@ -178,7 +178,7 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
     }
 
     @Override
-    public boolean onMouseScrolled(double scrollX, double ) {
+    public boolean onMouseScrolled(double scrollX, double scrollY) {
         if (this.syncHandler.phantom()) {
             if ((scrollY > 0 && !this.syncHandler.canFillSlot()) || (scrollY < 0 && !this.syncHandler.canDrainSlot())) {
                 return false;

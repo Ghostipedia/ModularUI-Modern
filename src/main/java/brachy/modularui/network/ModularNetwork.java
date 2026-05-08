@@ -1,6 +1,7 @@
 package brachy.modularui.network;
 
 import brachy.modularui.api.IMuiScreen;
+import brachy.modularui.api.IPacketWriter;
 import brachy.modularui.network.packets.SyncHandlerPacket;
 import brachy.modularui.utils.NetworkUtils;
 import brachy.modularui.value.sync.ModularSyncManager;
@@ -8,6 +9,7 @@ import brachy.modularui.value.sync.SyncHandler;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -119,13 +121,13 @@ public abstract class ModularNetwork {
         }
 
         @Override
-        public void sendSyncHandlerPacket(String panel, SyncHandler syncHandler, RegistryFriendlyByteBuf buffer, Player player) {
-            get(player).sendSyncHandlerPacket(panel, syncHandler, buffer, player);
+        public void sendSyncHandlerPacket(String panel, SyncHandler syncHandler, IPacketWriter<? super RegistryFriendlyByteBuf> writer, Player player) {
+            get(player).sendSyncHandlerPacket(panel, syncHandler, writer, player);
         }
 
         @Override
-        public void sendActionPacket(ModularSyncManager msm, String panel, String key, RegistryFriendlyByteBuf buffer, Player player) {
-            get(player).sendActionPacket(msm, panel, key, buffer, player);
+        public void sendActionPacket(ModularSyncManager msm, String panel, String key, IPacketWriter<? super RegistryFriendlyByteBuf> writer, Player player) {
+            get(player).sendActionPacket(msm, panel, key, writer, player);
         }
 
         @Override
