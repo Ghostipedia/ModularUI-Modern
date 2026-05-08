@@ -17,7 +17,6 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.crafting.Recipe;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -40,11 +39,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-public abstract class ModularUIRecipeCategory<T extends Recipe<?>, W extends IWidget> implements IRecipeCategory<T> {
+public abstract class ModularUIRecipeCategory<T> implements IRecipeCategory<T> {
 
     private final LoadingCache<T, ModularScreen> modularScreenCache;
 
-    protected ModularUIRecipeCategory(Function<T, W> wrapperFunction, Function<T, ResourceLocation> recipeIdGetter) {
+    protected ModularUIRecipeCategory(Function<T, IWidget> wrapperFunction, Function<T, ResourceLocation> recipeIdGetter) {
         this.modularScreenCache = CacheBuilder.newBuilder()
                 .expireAfterAccess(10, TimeUnit.SECONDS)
                 .maximumSize(10)
@@ -52,10 +51,10 @@ public abstract class ModularUIRecipeCategory<T extends Recipe<?>, W extends IWi
 
                     @Override
                     public ModularScreen load(T recipe) {
-                        W widget = wrapperFunction.apply(recipe);
+                        IWidget widget = wrapperFunction.apply(recipe);
                         ResourceLocation recipeId = recipeIdGetter.apply(recipe);
 
-                        ModularPanel panel = ModularPanel.defaultPanel(recipeId.toString(),
+                        ModularPanel<?> panel = ModularPanel.defaultPanel(recipeId.toString(),
                                 widget.getArea().width, widget.getArea().height);
                         panel.child(widget);
                         return new ModularScreen(recipeId.getNamespace(), panel);
@@ -113,7 +112,7 @@ public abstract class ModularUIRecipeCategory<T extends Recipe<?>, W extends IWi
             if (!(widget instanceof IngredientProvider<?> provider)) {
                 return true;
             }
-            RecipeIngredientRole role = mapToRole(provider.recipeRole());
+            RecipeIngredientRole role = mapToRole(provider.getRecipeRole());
             addJEISlot(builder, provider, role, i.getAndIncrement());
             return true;
         }, true);
@@ -156,17 +155,17 @@ public abstract class ModularUIRecipeCategory<T extends Recipe<?>, W extends IWi
         }
 
         public ScreenRectangle getArea() {
-            return getModularScreen(this.recipe).getRectangle();
+            return getModularScreen(this.recipe).getMainRectangle();
         }
 
         @Override
         public void mouseMoved(double mouseX, double mouseY) {
-            getModularScreen(this.recipe).mouseMoved(mouseX, mouseY);
+            //getModularScreen(this.recipe).mouseMoved(mouseX, mouseY);
         }
 
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            return getModularScreen(this.recipe).mouseClicked(mouseX, mouseY, button);
+            return getModularScreen(this.recipe).mousePressed(mouseX, mouseY, button);
         }
 
         @Override

@@ -6,7 +6,7 @@ import brachy.modularui.api.MCHelper;
 import brachy.modularui.api.RecipeViewerSettings;
 import brachy.modularui.api.UIFactory;
 import brachy.modularui.core.extensions.IRegistryFriendlyByteBufExtension;
-import brachy.modularui.core.mixins.ServerPlayerAccessor;
+import brachy.modularui.core.mixins.common.ServerPlayerAccessor;
 import brachy.modularui.network.ModularNetwork;
 import brachy.modularui.network.packets.OpenGuiPacket;
 import brachy.modularui.screen.ContainerScreenWrapper;
@@ -72,8 +72,7 @@ public class GuiManager {
         return FACTORIES.containsKey(name);
     }
 
-    public static <T extends GuiData> void open(@NotNull UIFactory<T> factory, @NotNull T guiData,
-                                                ServerPlayer player) {
+    public static <T extends GuiData> void open(@NotNull UIFactory<T> factory, @NotNull T guiData, ServerPlayer player) {
         if (player instanceof FakePlayer || openedContainers.contains(player)) return;
         openedContainers.add(player);
         // create panel, collect sync handlers and create menu
@@ -81,7 +80,7 @@ public class GuiManager {
         settings.defaultCanInteractWith(factory, guiData);
         ModularSyncManager msm = new ModularSyncManager(false);
         PanelSyncManager syncManager = new PanelSyncManager(msm, true);
-        ModularPanel panel = factory.createPanel(guiData, syncManager, settings);
+        ModularPanel<?> panel = factory.createPanel(guiData, syncManager, settings);
         WidgetTree.collectSyncValues(syncManager, panel);
 
         // create the menu
@@ -90,14 +89,13 @@ public class GuiManager {
             player.closeContainer();
         }
         int windowId = ((ServerPlayerAccessor) player).getContainerCounter();
-        ModularContainerMenu menu = settings.hasCustomContainer() ? settings.createContainer(windowId) :
-                factory.createContainer(windowId);
+        ModularContainerMenu menu = settings.hasCustomContainer() ? settings.createContainer(windowId) : factory.createContainer(windowId);
         menu.construct(player, msm, settings, panel.getName(), guiData);
 
         // sync to client
         RegistryFriendlyByteBuf buffer = IRegistryFriendlyByteBufExtension.createEmpty(player.registryAccess());
         factory.writeGuiData(guiData, buffer);
-        int nid = ModularNetwork.SERVER.activate(msm);
+        int nid = ModularNetwork.SERVER.activate(player, msm);
         PacketDistributor.sendToPlayer(player, new OpenGuiPacket<>(windowId, nid, factory, buffer));
         // open the menu // this mimics forge behaviour
         ((ServerPlayerAccessor) player).invokeInitMenu(menu);
@@ -117,15 +115,13 @@ public class GuiManager {
         settings.defaultCanInteractWith(factory, guiData);
         ModularSyncManager msm = new ModularSyncManager(true);
         PanelSyncManager syncManager = new PanelSyncManager(msm, true);
-        ModularPanel panel = factory.createPanel(guiData, syncManager, settings);
+        ModularPanel<?> panel = factory.createPanel(guiData, syncManager, settings);
         WidgetTree.collectSyncValues(syncManager, panel);
         ModularScreen screen = factory.createScreen(guiData, panel);
         screen.getContext().setSettings(settings);
-        ModularContainerMenu container = settings.hasCustomContainer() ? settings.createContainer(windowId) :
-                factory.createContainer(windowId);
+        ModularContainerMenu container = settings.hasCustomContainer() ? settings.createContainer(windowId) : factory.createContainer(windowId);
         container.construct(player, msm, settings, panel.getName(), guiData);
-        IMuiScreen wrapper = settings.hasCustomGui() ? settings.createGui(container, screen) :
-                factory.createScreenWrapper(container, screen);
+        IMuiScreen wrapper = settings.hasCustomGui() ? settings.createGui(container, screen) : factory.createScreenWrapper(container, screen);
         if (!(wrapper.wrappedScreen() instanceof AbstractContainerScreen<?> guiContainer)) {
             throw new IllegalStateException("The wrapping screen must be a GuiContainer for synced GUIs!");
         }
@@ -148,8 +144,7 @@ public class GuiManager {
 
     @OnlyIn(Dist.CLIENT)
     static void openScreen(ModularScreen screen, UISettings settings) {
-        if (screen.getScreenWrapper() != null &&
-                MCHelper.getCurrentScreen() == screen.getScreenWrapper().wrappedScreen()) {
+        if (screen.getScreenWrapper() != null && MCHelper.getCurrentScreen() == screen.getScreenWrapper().wrappedScreen()) {
             // already open
             return;
         }

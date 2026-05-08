@@ -27,25 +27,23 @@ import org.jetbrains.annotations.NotNull;
 @Accessors(chain = true)
 public class SliderWidget extends Widget<SliderWidget> implements Interactable {
 
-    private IDoubleValue<?> doubleValue;
+    @Getter private IDoubleValue<?> doubleValue;
     private IDrawable stopperDrawable = new Rectangle().color(Color.withAlpha(Color.WHITE.main, 0.4f));
     private IDrawable handleDrawable = GuiTextures.BUTTON_CLEAN;
-    private GuiAxis axis = GuiAxis.X;
-    private DoubleList stopper;
-    private int stopperWidth = 2, stopperHeight = 4;
+    @Getter private GuiAxis axis = GuiAxis.X;
+    @Getter private DoubleList stopper;
+    @Getter private int stopperWidth = 2, stopperHeight = 4;
     private final Unit sliderWidth = new Unit(), sliderHeight = new Unit();
-    private final Area sliderArea = new Area();
-    @Getter
-    private double min, max;
-    private double each = 0;
-    @Getter
-    private boolean dragging = false;
+    @Getter private final Area sliderArea = new Area();
+    @Getter private double min, max;
+    @Getter private double each = 0;
+    @Getter private boolean dragging = false;
 
     private double cache = Double.MIN_VALUE;
 
     public SliderWidget() {
         sliderHeight(1f).sliderWidth(6);
-        listenGuiAction((IGuiAction.MouseReleased) (mouseX, mouseY, button) -> {
+        listenGuiAction((IGuiAction.MouseReleased) (context, button) -> {
             boolean val = this.dragging;
             this.dragging = false;
             return val;
@@ -136,7 +134,7 @@ public class SliderWidget extends Widget<SliderWidget> implements Interactable {
     }
 
     @Override
-    public @NotNull Result onMousePressed(double mouseX, double mouseY, int button) {
+    public @NotNull Result onMousePressed(int button) {
         int p = getContext().getMouse(this.axis);
         setValue(posToValue(p), true);
         this.dragging = true;
@@ -144,9 +142,9 @@ public class SliderWidget extends Widget<SliderWidget> implements Interactable {
     }
 
     @Override
-    public void onMouseDrag(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public void onMouseDrag(int button, double dragX, double dragY) {
         if (this.dragging) {
-            onMousePressed(mouseX, mouseY, button);
+            onMousePressed(button);
         }
     }
 

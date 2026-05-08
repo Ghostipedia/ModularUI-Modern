@@ -8,6 +8,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import com.google.gson.JsonObject;
 
+import java.util.Objects;
+
 public class TiledUITexture extends UITexture {
 
     private final int imageWidth, imageHeight;
@@ -15,11 +17,16 @@ public class TiledUITexture extends UITexture {
     /**
      * Use {@link UITexture#builder()} with {@link Builder#tiled()}
      */
-    TiledUITexture(ResourceLocation location, float u0, float v0, float u1, float v1, int imageWidth, int imageHeight,
-                   ColorType colorType, boolean nonOpaque) {
-        super(location, u0, v0, u1, v1, colorType, nonOpaque);
+    TiledUITexture(ResourceLocation location, float u0, float v0, float u1, float v1, ColorType colorType,
+                   boolean nonOpaque, int colorOverride, int imageWidth, int imageHeight) {
+        super(location, u0, v0, u1, v1, colorType, nonOpaque, colorOverride);
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
+    }
+
+    @Override
+    public TiledUITexture register(String name) {
+        return (TiledUITexture) super.register(name);
     }
 
     @Override
@@ -35,21 +42,34 @@ public class TiledUITexture extends UITexture {
     }
 
     @Override
-    public boolean saveToJson(JsonObject json) {
+    protected void saveTextureToJson(JsonObject json) {
         super.saveToJson(json);
-        if (json.entrySet().size() > 1) {
-            json.addProperty("tiled", true);
-        }
-        return true;
+        json.addProperty("imageWidth", this.imageWidth);
+        json.addProperty("imageHeight", this.imageHeight);
+        json.addProperty("tiled", true);
     }
 
     @Override
     protected TiledUITexture copy() {
-        return new TiledUITexture(location, u0, v0, u1, v1, imageWidth, imageHeight, colorType, nonOpaque);
+        return new TiledUITexture(location, u0, v0, u1, v1, colorType, nonOpaque, colorOverride, imageWidth, imageHeight);
     }
 
     @Override
     public TiledUITexture withColorOverride(int color) {
         return (TiledUITexture) super.withColorOverride(color);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o != null && getClass() == o.getClass() && isEqual((TiledUITexture) o);
+    }
+
+    protected boolean isEqual(TiledUITexture texture) {
+        return super.isEqual(texture) && imageWidth == texture.imageWidth && imageHeight == texture.imageHeight;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), imageWidth, imageHeight);
     }
 }

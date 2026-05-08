@@ -23,6 +23,8 @@ import lombok.experimental.Accessors;
 import lombok.experimental.Tolerate;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 @Accessors(fluent = true, chain = true)
 public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
 
@@ -57,7 +59,7 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
     public final ColorType colorType;
     public final boolean nonOpaque;
 
-    private int colorOverride = 0;
+    protected int colorOverride = 0;
 
     /**
      * Creates a drawable texture
@@ -70,7 +72,7 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
      * @param colorType a function to get which color from a widget theme should be used to color this texture.
      */
     public UITexture(ResourceLocation location, float u0, float v0, float u1, float v1, @Nullable ColorType colorType) {
-        this(location, u0, v0, u1, v1, colorType, false);
+        this(location, u0, v0, u1, v1, colorType, false, 0);
     }
 
     /**
@@ -84,8 +86,23 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
      * @param colorType a function to get which color from a widget theme should be used to color this texture.
      * @param nonOpaque whether the texture should draw with blend (if true) or not (if false)
      */
-    public UITexture(ResourceLocation location, float u0, float v0, float u1, float v1, @Nullable ColorType colorType,
-                     boolean nonOpaque) {
+    public UITexture(ResourceLocation location, float u0, float v0, float u1, float v1, @Nullable ColorType colorType, boolean nonOpaque) {
+        this(location, u0, v0, u1, v1, colorType, nonOpaque, 0);
+    }
+
+    /**
+     * Creates a drawable texture
+     *
+     * @param location      location of the texture
+     * @param u0            x offset of the image (0-1)
+     * @param v0            y offset of the image (0-1)
+     * @param u1            x end offset of the image (0-1)
+     * @param v1            y end offset of the image (0-1)
+     * @param colorType     a function to get which color from a widget theme should be used to color this texture. Can be null.
+     * @param nonOpaque     whether the texture should draw with blend (if true) or not (if false).
+     * @param colorOverride color override for the texture in ARGB format. 0 means no override
+     */
+    public UITexture(ResourceLocation location, float u0, float v0, float u1, float v1, @Nullable ColorType colorType, boolean nonOpaque, int colorOverride) {
         this.colorType = colorType;
         boolean png = !location.getPath().endsWith(PNG_SUFFIX);
         boolean textures = !location.getPath().startsWith(TEXTURES_PREFIX);
@@ -100,6 +117,7 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         this.u1 = u1;
         this.v1 = v1;
         this.nonOpaque = nonOpaque;
+        this.colorOverride = colorOverride;
     }
 
     public static Builder builder() {
@@ -112,6 +130,11 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
 
     public static UITexture fullImage(ResourceLocation location, ColorType colorType) {
         return new UITexture(location, 0, 0, 1, 1, colorType);
+    }
+
+    public UITexture register(String name) {
+        DrawableSerialization.registerTexture(name, this);
+        return this;
     }
 
     public UITexture getSubArea(Area bounds) {
@@ -181,6 +204,8 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         if (name != null) {
             UITexture drawable = DrawableSerialization.getTexture(name);
             if (drawable != null) return drawable;
+            ModularUI.LOGGER.error("Tried to parse UITexture from json, but no texture with name '{}' is registered!", name);
+            return GuiTextures.HELP;
         }
         Builder builder = builder();
         builder.location(JsonHelper.getString(json, ModularUI.MOD_ID + ":gui/widgets/error", "location"))
@@ -219,6 +244,9 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         } else if (JsonHelper.getBoolean(json, false, "canApplyTheme")) {
             builder.canApplyTheme();
         }
+        if (JsonHelper.getBoolean(json, false, "nonOpaque")) {
+            builder.nonOpaque();
+        }
         int colorOverride = JsonHelper.getColor(json, 0, "colorOverride");
         if (colorOverride != 0) {
             builder.colorOverride(colorOverride);
@@ -233,18 +261,39 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
             json.addProperty("id", name);
             return true;
         }
+        saveTextureToJson(json);
+        return true;
+    }
+
+    protected void saveTextureToJson(JsonObject json) {
         json.addProperty("location", this.location.toString());
         json.addProperty("u0", this.u0);
         json.addProperty("v0", this.v0);
         json.addProperty("u1", this.u1);
         json.addProperty("v1", this.v1);
         if (this.colorType != null) json.addProperty("colorType", this.colorType.getName());
+        json.addProperty("nonOpaque", this.nonOpaque);
         json.addProperty("colorOverride", this.colorOverride);
-        return true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o != null && getClass() == o.getClass() && isEqual((UITexture) o);
+    }
+
+    protected boolean isEqual(UITexture texture) {
+        return Objects.equals(location, texture.location) && Float.compare(u0, texture.u0) == 0 && Float.compare(v0, texture.v0) == 0 &&
+                Float.compare(u1, texture.u1) == 0 && Float.compare(v1, texture.v1) == 0 && nonOpaque == texture.nonOpaque &&
+                colorOverride == texture.colorOverride && Objects.equals(colorType, texture.colorType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(location, u0, v0, u1, v1, colorType, nonOpaque, colorOverride);
     }
 
     protected UITexture copy() {
-        return new UITexture(this.location, this.u0, this.v0, this.u1, this.v1, this.colorType);
+        return new UITexture(this.location, this.u0, this.v0, this.u1, this.v1, this.colorType, this.nonOpaque, this.colorOverride);
     }
 
     public UITexture withColorOverride(int color) {
@@ -511,15 +560,6 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         public UITexture build() {
             UITexture texture = create();
             texture.colorOverride = this.colorOverride;
-            if (this.name == null) {
-                String[] p = texture.location.getPath().split("/");
-                p = p[p.length - 1].split("\\.");
-                this.name = texture.location.getNamespace().equals(ModularUI.MOD_ID) ? p[0] :
-                        texture.location.getNamespace() + ":" + p[0];
-                if (DrawableSerialization.getTexture(this.name) != null) {
-                    return texture;
-                }
-            }
             DrawableSerialization.registerTexture(this.name, texture);
             return texture;
         }
@@ -549,11 +589,11 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
                 }
                 if (this.bl > 0 || this.bt > 0 || this.br > 0 || this.bb > 0) {
                     return new AdaptableUITexture(this.location, this.u0, this.v0, this.u1, this.v1, this.colorType,
-                            this.nonOpaque, this.iw, this.ih, this.bl, this.bt, this.br, this.bb, this.tiled);
+                            this.nonOpaque, 0, this.iw, this.ih, this.bl, this.bt, this.br, this.bb, this.tiled);
                 }
                 if (this.tiled) {
-                    return new TiledUITexture(this.location, this.u0, this.v0, this.u1, this.v1, this.iw, this.ih,
-                            this.colorType, this.nonOpaque);
+                    return new TiledUITexture(this.location, this.u0, this.v0, this.u1, this.v1,
+                            this.colorType, this.nonOpaque, 0, this.iw, this.ih);
                 }
                 return new UITexture(this.location, this.u0, this.v0, this.u1, this.v1, this.colorType, this.nonOpaque);
             }

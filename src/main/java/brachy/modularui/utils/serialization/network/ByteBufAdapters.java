@@ -33,6 +33,15 @@ public class ByteBufAdapters {
     public static final IByteBufAdapter<ByteBuf, FriendlyByteBuf> FRIENDLY_BYTE_BUF = makeAdapter(NetworkUtils::readFriendlyByteBuf, NetworkUtils::writeByteBuf, null);
     // @formatter:on
 
+    public static final IByteBufAdapter<ByteBuf, Integer> INT = makeAdapter(ByteBufCodecs.VAR_INT, null);
+    public static final IByteBufAdapter<Long> LONG = makeAdapter(ByteBufCodecs.VAR_LONG, null);
+    public static final IByteBufAdapter<Float> FLOAT = makeAdapter(ByteBufCodecs.FLOAT, null);
+    public static final IByteBufAdapter<Double> DOUBLE = makeAdapter(ByteBufCodecs.DOUBLE, null);
+    public static final IByteBufAdapter<Boolean> BOOL = makeAdapter(ByteBufCodecs.BOOLEAN, null);
+    public static final IByteBufAdapter<Byte> BYTE = makeAdapter(ByteBufCodecs.BYTE, null);
+    public static final IByteBufAdapter<Short> SHORT = makeAdapter(ByteBufCodecs.SHORT, null);
+    public static final IByteBufAdapter<Character> CHAR = makeAdapter(ByteBufCodecs.CHAR, null);
+
     public static final IByteBufAdapter<ByteBuf, byte[]> BYTE_ARR = makeAdapter(ByteBufCodecs.BYTE_ARRAY, (t1, t2) -> {
         if (t1.length != t2.length) return false;
         for (int i = 0; i < t1.length; i++) {

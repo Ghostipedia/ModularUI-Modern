@@ -8,25 +8,21 @@ import lombok.experimental.Accessors;
 
 import java.util.function.Consumer;
 
-@Accessors(chain = true)
-public class Dialog<T> extends ModularPanel {
+/**
+ * A {@link ModularPanel} that can close with a result.
+ *
+ * @param <T> type of the result
+ * @param <W> type of this dialog
+ */
+@Accessors(chain = true, fluent = true)
+public class Dialog<T, W extends Dialog<T, W>> extends ModularPanel<W> {
 
-    private final Consumer<T> resultConsumer;
     @Getter
     @Setter
-    private boolean draggable = false;
-    @Setter
-    private boolean disablePanelsBelow = true;
-    @Setter
-    private boolean closeOnOutOfBoundsClick = false;
+    private Consumer<T> resultConsumer;
 
     public Dialog(String name) {
-        this(name, null);
-    }
-
-    public Dialog(String name, Consumer<T> resultConsumer) {
         super(name);
-        this.resultConsumer = resultConsumer;
     }
 
     public void closeWith(T result) {
@@ -34,15 +30,5 @@ public class Dialog<T> extends ModularPanel {
             this.resultConsumer.accept(result);
         }
         closeIfOpen();
-    }
-
-    @Override
-    public boolean disablePanelsBelow() {
-        return this.disablePanelsBelow;
-    }
-
-    @Override
-    public boolean closeOnOutOfBoundsClick() {
-        return this.closeOnOutOfBoundsClick;
     }
 }

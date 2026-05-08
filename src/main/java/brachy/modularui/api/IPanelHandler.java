@@ -41,7 +41,7 @@ public interface IPanelHandler {
      * @throws IllegalArgumentException if the build panel of the builder is the main panel or there are synced values
      *                                  in the panel
      */
-    static IPanelHandler simple(ModularPanel parent, SecondaryPanel.IPanelBuilder provider, boolean subPanel) {
+    static IPanelHandler simple(ModularPanel<?> parent, SecondaryPanel.IPanelBuilder provider, boolean subPanel) {
         return new SecondaryPanel(parent, provider, subPanel);
     }
 

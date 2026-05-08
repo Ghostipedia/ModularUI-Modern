@@ -1,4 +1,4 @@
-package brachy.modularui.core.mixins;
+package brachy.modularui.core.mixins.common;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;

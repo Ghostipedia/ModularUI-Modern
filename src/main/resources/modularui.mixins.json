@@ -12,17 +12,18 @@
         "client.GuiGraphicsMixin",
         "client.MinecraftMixin",
         "client.ScreenAccessor",
-        "client.StringSplitterAccessor",
         "client.SlotAccessor",
+        "client.StringSplitterAccessor",
         "jei.IngredientListOverlayAccessor"
     ],
     "mixins": [
-        "AbstractContainerMenuAccessor",
-        "RegistryFriendlyByteBufMixin",
-        "ReloadableServerResourcesMixin",
-        "ServerPlayerAccessor",
-        "TransientCraftingContainerAccessor",
-        "WorldLoaderMixin"
+        "common.AbstractContainerMenuAccessor",
+        "common.RegistryFriendlyByteBufMixin",
+        "common.ReloadableServerResourcesMixin",
+        "common.ServerPlayerAccessor",
+        "common.WorldLoaderMixin",
+        "common.CombinedInvWrapperAccessor",
+        "common.ComponentMixin"
     ],
     "injectors": {
         "defaultRequire": 1,

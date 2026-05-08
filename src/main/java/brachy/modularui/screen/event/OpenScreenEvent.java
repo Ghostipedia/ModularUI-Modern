@@ -14,9 +14,8 @@ import java.util.List;
 
 public class OpenScreenEvent extends Event {
 
-    @Getter
-    private final Screen screen;
-    private final List<ModularScreen> overlays = new ArrayList<>();
+    @Getter private final Screen screen;
+    @Getter private final List<ModularScreen> overlays = new ArrayList<>();
 
     public OpenScreenEvent(Screen screen) {
         this.screen = screen;
@@ -28,10 +27,6 @@ public class OpenScreenEvent extends Event {
 
     public @Nullable ModularScreen getModularScreen() {
         return screen instanceof IMuiScreen muiScreen ? muiScreen.screen() : null;
-    }
-
-    public List<ModularScreen> getOverlays() {
-        return overlays;
     }
 
     public void addOverlay(ModularScreen screen) {

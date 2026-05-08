@@ -1,4 +1,5 @@
 [versions]
+java = "21" # for
 minecraft = "1.21.1"
 neoForge = "21.1.215"
 loader = "4"

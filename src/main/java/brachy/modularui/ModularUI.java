@@ -1,8 +1,8 @@
 package brachy.modularui;
 
-import brachy.modularui.api.drawable.IKey;
 import brachy.modularui.factory.UIFactories;
 import brachy.modularui.factory.inventory.InventoryTypes;
+import brachy.modularui.network.ModularNetwork;
 import brachy.modularui.screen.ModularContainerMenu;
 import brachy.modularui.test.ModularUITestingRegistration;
 import brachy.modularui.theme.ThemeManager;
@@ -26,6 +26,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.data.loading.DatagenModLoader;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
@@ -51,6 +52,7 @@ public class ModularUI {
         NeoForge.EVENT_BUS.addListener(this::registerReloadListeners);
         NeoForge.EVENT_BUS.addListener(this::onTick);
         NeoForge.EVENT_BUS.addListener(this::registerCommand);
+        NeoForge.EVENT_BUS.addListener(this::onPlayerLeave);
 
         modContainer.registerConfig(ModConfig.Type.CLIENT, ModularUIConfig.CONFIG, ModularUI.MOD_ID + ".toml");
 
@@ -141,17 +143,23 @@ public class ModularUI {
         return FMLPaths.GAMEDIR.get();
     }
 
-    public void onTick(PlayerTickEvent.Post event) {
+    private void onTick(PlayerTickEvent.Post event) {
         if (event.getEntity().containerMenu instanceof ModularContainerMenu containerMenu) {
             containerMenu.onUpdate();
         }
     }
 
-    public void registerReloadListeners(AddReloadListenerEvent event) {
+    private void onPlayerLeave(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (!ModularUI.isClientSide()) {
+            ModularNetwork.SERVER.onPlayerLeave(event.getEntity());
+        }
+    }
+
+    private void registerReloadListeners(AddReloadListenerEvent event) {
         RegistryAccessContainer.update(event.getRegistryAccess(), event.getConditionContext());
     }
 
-    public void registerCommand(RegisterCommandsEvent event) {
+    private void registerCommand(RegisterCommandsEvent event) {
         var command = Commands.literal("mui")
                 .then(Commands.literal("reload_themes")
                         .executes(ctx -> {

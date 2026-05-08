@@ -4,26 +4,27 @@ import brachy.modularui.animation.Animator;
 import brachy.modularui.animation.IAnimator;
 import brachy.modularui.animation.SequentialAnimator;
 import brachy.modularui.animation.Wait;
-import brachy.modularui.api.drawable.IKey;
 import brachy.modularui.drawable.text.TextRenderer;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.Interpolation;
 
+import lombok.Getter;
+
 import net.minecraft.network.chat.Component;
 
 public class ScrollingTextWidget extends TextWidget<ScrollingTextWidget> {
 
     private TextRenderer.Line line;
-    private float progress = 0;
-    private IAnimator animator;
-    private Animator forward;
-    private Animator backward;
+    @Getter private float progress = 0;
+    @Getter private IAnimator animator;
+    @Getter private Animator forward;
+    @Getter private Animator backward;
 
     private int speed = 15;
 
-    public ScrollingTextWidget(IKey key) {
+    public ScrollingTextWidget(Component key) {
         super(key);
         tooltipBuilder(tooltip -> {
             tooltip.showUpTimer(10);
@@ -61,7 +62,7 @@ public class ScrollingTextWidget extends TextWidget<ScrollingTextWidget> {
             animator(new Animator().curve(Interpolation.SINE_INOUT));
         }
         if (this.line == null) {
-            updateLine(getKey().getFormatted());
+            updateLine(getKey());
         }
         checkString();
         WidgetTheme theme = getActiveWidgetTheme(widgetTheme, isHovering());

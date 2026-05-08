@@ -12,11 +12,11 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(Slot.class)
 public interface SlotAccessor {
 
-    @Accessor("x")
+    @Accessor
     @Mutable
-    void modularui$setX(int x);
+    void setX(int x);
 
-    @Accessor("x")
+    @Accessor
     @Mutable
-    void modularui$setY(int y);
+    void setY(int y);
 }

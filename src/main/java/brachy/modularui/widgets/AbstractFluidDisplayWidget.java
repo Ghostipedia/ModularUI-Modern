@@ -2,6 +2,7 @@ package brachy.modularui.widgets;
 
 import brachy.modularui.api.ITheme;
 import brachy.modularui.drawable.GuiDraw;
+import brachy.modularui.integration.recipeviewer.RecipeSlotRole;
 import brachy.modularui.integration.recipeviewer.entry.EntryList;
 import brachy.modularui.integration.recipeviewer.entry.fluid.FluidStackList;
 import brachy.modularui.integration.recipeviewer.handlers.IngredientProvider;
@@ -20,17 +21,17 @@ import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class AbstractFluidDisplayWidget<W extends AbstractFluidDisplayWidget<W>> extends Widget<W>
-        implements IngredientProvider<FluidStack> {
+public abstract class AbstractFluidDisplayWidget<W extends AbstractFluidDisplayWidget<W>> extends Widget<W> implements IngredientProvider<FluidStack> {
 
     public static final String UNIT_BUCKET = "B";
     public static final String UNIT_LITER = "L";
 
-    private final Box contentPadding = new Box().all(1);
+    @Getter private final Box contentPadding = new Box().all(1);
     private String unit = UNIT_BUCKET;
-    private SIPrefix baseUnitPrefix = SIPrefix.Milli;
-    @Getter
-    private boolean flipLighterThanAir = true;
+    @Getter private SIPrefix baseUnitPrefix = SIPrefix.Milli;
+    @Getter private boolean flipLighterThanAir = true;
+    @Getter private RecipeSlotRole recipeRole = RecipeSlotRole.RENDER_ONLY;
+
 
     protected AbstractFluidDisplayWidget() {
         size(18);
@@ -141,6 +142,11 @@ public abstract class AbstractFluidDisplayWidget<W extends AbstractFluidDisplayW
     public W fluidUnit(String baseUnitSymbol, SIPrefix baseUnitPrefix) {
         this.unit = baseUnitSymbol;
         this.baseUnitPrefix = baseUnitPrefix;
+        return getThis();
+    }
+
+    public W recipeSlotRole(RecipeSlotRole recipeRole) {
+        this.recipeRole = recipeRole;
         return getThis();
     }
 

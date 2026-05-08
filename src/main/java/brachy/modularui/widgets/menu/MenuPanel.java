@@ -2,11 +2,14 @@ package brachy.modularui.widgets.menu;
 
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.ModularPanel;
+import brachy.modularui.widget.WidgetTree;
 
 import org.jetbrains.annotations.ApiStatus;
 
+import java.util.List;
+
 @ApiStatus.Experimental
-public class MenuPanel extends ModularPanel {
+public class MenuPanel extends ModularPanel<MenuPanel> {
 
     public MenuPanel(String name, IWidget menu) {
         super(name);
@@ -17,6 +20,13 @@ public class MenuPanel extends ModularPanel {
 
     public void openSubMenu(IWidget menuList) {
         child(menuList);
+    }
+
+    @Override
+    public void onClose() {
+        super.onClose();
+        // close all menus that are related to this panel
+        closeAllMenus(false, false);
     }
 
     @Override
@@ -33,5 +43,14 @@ public class MenuPanel extends ModularPanel {
     @Override
     public boolean closeOnOutOfBoundsClick() {
         return true;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void closeAllMenus(boolean soft, boolean requireNoHover) {
+        // need to collect menus first instead of closing while iterating to avoid CME
+        List<Menu> menus = WidgetTree.flatListByType(this, Menu.class);
+        for (Menu<?> menu : menus) {
+            menu.checkClose(soft, requireNoHover);
+        }
     }
 }

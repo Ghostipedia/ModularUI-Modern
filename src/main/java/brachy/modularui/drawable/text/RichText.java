@@ -2,9 +2,9 @@ package brachy.modularui.drawable.text;
 
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.IIcon;
-import brachy.modularui.api.drawable.IKey;
 import brachy.modularui.api.drawable.IRichTextBuilder;
 import brachy.modularui.api.drawable.ITextLine;
+import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.client.component.DrawableTooltipComponent;
 import brachy.modularui.client.component.TooltipComponentIcon;
@@ -14,6 +14,7 @@ import brachy.modularui.utils.Alignment;
 import brachy.modularui.utils.TooltipLines;
 
 import net.minecraft.client.gui.Font;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 
@@ -48,7 +49,7 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
         return this.elements.isEmpty();
     }
 
-    public List<FormattedText> getAsText() {
+    public TooltipLines getAsText() {
         if (this.componentList == null) {
             this.componentList = new TooltipLines(this.elements);
         }
@@ -117,9 +118,9 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
     }
 
     @Override
-    public RichText add(IDrawable drawable) {
+    public RichText addDrawable(IDrawable drawable) {
         Object o = drawable;
-        if (!(o instanceof IKey) && !(o instanceof IIcon)) o = drawable.asIcon();
+        if (!(o instanceof Text) && !(o instanceof IIcon)) o = drawable.asIcon();
         addElement(o);
         clearComponents();
         return this;
@@ -128,10 +129,10 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
     @Override
     public RichText add(TooltipComponent tooltipComponent) {
         if (tooltipComponent instanceof DrawableTooltipComponent drawable) {
-            return add(drawable.drawable());
+            return addDrawable(drawable.drawable());
         } else {
             TooltipComponentIcon tci = new TooltipComponentIcon(tooltipComponent);
-            return add(tci);
+            return addDrawable(tci);
         }
     }
 
@@ -193,18 +194,22 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
     }
 
     @Override
-    public RichText replace(Pattern regex, UnaryOperator<IKey> function) {
+    public RichText replace(Pattern regex, UnaryOperator<Text> function) {
         int i = findNextText(this.cursor, true, s -> regex.matcher(s).find());
         if (i >= 0) {
             this.cursor = i;
             Object o = this.elements.get(i);
-            IKey key = o instanceof IKey key1 ? key1 : IKey.str((String) o);
-            key = function.apply(key);
-            if (key == null) {
+            Text text;
+            if (o instanceof Text text1) text = text1;
+            else if (o instanceof String s) text = Text.str(s);
+            else if (o instanceof Component component) text = component.asModular();
+            else return this;
+            text = function.apply(text);
+            if (text == null) {
                 this.elements.remove(i);
                 this.cursor--;
             } else {
-                this.elements.set(i, key);
+                this.elements.set(i, text);
             }
         }
         return this;
@@ -218,13 +223,13 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
 
     @Override
     public RichText moveCursorToEnd() {
-        this.cursor = this.elements.size() - 1;
+        this.cursor = this.elements.size();
         return this;
     }
 
     @Override
     public RichText moveCursorForward(int by) {
-        this.cursor = Math.min(this.cursor + by, this.elements.size() - 1);
+        this.cursor = Math.min(this.cursor + by, this.elements.size());
         return this;
     }
 
@@ -248,7 +253,7 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
 
     @Override
     public RichText moveCursorToNextLine() {
-        if (this.cursor < this.elements.size() - 1) {
+        if (this.cursor < this.elements.size()) {
             this.cursor = findNextLine(this.cursor) + 1;
         }
         return this;
@@ -257,8 +262,8 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
     private int findNextLine(int current) {
         for (int i = current; i < this.elements.size(); i++) {
             Object o = this.elements.get(i);
-            if (o == IKey.LINE_FEED) return i;
-            if (o instanceof IKey key && key.get().getString().trim().endsWith("\n")) return i;
+            if (o == Text.LINE_FEED) return i;
+            if (o instanceof Component key && key.getString().trim().endsWith("\n")) return i;
             if (o instanceof String string && string.trim().endsWith("\n")) return i;
             if (o instanceof ITextLine) return i;
         }
@@ -270,7 +275,7 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
         int lim = this.elements.size();
         while (i < lim) {
             Object o = this.elements.get(i);
-            if (o instanceof IKey key && test.test(key.get().getString())) return i;
+            if (o instanceof Component key && test.test(key.getString())) return i;
             if (o instanceof String string && test.test(string)) return i;
             if (++i == lim && wrapAround) {
                 i = 0;
@@ -285,7 +290,7 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
         List<Object> objects = this.elements;
         for (int i = 0; i < objects.size(); i++) {
             Object o = objects.get(i);
-            if (o == IKey.LINE_FEED) {
+            if (o == Text.LINE_FEED) {
                 if (i == objects.size() - 1) return this;
                 if (objects.get(i + 1) instanceof Spacer spacer) {
                     if (spacer.getSpace() == margin) return this;

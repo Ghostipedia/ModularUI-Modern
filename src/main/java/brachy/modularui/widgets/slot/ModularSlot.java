@@ -1,5 +1,6 @@
 package brachy.modularui.widgets.slot;
 
+import brachy.modularui.core.mixins.common.CombinedInvWrapperAccessor;
 import brachy.modularui.value.sync.ItemSlotSyncHandler;
 
 import net.minecraft.resources.ResourceLocation;
@@ -9,6 +10,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.datafixers.util.Pair;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.SlotItemHandler;
 import net.neoforged.neoforge.items.wrapper.PlayerArmorInvWrapper;
 import net.neoforged.neoforge.items.wrapper.PlayerInvWrapper;
@@ -38,8 +40,8 @@ public class ModularSlot extends SlotItemHandler {
     @Getter
     @Setter(onMethod_ = {@ApiStatus.Internal})
     private boolean enabled = true;
-    private boolean canTake = true, canPut = true;
-    private Predicate<ItemStack> filter = stack -> true;
+    @Getter private boolean canTake = true, canPut = true, canDragInto = true;
+    @Getter private Predicate<ItemStack> filter = stack -> true;
     private IOnSlotChanged changeListener = IOnSlotChanged.DEFAULT;
     @Getter
     private boolean ignoreMaxStackSize = false;
@@ -92,27 +94,33 @@ public class ModularSlot extends SlotItemHandler {
         return this.canTake && super.mayPickup(playerIn);
     }
 
+    public boolean canDragIntoSlot() {
+        return this.canDragInto;
+    }
+
     @Override
     public int getMaxStackSize(@NotNull ItemStack stack) {
         return this.ignoreMaxStackSize ? getMaxStackSize() : super.getMaxStackSize(stack);
     }
 
     @Override
-    public void setChanged() {}
+    public void setChanged() {
+        if (this.syncHandler != null) {
+            this.syncHandler.checkUpdate();
+        }
+    }
 
     public void onSlotChangedReal(ItemStack itemStack, boolean onlyChangedAmount, boolean client, boolean init) {
+        if (this.slotGroup != null) {
+            this.slotGroup.slotChanged(this);
+        }
         this.changeListener.onChange(itemStack, onlyChangedAmount, client, init);
-        if (!init && isInitialized())
+        if (!init && isInitialized()) {
             getSyncHandler().getSyncManager().getContainer().onSlotChanged(this, itemStack, onlyChangedAmount);
+        }
     }
 
     public void onCraftShiftClick(Player playerIn, ItemStack itemStack) {}
-
-    @Override
-    public void set(@NotNull ItemStack stack) {
-        if (ItemStack.matches(stack, getItem())) return;
-        super.set(stack);
-    }
 
     @Override
     public @Nullable Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
@@ -133,6 +141,11 @@ public class ModularSlot extends SlotItemHandler {
 
     protected Player getPlayer() {
         return getSyncHandler().getSyncManager().getPlayer();
+    }
+
+    @Override
+    public boolean isSameInventory(@NotNull Slot other) {
+        return other instanceof SlotItemHandler slotItemHandler && slotItemHandler.getItemHandler() == this.getItemHandler();
     }
 
     /**
@@ -166,6 +179,31 @@ public class ModularSlot extends SlotItemHandler {
     public ModularSlot accessibility(boolean canPut, boolean canTake) {
         this.canPut = canPut;
         this.canTake = canTake;
+        return this;
+    }
+
+    public ModularSlot canPut(boolean canPut) {
+        this.canPut = canPut;
+        return this;
+    }
+
+    public ModularSlot canTake(boolean canTake) {
+        this.canTake = canTake;
+        return this;
+    }
+
+    /**
+     * Sets if this slots accepts items which are dragged across the screen.
+     * This is useful to disable when the filter depends on the items in the other slots.
+     * When dragging, the item in the slot is not real and its only updated once the dragging is completed.
+     * This method is by default called from {@link brachy.modularui.screen.ModularContainerMenu#canDragTo(Slot)},
+     * which can be overridden for other custom behavior.
+     *
+     * @param canDragInto if items can be dragged into this slot
+     * @return this
+     */
+    public ModularSlot canDragInto(boolean canDragInto) {
+        this.canDragInto = canDragInto;
         return this;
     }
 
@@ -236,5 +274,31 @@ public class ModularSlot extends SlotItemHandler {
                 slot.getItemHandler() instanceof PlayerMainInvWrapper ||
                 slot.getItemHandler() instanceof PlayerArmorInvWrapper ||
                 slot.getItemHandler() instanceof PlayerOffhandInvWrapper;
+    }
+
+    public static Player getPlayerFromInventorySlot(Slot slot) {
+        return slot.container instanceof Inventory inv ? inv.player : null;
+    }
+
+    public static Player getPlayerFromInventorySlot(SlotItemHandler slot) {
+        switch (slot.getItemHandler()) {
+            case PlayerInvWrapper inv -> {
+                for (IItemHandlerModifiable ih : ((CombinedInvWrapperAccessor) inv).getItemHandler()) {
+                    if (ih instanceof PlayerMainInvWrapper mainInv) {
+                        return mainInv.getInventoryPlayer().player;
+                    }
+                }
+                return null;
+            }
+            case PlayerMainInvWrapper wrapper -> {
+                return wrapper.getInventoryPlayer().player;
+            }
+            case PlayerArmorInvWrapper wrapper -> {
+                return wrapper.getInventoryPlayer().player;
+            }
+            default -> {
+            }
+        }
+        return null;
     }
 }

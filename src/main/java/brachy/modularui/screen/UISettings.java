@@ -137,6 +137,7 @@ public class UISettings {
 
     public interface GuiCreator {
 
+        @OnlyIn(Dist.CLIENT)
         IMuiScreen create(ModularContainerMenu container, ModularScreen screen);
     }
 }

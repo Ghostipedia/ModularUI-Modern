@@ -10,6 +10,7 @@ import it.unimi.dsi.fastutil.chars.Char2IntMap;
 import it.unimi.dsi.fastutil.chars.Char2IntOpenHashMap;
 import it.unimi.dsi.fastutil.chars.Char2ObjectMap;
 import it.unimi.dsi.fastutil.chars.Char2ObjectOpenHashMap;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,8 +64,8 @@ public class SlotGroupWidget extends ParentWidget<SlotGroupWidget> {
         return slotGroupWidget;
     }
 
-    private String slotGroupName;
-    private SlotGroup slotGroup;
+    @Getter private String slotGroupName;
+    @Getter private SlotGroup slotGroup;
     private boolean sortButtonsAdded = false;
     private Consumer<SortButtons> sortButtonsEditor;
 
@@ -82,24 +83,6 @@ public class SlotGroupWidget extends ParentWidget<SlotGroupWidget> {
     }
 
     @Override
-    public void afterInit() {
-        super.afterInit();
-        if (this.slotGroup != null) {
-            for (IWidget widget : getChildren()) {
-                if (widget instanceof ItemSlot itemSlot) {
-                    itemSlot.getSlot().slotGroup(this.slotGroup);
-                }
-            }
-        } else if (this.slotGroupName != null) {
-            for (IWidget widget : getChildren()) {
-                if (widget instanceof ItemSlot itemSlot) {
-                    itemSlot.getSlot().slotGroup(this.slotGroupName);
-                }
-            }
-        }
-    }
-
-    @Override
     protected void onChildAdd(IWidget child) {
         super.onChildAdd(child);
         if (child instanceof SortButtons sortButtons) {
@@ -113,6 +96,12 @@ public class SlotGroupWidget extends ParentWidget<SlotGroupWidget> {
             }
             if (this.sortButtonsEditor != null) {
                 this.sortButtonsEditor.accept(sortButtons);
+            }
+        } else if (child instanceof ItemSlot slot && slot.isSynced() && slot.getSlot() != null) {
+            if (this.slotGroup != null) {
+                slot.getSlot().slotGroup(this.slotGroup);
+            } else if (this.slotGroupName != null) {
+                slot.getSlot().slotGroup(this.slotGroupName);
             }
         }
     }

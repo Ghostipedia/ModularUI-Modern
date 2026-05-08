@@ -17,21 +17,14 @@ import brachy.modularui.widget.Widget;
 import brachy.modularui.widget.WidgetTree;
 import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widget.sizer.ScreenResizeNode;
-import brachy.modularui.widget.wrapper.WidgetWrapper;
+import brachy.modularui.widgets.menu.MenuPanel;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Renderable;
-import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.layouts.LayoutElement;
-import net.minecraft.client.gui.narration.NarratableEntry;
-import net.minecraft.client.gui.narration.NarratedElementType;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Lighting;
@@ -56,16 +49,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.StreamSupport;
 
 /**
  * This is the base class for all modular UIs. It only exists on client side.
  * It handles drawing the screen, all panels and widget interactions.
  */
 @OnlyIn(Dist.CLIENT)
-public class ModularScreen implements GuiEventListener, Renderable, LayoutElement, NarratableEntry {
+public class ModularScreen implements Renderable {
 
     public static boolean isScreen(@Nullable Screen guiScreen, String owner, String name) {
         if (guiScreen instanceof IMuiScreen screenWrapper) {
@@ -132,7 +123,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @param owner     owner of this screen (usually a mod id)
      * @param mainPanel main panel of this screen
      */
-    public ModularScreen(@NotNull String owner, @NotNull ModularPanel mainPanel) {
+    public ModularScreen(@NotNull String owner, @NotNull ModularPanel<?> mainPanel) {
         this(owner, context -> mainPanel);
     }
 
@@ -150,7 +141,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
                           boolean ignored) {
         Objects.requireNonNull(owner, "The owner must not be null!");
         this.owner = owner;
-        ModularPanel mainPanel = mainPanelCreator != null ? mainPanelCreator.apply(this.context) :
+        ModularPanel<?> mainPanel = mainPanelCreator != null ? mainPanelCreator.apply(this.context) :
                 buildUI(this.context);
         Objects.requireNonNull(mainPanel, "The main panel must not be null!");
         this.name = mainPanel.getName();
@@ -167,7 +158,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
     /**
      * Intended for use in {@link CustomModularScreen}
      */
-    ModularPanel buildUI(ModularGuiContext context) {
+    ModularPanel<?> buildUI(ModularGuiContext context) {
         throw new UnsupportedOperationException();
     }
 
@@ -285,7 +276,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @param panel panel to check
      * @return true if the panel is open
      */
-    public boolean isPanelOpen(ModularPanel panel) {
+    public boolean isPanelOpen(ModularPanel<?> panel) {
         return this.panelManager.hasOpenPanel(panel);
     }
 
@@ -294,7 +285,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      */
     @MustBeInvokedByOverriders
     public void onUpdate() {
-        for (ModularPanel panel : this.panelManager.getOpenPanels()) {
+        for (ModularPanel<?> panel : this.panelManager.getOpenPanels()) {
             WidgetTree.onUpdate(panel);
         }
     }
@@ -328,7 +319,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
         this.context.reset();
         this.context.pushViewport(null, this.context.getScreenArea());
-        for (ModularPanel panel : this.panelManager.getReverseOpenPanels()) {
+        for (ModularPanel<?> panel : this.panelManager.getReverseOpenPanels()) {
             this.context.updateZ(0);
             if (panel.disablePanelsBelow()) {
                 GuiDraw.drawRect(graphics, 0, 0, this.context.getScreenArea().w(), this.context.getScreenArea().h(),
@@ -356,7 +347,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
         this.context.reset();
         this.context.pushViewport(null, this.context.getScreenArea());
-        for (ModularPanel panel : this.panelManager.getReverseOpenPanels()) {
+        for (ModularPanel<?> panel : this.panelManager.getReverseOpenPanels()) {
             this.context.updateZ(100);
             if (panel.isEnabled()) {
                 WidgetTree.drawTreeForeground(panel, this.context);
@@ -372,9 +363,9 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
     public boolean handleDraggableInput(double mouseX, double mouseY, int button, boolean pressed) {
         if (this.context.hasDraggable()) {
             if (pressed) {
-                this.context.onMousePressed(mouseX, mouseY, button);
+                this.context.onMousePressed(button);
             } else {
-                this.context.onMouseReleased(mouseX, mouseY, button);
+                this.context.onMouseReleased(button);
             }
             return true;
         }
@@ -383,7 +374,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
     /**
      * Called when a mouse button is pressed. Tries to invoke
-     * {@link Interactable#onMousePressed(double, double, int)
+     * {@link Interactable#onMousePressed(int)
      * Interactable#onMousePressed(double, double, int)} on every widget under
      * the mouse after gui action listeners have been called. Will try to focus widgets that have been interacted with.
      * Focused widgets will be interacted with first in other interaction methods (mouse scroll, release and drag, key
@@ -394,14 +385,23 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @param button mouse button (0 = left button, 1 = right button, 2 = scroll button, 4 and 5 = side buttons)
      * @return true if the action was consumed and further processing should be canceled
      */
-    public boolean onMousePressed(double mouseX, double mouseY, int button) {
+    public boolean mousePressed(double mouseX, double mouseY, int button) {
+        // call all action listeners
         for (IGuiAction.MousePressed action : getGuiActionListeners(IGuiAction.MousePressed.class)) {
-            action.press(mouseX, mouseY, button);
+            action.press(this.context, button);
         }
-        if (this.context.onMousePressed(mouseX, mouseY, button)) {
+        // check if any context menu is open and close them if they or their children are not hovered
+        for (ModularPanel<?> panel : this.panelManager.getOpenPanels()) {
+            if (panel instanceof MenuPanel menuPanel) {
+                menuPanel.closeAllMenus(false, true);
+            }
+        }
+        // handle dragging of draggable widgets
+        if (this.context.onMousePressed(button)) {
             return true;
         }
-        for (ModularPanel panel : this.panelManager.getOpenPanels()) {
+        // finally click hovered widgets
+        for (ModularPanel<?> panel : this.panelManager.getOpenPanels()) {
             if (panel.onMousePressed(mouseX, mouseY, button)) {
                 return true;
             }
@@ -414,7 +414,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
     /**
      * Called when a mouse button is released. Tries to invoke
-     * {@link Interactable#onMouseReleased(double, double, int)
+     * {@link Interactable#onMouseReleased(int)
      * Interactable#onMouseRelease(int)} on every widget under
      * the mouse after gui action listeners have been called.
      *
@@ -423,15 +423,14 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @param button mouse button (0 = left button, 1 = right button, 2 = scroll button, 4 and 5 = side buttons)
      * @return true if the action was consumed and further processing should be canceled
      */
-    @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         for (IGuiAction.MouseReleased action : getGuiActionListeners(IGuiAction.MouseReleased.class)) {
-            action.release(mouseX, mouseY, button);
+            action.release(this.context, button);
         }
-        if (this.context.onMouseReleased(mouseX, mouseY, button)) {
+        if (this.context.onMouseReleased(button)) {
             return true;
         }
-        for (ModularPanel panel : this.panelManager.getOpenPanels()) {
+        for (ModularPanel<?> panel : this.panelManager.getOpenPanels()) {
             if (panel.onMouseReleased(mouseX, mouseY, button)) {
                 return true;
             }
@@ -453,12 +452,11 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @param modifiers the key modifiers of the pressed key (see modifiers at {@link InputConstants})
      * @return true if the action was consumed and further processing should be canceled
      */
-    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         for (IGuiAction.KeyPressed action : getGuiActionListeners(IGuiAction.KeyPressed.class)) {
-            action.press(keyCode, scanCode, modifiers);
+            action.press(context, modifiers);
         }
-        for (ModularPanel panel : this.panelManager.getOpenPanels()) {
+        for (ModularPanel<?> panel : this.panelManager.getOpenPanels()) {
             if (panel.onKeyPressed(keyCode, scanCode, modifiers)) {
                 return true;
             }
@@ -480,12 +478,11 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @param modifiers the key modifiers of the pressed key (see modifiers at {@link InputConstants})
      * @return true if the action was consumed and further processing should be canceled
      */
-    @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
         for (IGuiAction.KeyReleased action : getGuiActionListeners(IGuiAction.KeyReleased.class)) {
-            action.release(keyCode, scanCode, modifiers);
+            action.release(getContext(), keyCode, scanCode, modifiers);
         }
-        for (ModularPanel panel : this.panelManager.getOpenPanels()) {
+        for (ModularPanel<?> panel : this.panelManager.getOpenPanels()) {
             if (panel.onKeyReleased(keyCode, scanCode, modifiers)) {
                 return true;
             }
@@ -506,12 +503,11 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @param modifiers the key modifiers of the typed character (see modifiers at {@link InputConstants})
      * @return true if the action was consumed and further processing should be canceled
      */
-    @Override
     public boolean charTyped(char codePoint, int modifiers) {
         for (IGuiAction.CharTyped action : getGuiActionListeners(IGuiAction.CharTyped.class)) {
-            action.type(codePoint, modifiers);
+            action.type(getContext(), codePoint, modifiers);
         }
-        for (ModularPanel panel : this.panelManager.getOpenPanels()) {
+        for (ModularPanel<?> panel : this.panelManager.getOpenPanels()) {
             if (panel.onCharTyped(codePoint, modifiers)) {
                 return true;
             }
@@ -524,7 +520,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
     /**
      * Called when a mouse button is released. Tries to invoke
-     * {@link Interactable#onMouseScrolled(double, double, double, double)
+     * {@link Interactable#onMouseScrolled(double, double)
      * Interactable#onMouseScrolled(double, double, double)} on every widget under
      * the mouse after gui action listeners have been called.
      *
@@ -534,12 +530,11 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @param scrollY the direction and speed of the scroll
      * @return true if the action was consumed and further processing should be canceled
      */
-    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         for (IGuiAction.MouseScroll action : getGuiActionListeners(IGuiAction.MouseScroll.class)) {
-            action.scroll(mouseX, mouseY, scrollX, scrollY);
+            action.scroll(getContext(), scrollX, scrollY);
         }
-        for (ModularPanel panel : this.panelManager.getOpenPanels()) {
+        for (ModularPanel<?> panel : this.panelManager.getOpenPanels()) {
             if (panel.onMouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
                 return true;
             }
@@ -552,7 +547,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
 
     /**
      * Called every time the mouse pos changes and a mouse button is held down. Invokes
-     * {@link Interactable#onMouseDrag(double, double, int, double, double)
+     * {@link Interactable#onMouseDrag(int, double, double)
      * Interactable#onMouseDrag(double, double, int, double, double)} on every widget
      * under the mouse after gui action listeners have been called.
      *
@@ -564,12 +559,11 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
      * @param dragY  the Y distance of the drag
      * @return true if the action was consumed and further processing should be canceled
      */
-    @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         for (IGuiAction.MouseDrag action : getGuiActionListeners(IGuiAction.MouseDrag.class)) {
-            action.drag(mouseX, mouseY, button, dragX, dragY);
+            action.drag(getContext(), button, dragX, dragY);
         }
-        for (ModularPanel panel : this.panelManager.getOpenPanels()) {
+        for (ModularPanel<?> panel : this.panelManager.getOpenPanels()) {
             if (panel.onMouseDrag(mouseX, mouseY, button, dragX, dragY)) {
                 return true;
             }
@@ -594,7 +588,6 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
         this.screenWrapper.wrappedScreen().setFocused(focus);
     }
 
-    @Override
     public boolean isFocused() {
         return this.screenWrapper.wrappedScreen().isFocused();
     }
@@ -624,7 +617,7 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
         return getContainer().getSyncManager();
     }
 
-    public ModularPanel getMainPanel() {
+    public ModularPanel<?> getMainPanel() {
         return this.panelManager.getMainPanel();
     }
 
@@ -632,8 +625,12 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
         return this.context.getScreenArea();
     }
 
+    public @NotNull ScreenRectangle getMainRectangle() {
+        return this.panelManager.getMainPanel().getArea().toScreenRectangle();
+    }
+
     public boolean isClientOnly() {
-        return isOverlay() || !this.screenWrapper.isGuiContainer() || getContainer().isClientOnly();
+        return isOverlay() || !this.screenWrapper.isContainerScreen() || getContainer().isClientOnly();
     }
 
     public ModularContainerMenu getContainer() {
@@ -767,66 +764,5 @@ public class ModularScreen implements GuiEventListener, Renderable, LayoutElemen
     public ModularScreen openParentOnClose(boolean openParentOnClose) {
         this.openParentOnClose = openParentOnClose;
         return this;
-    }
-
-    @Override
-    public void setX(int x) {
-        this.panelManager.getMainPanel().getArea().setX(x);
-    }
-
-    @Override
-    public void setY(int y) {
-        this.panelManager.getMainPanel().getArea().setY(y);
-    }
-
-    @Override
-    public int getX() {
-        return this.panelManager.getMainPanel().getArea().getX();
-    }
-
-    @Override
-    public int getY() {
-        return this.panelManager.getMainPanel().getArea().getY();
-    }
-
-    @Override
-    public int getWidth() {
-        return this.panelManager.getMainPanel().getArea().getWidth();
-    }
-
-    @Override
-    public int getHeight() {
-        return this.panelManager.getMainPanel().getArea().getHeight();
-    }
-
-    @Override
-    public @NotNull ScreenRectangle getRectangle() {
-        Area area = this.panelManager.getMainPanel().getArea();
-        return new ScreenRectangle(area.x(), area.y(), area.w(), area.h());
-    }
-
-    @Override
-    public void visitWidgets(@NotNull Consumer<AbstractWidget> consumer) {
-        for (WidgetWrapper wrapper : panelManager.getReverseOpenPanelsWrappers()) {
-            consumer.accept(wrapper);
-        }
-    }
-
-    private static final Component USAGE_NARRATION = Component.translatable("narrator.screen.usage");
-
-    private NarratableEntry lastNarratable = null;
-
-    @Override
-    public void updateNarration(@NotNull NarrationElementOutput output) {
-        output.add(NarratedElementType.USAGE, USAGE_NARRATION);
-        var entries = StreamSupport.stream(panelManager.getReverseOpenPanelsWrappers().spliterator(), false);
-        WidgetWrapper.updateNarrations(entries, output, lastNarratable, entry -> lastNarratable = entry);
-    }
-
-    @Override
-    public @NotNull NarrationPriority narrationPriority() {
-        if (this.isFocused()) return NarrationPriority.FOCUSED;
-        else if (this.context.isHovered()) return NarrationPriority.HOVERED;
-        else return NarrationPriority.NONE;
     }
 }

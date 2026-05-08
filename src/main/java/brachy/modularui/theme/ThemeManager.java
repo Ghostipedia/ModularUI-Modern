@@ -53,7 +53,9 @@ public class ThemeManager extends SimplePreparableReloadListener<Map<String, Lis
     private ThemeManager() {}
 
     public static void reload() {
-        // wtf is this hackery??
+        // hackery to reload themes on this thread
+        // usually resources are loaded off-thread to not block the main thread
+        // but this should be fine since it is currently not expected to take longer than a second
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
         ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
         INSTANCE.apply(INSTANCE.prepare(resourceManager, profiler), resourceManager, profiler);
@@ -354,7 +356,7 @@ public class ThemeManager extends SimplePreparableReloadListener<Map<String, Lis
                         map.putTheme(key, new WidgetThemeEntry<>(key, entry.theme(), entry.hoverTheme()));
                         return;
                     }
-                    // we still need to parse non inherited values (fallback)
+                    // we still need to parse non-inherited values (fallback)
                     widgetThemeJson = emptyJson;
                     widgetThemeHoverJson = emptyJson;
                 }
@@ -378,7 +380,7 @@ public class ThemeManager extends SimplePreparableReloadListener<Map<String, Lis
             }
 
             // only inherit from the widget theme if it was actually defined, otherwise use parent
-            T parentWidgetHoverTheme = widgetThemeJson != null ? widgetTheme :
+            T parentWidgetHoverTheme = definedStandard ? widgetTheme :
                     parent.getWidgetTheme(key).hoverTheme();
             T widgetThemeHover = parser.parse(parentWidgetHoverTheme, widgetThemeHoverJson, fallback);
 

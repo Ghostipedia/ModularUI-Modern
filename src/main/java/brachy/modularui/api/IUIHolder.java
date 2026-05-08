@@ -1,6 +1,5 @@
 package brachy.modularui.api;
 
-import brachy.modularui.ModularUI;
 import brachy.modularui.factory.GuiData;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
@@ -14,7 +13,6 @@ import net.neoforged.api.distmarker.OnlyIn;
  * An interface to implement on {@link net.minecraft.world.level.block.entity.BlockEntity} or
  * {@link net.minecraft.world.item.Item}.
  */
-@FunctionalInterface
 public interface IUIHolder<T extends GuiData> {
 
     /**
@@ -25,12 +23,7 @@ public interface IUIHolder<T extends GuiData> {
      * @return a modular screen instance with the given panel
      */
     @OnlyIn(Dist.CLIENT)
-    default ModularScreen createScreen(T data, ModularPanel mainPanel) {
-        ModularUI.LOGGER
-                .warn("IGuiHolder.createScreen() should be overridden to pass your own mod id to the ModularScreen. " +
-                        "In future versions this method must be overridden or else it will crash!");
-        return new ModularScreen(ModularUI.MOD_ID, mainPanel);
-    }
+    ModularScreen createScreen(T data, ModularPanel<?> mainPanel);
 
     /**
      * Called on server and client. Create only the main panel here. Only here you can add sync handlers to widgets
@@ -43,5 +36,5 @@ public interface IUIHolder<T extends GuiData> {
      * @param syncManager sync handler where widget sync handlers should be registered
      * @param settings    settings which apply to the whole ui and not just this panel
      */
-    ModularPanel buildUI(T data, PanelSyncManager syncManager, UISettings settings);
+    ModularPanel<?> buildUI(T data, PanelSyncManager syncManager, UISettings settings);
 }

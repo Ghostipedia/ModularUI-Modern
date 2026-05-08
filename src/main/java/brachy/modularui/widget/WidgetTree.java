@@ -186,28 +186,27 @@ public class WidgetTree extends TreeUtil {
         return InternalWidgetTree.findChildAt(parent, type, path, 0, false);
     }
 
-    public static boolean hasSyncedValues(ModularPanel panel) {
+    public static boolean hasSyncedValues(ModularPanel<?> panel) {
         return !foreachChild(panel, widget -> !(widget instanceof ISynced<?> synced) || !synced.isSynced(), true);
     }
 
     @ApiStatus.Internal
-    public static void collectSyncValues(PanelSyncManager syncManager, ModularPanel panel) {
+    public static void collectSyncValues(PanelSyncManager syncManager, ModularPanel<?> panel) {
         collectSyncValues(syncManager, panel, true);
     }
 
     @ApiStatus.Internal
-    public static void collectSyncValues(PanelSyncManager syncManager, ModularPanel panel, boolean includePanel) {
+    public static void collectSyncValues(PanelSyncManager syncManager, ModularPanel<?> panel, boolean includePanel) {
         collectSyncValues(syncManager, panel.getName(), panel, includePanel);
     }
 
     @ApiStatus.Internal
-    public static void collectSyncValues(PanelSyncManager syncManager, String panelName, IWidget panel,
-                                         boolean includePanel) {
+    public static void collectSyncValues(PanelSyncManager syncManager, String panelName, IWidget panel, boolean includePanel) {
         MutableInt id = new MutableInt(0);
         String syncKey = ModularSyncManager.AUTO_SYNC_PREFIX + panelName;
         foreachChildBFS(panel, widget -> {
             if (widget instanceof ISynced<?> synced) {
-                if (synced.isSynced() && !synced.getSyncHandler().isRegistered()) {
+                if (synced.isSynced() && !synced.getSyncHandler().isRegistered(syncManager)) {
                     syncManager.syncValue(syncKey, id.getAndIncrement(), synced.getSyncHandler());
                 }
             }
@@ -215,10 +214,10 @@ public class WidgetTree extends TreeUtil {
         }, includePanel);
     }
 
-    public static int countUnregisteredSyncHandlers(IWidget parent) {
+    public static int countUnregisteredSyncHandlers(PanelSyncManager syncManager, IWidget parent) {
         MutableInt count = new MutableInt();
         foreachChildBFS(parent, widget -> {
-            if (widget instanceof ISynced<?> synced && synced.isSynced() && !synced.getSyncHandler().isRegistered()) {
+            if (widget instanceof ISynced<?> synced && synced.isSynced() && !synced.getSyncHandler().isRegistered(syncManager)) {
                 count.increment();
             }
             return true;

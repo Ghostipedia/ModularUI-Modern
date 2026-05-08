@@ -24,13 +24,18 @@ public class NetworkUtils {
     }
 
     public static void writeByteBuf(ByteBuf writeTo, ByteBuf writeFrom) {
+        writeFrom.readerIndex(0);
+        VarInt.write(writeTo, writeFrom.readableBytes());
+        writeTo.writeBytes(writeFrom);
+    }
+
+    public static void writeRemainingByteBuf(ByteBuf writeTo, ByteBuf writeFrom) {
         VarInt.write(writeTo, writeFrom.readableBytes());
         writeTo.writeBytes(writeFrom.slice());
     }
 
     public static ByteBuf readByteBuf(ByteBuf buf) {
-        ByteBuf directSliceBuffer = buf.readBytes(VarInt.read(buf));
-        return Unpooled.copiedBuffer(directSliceBuffer);
+        return buf.readBytes(VarInt.read(buf));
     }
 
     public static FriendlyByteBuf readFriendlyByteBuf(ByteBuf buf) {

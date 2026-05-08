@@ -1,4 +1,4 @@
-package brachy.modularui.core.mixins;
+package brachy.modularui.core.mixins.common;
 
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;

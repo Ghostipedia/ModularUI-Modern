@@ -18,23 +18,20 @@ neoForge {
     }
 
     addModdingDependenciesTo(sourceSets.test)
-//    addModdingDependenciesTo(sourceSets.extra)
+    addModdingDependenciesTo(sourceSets.client)
 
     mods {
         // define mod <-> source bindings
         "${mod_id}" {
             sourceSet(sourceSets.main)
             sourceSet(sourceSets.client)
-            sourceSet(sourceSets.test)
-            sourceSet(sourceSets.extra)
-            sourceSet(sourceSets.clientExtra)
         }
     }
 
     runs {
         client {
             client()
-            sourceSet = sourceSets.clientExtra
+            sourceSet = sourceSets.client
             ideName = "Client 1"
 
             systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
@@ -42,7 +39,7 @@ neoForge {
 
         client2 {
             client()
-            sourceSet = sourceSets.clientExtra
+            sourceSet = sourceSets.client
             ideName = "Client 2"
 
             programArguments.addAll('--username', 'YoungOnion', '--uuid', '3a27782d-6864-4814-a9fe-7c6931f29a8a')
@@ -51,27 +48,8 @@ neoForge {
 
         server {
             server()
-            sourceSet = sourceSets.extra
-            ideName = "Server"
-
-            gameDirectory.set(file('run/server'))
-            programArguments.addAll('--nogui', '--world', 'world-extra')
-            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
-        }
-
-        // Client with GTM + Jade, EMI, AE2
-        cleanClient {
-            client()
-            sourceSet = sourceSets.client
-            ideName = "Clean Client"
-
-            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
-        }
-
-        cleanServer {
-            server()
             sourceSet = sourceSets.main
-            ideName = "Clean Server"
+            ideName = "Server"
 
             gameDirectory.set(file('run/server'))
             programArgument '--nogui'
@@ -110,7 +88,7 @@ neoForge {
             create("renderDocClient") {
                 client()
                 sourceSet = sourceSets.client
-                ideName = "Clean Client + RenderDoc"
+                ideName = "Client w/ RenderDoc"
 
                 programArguments.addAll('--username', 'screret', '--uuid', '1184eb79-5831-4f7d-b8f4-3a46fccf7a1d')
 
@@ -133,7 +111,7 @@ neoForge {
             // "REGISTRYDUMP": For getting the contents of all registries.
             systemProperty 'forge.logging.markers', 'REGISTRIES'
             // Enable assertions for our classes in dev environment
-            jvmArgument('-ea:com.gregtechceu.gtceu...')
+            jvmArgument('-ea:brachy.modularui...')
 
             // Recommended logging level for the console
             // You can set various levels here.

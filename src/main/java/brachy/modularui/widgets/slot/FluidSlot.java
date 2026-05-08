@@ -1,7 +1,7 @@
 package brachy.modularui.widgets.slot;
 
 import brachy.modularui.api.ITheme;
-import brachy.modularui.api.drawable.IKey;
+import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.value.ISyncOrValue;
 import brachy.modularui.api.widget.Interactable;
 import brachy.modularui.drawable.GuiDraw;
@@ -11,11 +11,15 @@ import brachy.modularui.screen.RichTooltip;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.SlotTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
+import brachy.modularui.utils.IMultiFluidTankHandler;
 import brachy.modularui.utils.LangUtil;
 import brachy.modularui.utils.MouseData;
 import brachy.modularui.value.sync.FluidSlotSyncHandler;
 import brachy.modularui.widgets.AbstractFluidDisplayWidget;
 
+import lombok.Getter;
+
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -47,9 +51,8 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
     }
 
     private FluidSlotSyncHandler syncHandler;
-    private boolean alwaysShowFull = true;
-    private boolean displayAmount = true;
 
+    @Getter private boolean alwaysShowFull = true;
     public FluidSlot() {
         tooltip().autoUpdate(true);
         tooltipBuilder(this::addTooltip);
@@ -59,43 +62,43 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
         IFluidTank fluidTank = getFluidTank();
         FluidStack fluid = this.syncHandler.getValue();
         if (fluid != null && !fluid.isEmpty()) {
-            tooltip.addLine(IKey.lang(fluid.getHoverName())).spaceLine(2);
+            tooltip.addLine(fluid.getHoverName()).spaceLine(2);
         }
         if (this.syncHandler.phantom()) {
             if (fluid != null) {
                 if (this.syncHandler.controlsAmount()) {
-                    tooltip.addLine(IKey.lang("modularui.fluid.phantom.amount",
+                    tooltip.addLine(Text.lang("modularui.fluid.phantom.amount",
                             formatFluidTooltipAmount(fluid.getAmount()), getUnit()));
                 }
             } else {
-                tooltip.addLine(IKey.lang("modularui.fluid.empty"));
+                tooltip.addLine(Text.lang("modularui.fluid.empty"));
                 tooltip.addLine(
-                        IKey.lang("modularui.fluid_pipe.capacity", formatFluidTooltipAmount(fluidTank.getCapacity()),
+                        Text.lang("modularui.fluid_pipe.capacity", formatFluidTooltipAmount(fluidTank.getCapacity()),
                                 getUnit()));
             }
             if (this.syncHandler.controlsAmount()) {
-                tooltip.addLine(IKey.lang("modularui.fluid.phantom.control"));
+                tooltip.addLine(Text.lang("modularui.fluid.phantom.control"));
             }
         } else {
             if (fluid != null) {
-                tooltip.addLine(IKey.lang("modularui.fluid.amount", formatFluidTooltipAmount(fluid.getAmount()),
+                tooltip.addLine(Text.lang("modularui.fluid.amount", formatFluidTooltipAmount(fluid.getAmount()),
                         formatFluidTooltipAmount(fluidTank.getCapacity()), getUnit()));
                 addAdditionalFluidInfo(tooltip, fluid);
             } else {
-                tooltip.addLine(IKey.lang("modularui.fluid.empty"));
+                tooltip.addLine(Text.lang("modularui.fluid.empty"));
             }
             if (this.syncHandler.canFillSlot() || this.syncHandler.canDrainSlot()) {
-                tooltip.addLine(IKey.EMPTY); // Add an empty line to separate from the bottom material tooltips
+                tooltip.addLine(Text.EMPTY); // Add an empty line to separate from the bottom material tooltips
                 if (Interactable.hasShiftDown()) {
                     if (this.syncHandler.canFillSlot() && this.syncHandler.canDrainSlot()) {
-                        tooltip.addLine(IKey.lang("modularui.fluid.click_combined"));
+                        tooltip.addLine(Text.lang("modularui.fluid.click_combined"));
                     } else if (this.syncHandler.canDrainSlot()) {
-                        tooltip.addLine(IKey.lang("modularui.fluid.click_to_fill"));
+                        tooltip.addLine(Text.lang("modularui.fluid.click_to_fill"));
                     } else if (this.syncHandler.canFillSlot()) {
-                        tooltip.addLine(IKey.lang("modularui.fluid.click_to_empty"));
+                        tooltip.addLine(Text.lang("modularui.fluid.click_to_empty"));
                     }
                 } else {
-                    tooltip.addLine(IKey.lang("modularui.tooltip.hold_shift"));
+                    tooltip.addLine(Text.lang("modularui.tooltip.hold_shift"));
                 }
             }
         }
@@ -128,6 +131,14 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
     }
 
     @Override
+    public @NotNull FluidSlotSyncHandler getSyncHandler() {
+        if (this.syncHandler == null) {
+            throw new IllegalStateException("Widget is not initialised or not synced!");
+        }
+        return syncHandler;
+    }
+
+    @Override
     protected boolean displayAmountText() {
         return this.syncHandler == null || this.syncHandler.controlsAmount();
     }
@@ -153,7 +164,7 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
 
     @NotNull
     @Override
-    public Result onMousePressed(double mouseX, double mouseY, int button) {
+    public Result onMousePressed(int button) {
         if (!this.syncHandler.canFillSlot() && !this.syncHandler.canDrainSlot()) {
             return Result.ACCEPT;
         }
@@ -167,7 +178,7 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
     }
 
     @Override
-    public boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean onMouseScrolled(double scrollX, double ) {
         if (this.syncHandler.phantom()) {
             if ((scrollY > 0 && !this.syncHandler.canFillSlot()) || (scrollY < 0 && !this.syncHandler.canDrainSlot())) {
                 return false;
@@ -209,11 +220,6 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
         return this.syncHandler == null ? EMPTY : this.syncHandler.fluidTank();
     }
 
-    public FluidSlot displayAmount(boolean displayAmount) {
-        this.displayAmount = displayAmount;
-        return this;
-    }
-
     /**
      * @param alwaysShowFull if the fluid should be rendered as full or as the partial amount.
      */
@@ -226,9 +232,21 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
         return syncHandler(new FluidSlotSyncHandler(fluidTank));
     }
 
+    public FluidSlot syncHandler(IMultiFluidTankHandler fluidTank, int index) {
+        return syncHandler(fluidTank.getFluidTank(index));
+    }
+
     public FluidSlot syncHandler(FluidSlotSyncHandler syncHandler) {
         setSyncOrValue(ISyncOrValue.orEmpty(syncHandler));
         return this;
+    }
+
+    public FluidSlot tank(IFluidTank fluidTank) {
+        return syncHandler(fluidTank);
+    }
+
+    public FluidSlot tank(IMultiFluidTankHandler fluidTank, int index) {
+        return syncHandler(fluidTank, index);
     }
 
     /* === recipe viewer ghost slot === */

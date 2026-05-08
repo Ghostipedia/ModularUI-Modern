@@ -4,6 +4,7 @@ import brachy.modularui.api.ITheme;
 import brachy.modularui.api.value.ISyncOrValue;
 import brachy.modularui.api.value.IValue;
 import brachy.modularui.drawable.GuiDraw;
+import brachy.modularui.integration.recipeviewer.RecipeSlotRole;
 import brachy.modularui.integration.recipeviewer.entry.EntryList;
 import brachy.modularui.integration.recipeviewer.entry.item.ItemStackList;
 import brachy.modularui.integration.recipeviewer.handlers.IngredientProvider;
@@ -12,14 +13,17 @@ import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.value.ObjectValue;
 import brachy.modularui.widget.Widget;
 
+import lombok.Getter;
+
 import net.minecraft.world.item.ItemStack;
 
 import org.jetbrains.annotations.NotNull;
 
 public class ItemDisplayWidget extends Widget<ItemDisplayWidget> implements IngredientProvider<ItemStack> {
 
-    private IValue<ItemStack> value;
-    private boolean displayAmount = false;
+    @Getter private IValue<ItemStack> value;
+    @Getter private boolean displayAmount = false;
+    @Getter private RecipeSlotRole recipeRole = RecipeSlotRole.RENDER_ONLY;
 
     public ItemDisplayWidget() {
         size(18);
@@ -69,6 +73,11 @@ public class ItemDisplayWidget extends Widget<ItemDisplayWidget> implements Ingr
     @Override
     public EntryList<ItemStack> getIngredients() {
         return ItemStackList.of(value.getValue());
+    }
+
+    public ItemDisplayWidget recipeSlotRole(RecipeSlotRole recipeRole) {
+        this.recipeRole = recipeRole;
+        return this;
     }
 
     @Override

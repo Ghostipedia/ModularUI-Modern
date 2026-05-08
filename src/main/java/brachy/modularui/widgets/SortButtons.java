@@ -38,14 +38,10 @@ public class SortButtons extends Widget<SortButtons> {
         }
     }
 
-    @Getter
-    @Setter
-    private String slotGroupName;
-    @Getter
-    @Setter
-    private SlotGroup slotGroup;
-    @Setter
-    private boolean horizontal = true;
+    @Getter private String slotGroupName;
+    @Getter private SlotGroup slotGroup;
+
+    @Getter private boolean horizontal = true;
     private final ButtonWidget<?> sortButton = new ButtonWidget<>();
     private final ButtonWidget<?> settingsButton = new ButtonWidget<>();
     @Getter
@@ -59,7 +55,7 @@ public class SortButtons extends Widget<SortButtons> {
                     // .overlay(ButtonHandler.BUTTON_SORT)
                     .hoverOverlay(HOVER_SORT_OVERLAY)
                     .disableHoverBackground()
-                    .onMousePressed((x, y, button) -> {
+                    .onMousePressed((context, button) -> {
                         sort();
                         return true;
                     });
@@ -68,7 +64,7 @@ public class SortButtons extends Widget<SortButtons> {
                     // .overlay(ButtonHandler.BUTTON_SETTINGS)
                     .hoverOverlay(HOVER_SETTINGS_OVERLAY)
                     .disableHoverBackground()
-                    .onMousePressed((x, y, button) -> {
+                    .onMousePressed((context, button) -> {
                         // IBogoSortAPI.getInstance().openConfigGui();
                         return true;
                     });

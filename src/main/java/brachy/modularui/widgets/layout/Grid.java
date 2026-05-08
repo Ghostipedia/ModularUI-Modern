@@ -1,5 +1,6 @@
 package brachy.modularui.widgets.layout;
 
+import brachy.modularui.api.GuiAxis;
 import brachy.modularui.api.layout.ILayoutWidget;
 import brachy.modularui.api.widget.IParentWidget;
 import brachy.modularui.api.widget.IWidget;
@@ -13,23 +14,25 @@ import brachy.modularui.widget.sizer.Box;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.IntFunction;
+import java.util.function.Consumer;
 
 public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayoutWidget, IParentWidget<IWidget, Grid> {
 
     private final List<List<IWidget>> matrix = new ArrayList<>();
-    private final Box minElementMargin = new Box();
-    private int minRowHeight = 5, minColWidth = 5;
-    private Alignment alignment = Alignment.Center;
-    private boolean dirty = false;
-    private boolean collapseDisabledChild = false;
+    @Getter private final Box minElementMargin = new Box();
+    @Getter private int minRowHeight = 5, minColWidth = 5;
+    @Getter private Alignment alignment = Alignment.Center;
+    private boolean dirty = false, unsanitized = false;
+    @Getter private boolean collapseDisabledChildren = false;
 
     public Grid() {
         super(null, null);
@@ -38,29 +41,48 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
     @Override
     public void onInit() {
         super.onInit();
-        int maxRowSize = 0;
-        for (List<? extends IWidget> row : this.matrix) {
-            maxRowSize = Math.max(maxRowSize, row.size());
-        }
-        for (List<? extends IWidget> row : this.matrix) {
-            while (row.size() < maxRowSize) {
-                row.add(null);
-            }
-        }
+        sanitizeMatrix();
     }
 
-    private int getElementWidth(Area area) {
-        return area.width + Math.max(area.getMargin().left(), this.minElementMargin.left()) +
-                Math.max(area.getMargin().right(), this.minElementMargin.right());
+    private int getMarginStart(Area area, GuiAxis axis, int border) {
+        int m = 0;
+        if (border > -1) {
+            m += Math.max(area.getMargin().getStart(axis), this.minElementMargin.getStart(axis));
+        } else {
+            m += area.getMargin().getStart(axis);
+        }
+        return m;
     }
 
-    private int getElementHeight(Area area) {
-        return area.height + Math.max(area.getMargin().top(), this.minElementMargin.top()) +
-                Math.max(area.getMargin().bottom(), this.minElementMargin.bottom());
+    private int getMarginEnd(Area area, GuiAxis axis, int border) {
+        int m = 0;
+        if (border < 1) {
+            m += Math.max(area.getMargin().getEnd(axis), this.minElementMargin.getEnd(axis));
+        } else {
+            m += area.getMargin().getEnd(axis);
+        }
+        return m;
+    }
+
+    private int getElementWidth(Area area, int border) {
+        // border: -1 = start, 0 = none, 1 = end
+        return area.width + getMarginStart(area, GuiAxis.X, border) + getMarginEnd(area, GuiAxis.X, border);
+    }
+
+    private int getElementHeight(Area area, int border) {
+        // border: -1 = start, 0 = none, 1 = end
+        return area.height + getMarginStart(area, GuiAxis.Y, border) + getMarginEnd(area, GuiAxis.Y, border);
+    }
+
+    private int border(int index, int size) {
+        if (index == 0) return -1;
+        if (index == size - 1) return 1;
+        return 0;
     }
 
     @Override
     public boolean layoutWidgets() {
+        sanitizeMatrix();
         IntList rowSizes = new IntArrayList();
         IntList colSizes = new IntArrayList();
 
@@ -68,14 +90,16 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
         for (List<IWidget> row : this.matrix) {
             j = 0;
             rowSizes.add(this.minRowHeight);
+            int yBorder = border(i, this.matrix.size());
             for (IWidget child : row) {
                 if (i == 0) {
                     colSizes.add(this.minColWidth);
                 }
                 if (!shouldIgnoreChildSize(child)) {
                     if (!child.resizer().isWidthCalculated() || !child.resizer().isHeightCalculated()) return false;
-                    rowSizes.set(i, Math.max(rowSizes.getInt(i), getElementHeight(child.getArea())));
-                    colSizes.set(j, Math.max(colSizes.getInt(j), getElementWidth(child.getArea())));
+                    int xBorder = border(j, row.size());
+                    rowSizes.set(i, Math.max(rowSizes.getInt(i), getElementHeight(child.getArea(), yBorder)));
+                    colSizes.set(j, Math.max(colSizes.getInt(j), getElementWidth(child.getArea(), xBorder)));
                 }
                 j++;
             }
@@ -90,8 +114,15 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
                 int width = colSizes.getInt(c);
                 IWidget child = this.matrix.get(r).get(c);
                 if (child != null) {
-                    child.getArea().rx = (int) (x + (width - child.getArea().width) * alignment.x);
-                    child.getArea().ry = (int) (y + (height - child.getArea().height) * alignment.y);
+                    Area area = child.getArea();
+                    int xBorder = border(c, colSizes.size());
+                    int yBorder = border(r, rowSizes.size());
+                    int xs = getMarginStart(area, GuiAxis.X, xBorder);
+                    int xe = getMarginEnd(area, GuiAxis.X, xBorder);
+                    int ys = getMarginStart(area, GuiAxis.Y, yBorder);
+                    int ye = getMarginEnd(area, GuiAxis.Y, yBorder);
+                    child.getArea().rx = (int) (x + xs + (width - xs - xe - area.width) * alignment.x);
+                    child.getArea().ry = (int) (y + ys + (height - ys - ye - area.height) * alignment.y);
                     child.resizer().setPosResized(true, true);
                 }
                 x += width;
@@ -109,7 +140,7 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
 
     @Override
     public boolean shouldIgnoreChildSize(IWidget child) {
-        return child == null || (this.collapseDisabledChild && !child.isEnabled());
+        return child == null || (this.collapseDisabledChildren && !child.isEnabled());
     }
 
     @Override
@@ -128,12 +159,15 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
 
     @Override
     public int getDefaultHeight() {
+        sanitizeMatrix();
         int h = 0;
-        for (List<IWidget> row : this.matrix) {
+        for (int i = 0; i < this.matrix.size(); i++) {
+            List<IWidget> row = this.matrix.get(i);
+            int yBorder = border(i, this.matrix.size());
             int rowHeight = 0;
             for (IWidget child : row) {
                 if (!shouldIgnoreChildSize(child)) {
-                    rowHeight = Math.max(rowHeight, getElementHeight(child.getArea()));
+                    rowHeight = Math.max(rowHeight, getElementHeight(child.getArea(), yBorder));
                 }
             }
             h += Math.max(rowHeight, this.minRowHeight);
@@ -143,6 +177,7 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
 
     @Override
     public int getDefaultWidth() {
+        sanitizeMatrix();
         IntList colSizes = new IntArrayList();
         int i = 0, j;
         for (List<? extends IWidget> row : this.matrix) {
@@ -152,7 +187,8 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
                     colSizes.add(this.minColWidth);
                 }
                 if (!shouldIgnoreChildSize(child)) {
-                    colSizes.set(j, Math.max(colSizes.getInt(j), getElementWidth(child.getArea())));
+                    int xBorder = border(j, row.size());
+                    colSizes.set(j, Math.max(colSizes.getInt(j), getElementWidth(child.getArea(), xBorder)));
                 }
                 j++;
             }
@@ -165,18 +201,35 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
         return w;
     }
 
-    public <I extends IWidget> Grid matrix(List<List<I>> matrix) {
+    @SuppressWarnings("unchecked")
+    public <I extends IWidget> Grid grid(List<List<I>> matrix) {
         this.matrix.clear();
-        for (List<I> row : matrix) {
-            this.matrix.add((List<IWidget>) row);
-        }
+        for (List<I> row : matrix) this.matrix.add((List<IWidget>) row);
         this.dirty = true;
+        this.unsanitized = true;
+        if (isValid()) {
+            foreachGrid(matrix, w -> {
+                w.initialise(this, true);
+                onChildAdd(w);
+            });
+        } else {
+            foreachGrid(matrix, this::onChildAdd);
+        }
         return this;
     }
 
     public Grid row(List<IWidget> row) {
         this.matrix.add(row);
         this.dirty = true;
+        this.unsanitized = true;
+        if (isValid()) {
+            foreachRow(row, w -> {
+                w.initialise(this, true);
+                onChildAdd(w);
+            });
+        } else {
+            foreachRow(row, this::onChildAdd);
+        }
         return this;
     }
 
@@ -199,35 +252,27 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
         }
         onChildAdd(child);
         this.dirty = true;
+        this.unsanitized = true;
         return true;
     }
 
     public Grid child(@Nullable IWidget widget) {
+        if (this.matrix.isEmpty()) this.matrix.add(new ArrayList<>());
         this.matrix.get(this.matrix.size() - 1).add(widget);
         this.dirty = true;
+        this.unsanitized = true;
+        if (widget != null) {
+            if (isValid()) {
+                widget.initialise(this, true);
+            }
+            onChildAdd(widget);
+        }
         return this;
     }
 
     public Grid nextRow() {
         this.matrix.add(new ArrayList<>());
         return this;
-    }
-
-    public <T, I extends IWidget> Grid mapTo(int rowLength, @NotNull List<T> list,
-                                             @NotNull IndexedElementMapper<T, I> widgetCreator) {
-        Objects.requireNonNull(widgetCreator);
-        Objects.requireNonNull(list);
-        return matrix(mapToMatrix(rowLength, list, widgetCreator));
-    }
-
-    public <I extends IWidget> Grid mapTo(int rowLength, @NotNull List<I> list) {
-        Objects.requireNonNull(list);
-        return mapTo(rowLength, list.size(), list::get);
-    }
-
-    public <I extends IWidget> Grid mapTo(int rowLength, int size, @NotNull IntFunction<I> widgetCreator) {
-        Objects.requireNonNull(widgetCreator);
-        return matrix(mapToMatrix(rowLength, size, widgetCreator));
     }
 
     public Grid minColWidth(int minColWidth) {
@@ -298,31 +343,187 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
     /**
      * Configures this widget to collapse row/column if all the child widgets in that axis are disabled.
      */
-    public Grid collapseDisabledChild() {
-        this.collapseDisabledChild = true;
+    public Grid collapseDisabledChildren() {
+        this.collapseDisabledChildren = true;
         return getThis();
     }
 
-    public static <T, I extends IWidget> List<List<I>> mapToMatrix(int rowLength, List<T> list,
-                                                                   IndexedElementMapper<T, I> widgetCreator) {
-        return mapToMatrix(rowLength, list.size(), i -> widgetCreator.apply(i, list.get(i)));
+    /**
+     * Creates a grid with a given width and height.
+     *
+     * @param width         number of elements in each row
+     * @param height        number of elements in each column
+     * @param widgetCreator A function that maps each pos to a widget. The arguments are (xIndex, yIndex, totalIndex). Can return null.
+     * @return this
+     */
+    public <I extends IWidget> Grid gridOfWidthHeight(int width, int height, GridPosMapper<I> widgetCreator) {
+        return grid(createGridOfWidthHeight(width, height, widgetCreator));
     }
 
-    public static <I extends IWidget> List<List<I>> mapToMatrix(int rowLength, int size, IntFunction<I> widgetCreator) {
+    /**
+     * Creates a grid with a given total size and height.
+     *
+     * @param size          total number of elements (width * height)
+     * @param height        number of elements in each column
+     * @param widgetCreator A function that maps each pos to a widget. The arguments are (xIndex, yIndex, totalIndex). Can return null.
+     * @return this
+     */
+    public <I extends IWidget> Grid gridOfSizeHeight(int size, int height, GridPosMapper<I> widgetCreator) {
+        return grid(createGridOfSizeHeight(size, height, widgetCreator));
+    }
+
+    /**
+     * Creates a grid with a given total size and width.
+     *
+     * @param size          total number of elements (width * height)
+     * @param width         number of elements in each row
+     * @param widgetCreator A function that maps each pos to a widget. The arguments are (xIndex, yIndex, totalIndex). Can return null.
+     * @return this
+     */
+    public <I extends IWidget> Grid gridOfSizeWidth(int size, int width, GridPosMapper<I> widgetCreator) {
+        return grid(createGridOfSizeWidth(size, width, widgetCreator));
+    }
+
+    /**
+     * Creates a grid of widgets with a given grid of any type.
+     *
+     * @param matrix        elements of any type
+     * @param widgetCreator A mapper to map each element to a widget. The arguments are (xIndex, yIndex, totalIndex, element). Can return null.
+     * @param <T>           type of elements
+     * @param <I>           widget type
+     * @return this
+     */
+    public <T, I extends IWidget> Grid gridOfElements(Iterable<? extends Iterable<T>> matrix, GridPosElementMapper<T, I> widgetCreator) {
+        return grid(createGridOfElements(matrix, widgetCreator));
+    }
+
+    /**
+     * Creates a grid of widgets with a given list and row length.
+     *
+     * @param width number of elements in each row
+     * @param list  widgets
+     * @param <I>   widget type
+     * @return this
+     */
+    public <I extends IWidget> Grid gridOf(int width, Iterable<I> list) {
+        return grid(createGridOfWidthElements(width, list, (x, y, i, e) -> e));
+    }
+
+    /**
+     * Creates a grid of widgets with a given list and row length.
+     *
+     * @param width         number of elements in each row
+     * @param list          elements of any type
+     * @param widgetCreator A mapper to map each element to a widget. The arguments are (xIndex, yIndex, listIndex, element). Can return null.
+     * @param <T>           type of elements
+     * @param <I>           widget type
+     * @return this
+     */
+    public <T, I extends IWidget> Grid gridOfWidthElements(int width, Iterable<T> list, GridPosElementMapper<T, I> widgetCreator) {
+        return grid(createGridOfWidthElements(width, list, widgetCreator));
+    }
+
+    public static <T, I extends IWidget> List<List<I>> createGridOfElements(Iterable<? extends Iterable<T>> matrix, GridPosElementMapper<T, I> widgetCreator) {
+        List<List<I>> widgetMatrix = new ArrayList<>();
+        Iterator<? extends Iterable<T>> colIt = matrix.iterator();
+        int r = 0, i = 0;
+        while (colIt.hasNext()) {
+            List<I> row = new ArrayList<>();
+            widgetMatrix.add(row);
+            Iterator<T> rowIt = colIt.next().iterator();
+            int c = 0;
+            while (rowIt.hasNext()) {
+                row.add(widgetCreator.apply(c, r, i, rowIt.next()));
+                c++;
+                i++;
+            }
+            r++;
+        }
+        return widgetMatrix;
+    }
+
+    public static <T, I extends IWidget> List<List<I>> createGridOfWidthElements(int width, Iterable<T> list, GridPosElementMapper<T, I> widgetCreator) {
+        width = Math.max(width, 1);
+        List<List<I>> widgetMatrix = new ArrayList<>();
+        Iterator<T> it = list.iterator();
+        int r = 0, c = 0, i = 0;
+        List<I> row = new ArrayList<>();
+        widgetMatrix.add(row);
+        while (it.hasNext()) {
+            row.add(widgetCreator.apply(c, r, i, it.next()));
+            i++;
+            if (++c == width) {
+                r++;
+                c = 0;
+                row = new ArrayList<>();
+                widgetMatrix.add(row);
+            }
+        }
+        return widgetMatrix;
+    }
+
+    public static <I extends IWidget> List<List<I>> createGridOfWidthHeight(int width, int height, GridPosMapper<I> widgetCreator) {
+        height = Math.max(height, 1);
+        width = Math.max(width, 1);
         List<List<I>> matrix = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            int r = i / rowLength;
-
-            if (r == matrix.size())
-                matrix.add(new ArrayList<>());
-
-            matrix.get(r).add(widgetCreator.apply(i));
+        for (int i = 0; i < height; i++) {
+            List<I> row = new ArrayList<>();
+            matrix.add(row);
+            for (int j = 0; j < width; j++) {
+                row.add(widgetCreator.apply(j, i, i * width + j));
+            }
         }
         return matrix;
     }
 
-    public interface IndexedElementMapper<T, I> {
+    public static <I extends IWidget> List<List<I>> createGridOfSizeHeight(int size, int height, GridPosMapper<I> widgetCreator) {
+        return createGridOfWidthHeight(calcSize(size, height), height, widgetCreator);
+    }
 
-        I apply(int index, T value);
+    public static <I extends IWidget> List<List<I>> createGridOfSizeWidth(int size, int width, GridPosMapper<I> widgetCreator) {
+        return createGridOfWidthHeight(width, calcSize(size, width), widgetCreator);
+    }
+
+    private static int calcSize(int totalSize, int otherSize) {
+        return (int) Math.ceil((double) totalSize / otherSize);
+    }
+
+    /**
+     * Ensures that every row in the matrix has the same size by appending null values to rows with fewer elements than the longest row.
+     */
+    private void sanitizeMatrix() {
+        if (!this.unsanitized) return;
+        int maxRowSize = 0;
+        for (List<?> row : this.matrix) {
+            maxRowSize = Math.max(maxRowSize, row.size());
+        }
+        for (List<?> row : this.matrix) {
+            while (row.size() < maxRowSize) {
+                row.add(null);
+            }
+        }
+        this.unsanitized = false;
+    }
+
+    private static void foreachRow(Iterable<IWidget> row, Consumer<IWidget> consumer) {
+        row.forEach(consumer);
+    }
+
+    private static <I extends IWidget> void foreachGrid(Iterable<? extends Iterable<I>> grid, Consumer<IWidget> consumer) {
+        for (Iterable<I> row : grid) {
+            row.forEach(consumer);
+        }
+    }
+
+    public interface GridPosMapper<I> {
+
+        @Nullable
+        I apply(int xIndex, int yIndex, int index);
+    }
+
+    public interface GridPosElementMapper<T, I> {
+
+        @Nullable
+        I apply(int xIndex, int yIndex, int index, T element);
     }
 }

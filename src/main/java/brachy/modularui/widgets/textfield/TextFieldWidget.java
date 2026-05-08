@@ -2,7 +2,7 @@ package brachy.modularui.widgets.textfield;
 
 import brachy.modularui.ModularUI;
 import brachy.modularui.api.drawable.IDrawable;
-import brachy.modularui.api.drawable.IKey;
+import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.drawable.ITextLine;
 import brachy.modularui.api.value.IStringValue;
 import brachy.modularui.api.value.ISyncOrValue;
@@ -39,18 +39,14 @@ import java.util.regex.Pattern;
 @Accessors(chain = true)
 public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
 
-    @Getter
-    private IStringValue<?> stringValue;
+    @Getter private IStringValue<?> stringValue;
     private Function<String, String> validator = val -> val;
-    private boolean numbers = false;
-    @Getter
-    private String mathFailMessage = null;
-    private double defaultNumber = 0;
-    private boolean tooltipOverride = false;
-    @Getter
-    private boolean autoUpdateOnChange = false;
-    @Getter
-    private boolean acceptsExpression = true;
+    @Getter private boolean numbers = false;
+    @Getter private String mathFailMessage = null;
+    @Getter private double defaultNumber = 0;
+    @Getter private boolean tooltipOverride = false;
+    @Getter private boolean autoUpdateOnChange = false;
+    @Getter private boolean acceptsExpression = true;
 
     public double parse(String num) {
         if (!this.acceptsExpression) {
@@ -82,7 +78,7 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
         }
         setText(this.stringValue.getStringValue());
         if (!hasTooltip() && !tooltipOverride) {
-            tooltipBuilder(tooltip -> tooltip.addLine(IKey.str(getText())));
+            tooltipBuilder(tooltip -> tooltip.addLine(Text.str(getText())));
             // set back to false so this won't get triggered
             tooltipOverride = false;
         }

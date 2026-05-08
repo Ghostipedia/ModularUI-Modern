@@ -10,6 +10,7 @@ import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.value.sync.InteractionSyncHandler;
 import brachy.modularui.widget.SingleChildWidget;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 public class ButtonWidget<W extends ButtonWidget<W>> extends SingleChildWidget<W> implements Interactable {
@@ -19,7 +20,7 @@ public class ButtonWidget<W extends ButtonWidget<W>> extends SingleChildWidget<W
         return buttonWidget.widgetTheme(IThemeApi.CLOSE_BUTTON)
                 .top(4).right(4)
                 .overlay(GuiTextures.CROSS_TINY)
-                .onMousePressed((mouseX, mouseY, button) -> {
+                .onMousePressed((context, button) -> {
                     if (button == 0 || button == 1) {
                         buttonWidget.getPanel().closeIfOpen();
                         return true;
@@ -28,8 +29,8 @@ public class ButtonWidget<W extends ButtonWidget<W>> extends SingleChildWidget<W
                 });
     }
 
-    private boolean playClickSound = true;
-    private Runnable clickSound;
+    @Getter private boolean playClickSound = true;
+    @Getter private Runnable clickSound;
     private IGuiAction.MousePressed mousePressed;
     private IGuiAction.MouseReleased mouseReleased;
     private IGuiAction.MousePressed mouseTapped;
@@ -67,8 +68,8 @@ public class ButtonWidget<W extends ButtonWidget<W>> extends SingleChildWidget<W
     }
 
     @Override
-    public @NotNull Result onMousePressed(double mouseX, double mouseY, int button) {
-        if (this.mousePressed != null && this.mousePressed.press(mouseX, mouseY, button)) {
+    public @NotNull Result onMousePressed(int button) {
+        if (this.mousePressed != null && this.mousePressed.press(getContext(), button)) {
             playClickSound();
             return Result.SUCCESS;
         }
@@ -80,15 +81,15 @@ public class ButtonWidget<W extends ButtonWidget<W>> extends SingleChildWidget<W
     }
 
     @Override
-    public boolean onMouseReleased(double mouseX, double mouseY, int button) {
-        return (this.mouseReleased != null && this.mouseReleased.release(mouseX, mouseY, button)) ||
+    public boolean onMouseReleased(int button) {
+        return (this.mouseReleased != null && this.mouseReleased.release(getContext(), button)) ||
                 (this.syncHandler != null && this.syncHandler.onMouseReleased(button));
     }
 
     @NotNull
     @Override
-    public Result onMouseTapped(double mouseX, double mouseY, int button) {
-        if (this.mouseTapped != null && this.mouseTapped.press(mouseX, mouseY, button)) {
+    public Result onMouseTapped(int button) {
+        if (this.mouseTapped != null && this.mouseTapped.press(getContext(), button)) {
             playClickSound();
             return Result.SUCCESS;
         }
@@ -101,7 +102,7 @@ public class ButtonWidget<W extends ButtonWidget<W>> extends SingleChildWidget<W
 
     @Override
     public @NotNull Result onKeyPressed(int keyCode, int scanCode, int modifiers) {
-        if (this.keyPressed != null && this.keyPressed.press(keyCode, scanCode, modifiers)) {
+        if (this.keyPressed != null && this.keyPressed.press(getContext(), modifiers)) {
             return Result.SUCCESS;
         }
         if (this.syncHandler != null && this.syncHandler.onKeyPressed(keyCode, scanCode, modifiers)) {
@@ -112,14 +113,14 @@ public class ButtonWidget<W extends ButtonWidget<W>> extends SingleChildWidget<W
 
     @Override
     public boolean onKeyReleased(int keyCode, int scanCode, int modifiers) {
-        return (this.keyReleased != null && this.keyReleased.release(keyCode, scanCode, modifiers)) ||
+        return (this.keyReleased != null && this.keyReleased.release(getContext(), keyCode, scanCode, modifiers)) ||
                 (this.syncHandler != null && this.syncHandler.onKeyReleased(keyCode, scanCode, modifiers));
     }
 
     @NotNull
     @Override
     public Result onKeyTapped(int keyCode, int scanCode, int modifiers) {
-        if (this.keyTapped != null && this.keyTapped.press(keyCode, scanCode, modifiers)) {
+        if (this.keyTapped != null && this.keyTapped.press(getContext(), modifiers)) {
             return Result.SUCCESS;
         }
         if (this.syncHandler != null && this.syncHandler.onKeyTapped(keyCode, scanCode, modifiers)) {
@@ -129,9 +130,17 @@ public class ButtonWidget<W extends ButtonWidget<W>> extends SingleChildWidget<W
     }
 
     @Override
-    public boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        return (this.mouseScroll != null && this.mouseScroll.scroll(mouseX, mouseY, scrollX, scrollY)) ||
-                (this.syncHandler != null && this.syncHandler.onMouseScroll(scrollX, scrollY));
+    public boolean onMouseScrolled(double scrollX, double scrollY) {
+        return (this.mouseScroll != null && this.mouseScroll.scroll(getContext(), scrollX, scrollY)) ||
+                (this.syncHandler != null && this.syncHandler.onMouseScroll((int) scrollX, (int) scrollY));
+    }
+
+    @Override
+    public @NotNull InteractionSyncHandler getSyncHandler() {
+        if (this.syncHandler == null) {
+            throw new IllegalStateException("Widget is not initialised or not synced!");
+        }
+        return syncHandler;
     }
 
     public W onMousePressed(IGuiAction.MousePressed mousePressed) {

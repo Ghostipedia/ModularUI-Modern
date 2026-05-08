@@ -58,8 +58,8 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
      * @param drawable drawable to add.
      * @return this
      */
-    default T add(IDrawable drawable) {
-        getRichText().add(drawable);
+    default T addDrawable(IDrawable drawable) {
+        getRichText().addDrawable(drawable);
         return getThis();
     }
 
@@ -101,14 +101,14 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
 
     /**
      * Adds a drawable to the current line and creates a new line.
-     * Refer to {@link #add(IDrawable)} for additional information.
+     * Refer to {@link #addDrawable(IDrawable)} for additional information.
      *
      * @param line drawable to add.
      * @return this
-     * @see #add(IDrawable)
+     * @see #addDrawable(IDrawable)
      */
-    default T addLine(IDrawable line) {
-        getRichText().add(line).newLine();
+    default T addDrawableLine(IDrawable line) {
+        getRichText().addDrawable(line).newLine();
         return getThis();
     }
 
@@ -132,7 +132,7 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
      * @return this
      */
     default T newLine() {
-        return add(IKey.LINE_FEED);
+        return add(Text.LINE_FEED);
     }
 
     /**
@@ -141,7 +141,7 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
      * @return this
      */
     default T space() {
-        return add(IKey.SPACE);
+        return add(Text.SPACE);
     }
 
     /**
@@ -175,30 +175,30 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
 
     /**
      * Adds multiple drawables to the current line.
-     * Refer to {@link #add(IDrawable)} for additional information.
+     * Refer to {@link #addDrawable(IDrawable)} for additional information.
      *
      * @param drawables drawables to add.
      * @return this
-     * @see #add(IDrawable)
+     * @see #addDrawable(IDrawable)
      */
     default T addElements(Iterable<IDrawable> drawables) {
         for (IDrawable drawable : drawables) {
-            getRichText().add(drawable);
+            getRichText().addDrawable(drawable);
         }
         return getThis();
     }
 
     /**
      * Adds each drawable and creates a new line after each.
-     * Refer to {@link #add(IDrawable)} for additional information.
+     * Refer to {@link #addDrawable(IDrawable)} for additional information.
      *
      * @param drawables drawables to add.
      * @return this
-     * @see #add(IDrawable)
+     * @see #addDrawable(IDrawable)
      */
     default T addDrawableLines(Iterable<IDrawable> drawables) {
         for (IDrawable drawable : drawables) {
-            getRichText().add(drawable).newLine();
+            getRichText().addDrawable(drawable).newLine();
         }
         return getThis();
     }
@@ -209,7 +209,7 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
      *
      * @param strings strings to add.
      * @return this
-     * @see #add(IDrawable)
+     * @see #addDrawable(IDrawable)
      */
     default T addStringLines(Iterable<String> strings) {
         for (String string : strings) {
@@ -252,7 +252,7 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
      * @param function function to modify the found element
      * @return this
      */
-    default T replace(String regex, UnaryOperator<IKey> function) {
+    default T replace(String regex, UnaryOperator<Text> function) {
         return replace(Pattern.compile(regex), function);
     }
 
@@ -267,7 +267,7 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
      * @param function function to modify the found element
      * @return this
      */
-    default T replace(Pattern regex, UnaryOperator<IKey> function) {
+    default T replace(Pattern regex, UnaryOperator<Text> function) {
         getRichText().replace(regex, function);
         return getThis();
     }

@@ -1,6 +1,6 @@
 package brachy.modularui.widgets;
 
-import brachy.modularui.api.drawable.IKey;
+import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.widget.Interactable;
 import brachy.modularui.client.schemarenderer.BaseSchemaRenderer;
 import brachy.modularui.schema.ISchema;
@@ -8,6 +8,8 @@ import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.math.MathUtils;
 import brachy.modularui.widget.Widget;
+
+import lombok.Getter;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -19,14 +21,14 @@ import org.joml.Vector3fc;
 
 public class SchemaWidget extends Widget<SchemaWidget> implements Interactable {
 
-    private final BaseSchemaRenderer schemaRenderer;
-    private boolean enableRotation = true;
-    private boolean enableTranslation = true;
-    private boolean enableScaling = true;
-    private float scale = 10f;
-    private float pitch = MathUtils.PI_QUART;
-    private float yaw = 0;
-    private final Vector3f offset = new Vector3f();
+    @Getter private final BaseSchemaRenderer schemaRenderer;
+    @Getter private boolean enableRotation = true;
+    @Getter private boolean enableTranslation = true;
+    @Getter private boolean enableScaling = true;
+    @Getter private float scale = 10f;
+    @Getter private float pitch = MathUtils.PI_QUART;
+    @Getter private float yaw = 0;
+    @Getter private final Vector3f offset = new Vector3f();
 
     public SchemaWidget(ISchema schema) {
         this(new BaseSchemaRenderer(schema));
@@ -51,7 +53,7 @@ public class SchemaWidget extends Widget<SchemaWidget> implements Interactable {
     }
 
     @Override
-    public boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean onMouseScrolled(double scrollX, double scrollY) {
         if (this.enableScaling) {
             incrementScale((float) (-scrollY / 12.0f));
             return true;
@@ -60,12 +62,12 @@ public class SchemaWidget extends Widget<SchemaWidget> implements Interactable {
     }
 
     @Override
-    public @NotNull Result onMousePressed(double mouseX, double mouseY, int button) {
+    public @NotNull Result onMousePressed(int button) {
         return Result.SUCCESS;
     }
 
     @Override
-    public void onMouseDrag(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public void onMouseDrag(int button, double dragX, double dragY) {
         float dx = (float) dragX;
         float dy = (float) dragY;
         if (button == InputConstants.MOUSE_BUTTON_LEFT && this.enableRotation) {
@@ -141,10 +143,10 @@ public class SchemaWidget extends Widget<SchemaWidget> implements Interactable {
         public LayerButton(ISchema schema, int minLayer, int maxLayer) {
             this.minLayer = minLayer;
             this.maxLayer = maxLayer;
-            overlay(IKey.dynamic(() -> currentLayer > Integer.MIN_VALUE ?
-                    Component.literal(Integer.toString(currentLayer)) : Component.literal("ALL")).scale(0.5f));
+            overlay(Text.dynamic(() -> currentLayer > Integer.MIN_VALUE ?
+                    Component.literal(Integer.toString(currentLayer)) : Component.literal("ALL"))/*.scale(0.5f)*/); // TODO
 
-            onMousePressed((mouseX, mouseY, button) -> {
+            onMousePressed((context, button) -> {
                 if (button == 0 || button == 1) {
                     if (button == 0) {
                         if (currentLayer == Integer.MIN_VALUE) {

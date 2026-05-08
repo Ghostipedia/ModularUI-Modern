@@ -6,7 +6,6 @@ import brachy.modularui.api.widget.IFocusedWidget;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.TextFieldTheme;
-import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.Alignment;
 import brachy.modularui.widget.AbstractScrollWidget;
@@ -58,15 +57,15 @@ public class BaseTextFieldWidget<W extends BaseTextFieldWidget<W>> extends Abstr
     @Getter
     protected List<String> lastText;
     protected int scrollOffset = 0;
-    protected float scale = 1f;
-    protected boolean focusOnGuiOpen;
+    @Getter protected float scale = 1f;
+    @Getter protected boolean focusOnGuiOpen;
     private int cursorTimer;
     protected long lastClickTime = 0;
 
-    protected Integer textColor;
-    protected Integer markedColor;
-    protected Component hintText = null;
-    protected Integer hintTextColor;
+    @Getter protected Integer textColor;
+    @Getter protected Integer markedColor;
+    @Getter protected Component hintText = null;
+    @Getter protected Integer hintTextColor;
 
     public BaseTextFieldWidget() {
         super(new HorizontalScrollData(false, 4), null);
@@ -124,16 +123,6 @@ public class BaseTextFieldWidget<W extends BaseTextFieldWidget<W>> extends Abstr
         }
     }
 
-    @Override
-    public void postDraw(ModularGuiContext context, boolean transformed) {
-        if (!transformed) {
-            context.getStencil().pop();
-            WidgetThemeEntry<WidgetTheme> scrollbarTheme = context.getTheme().getScrollbarTheme();
-            getScrollArea().drawScrollbar(context, scrollbarTheme.getTheme(isHovering()),
-                    scrollbarTheme.theme().getBackground());
-        }
-    }
-
     protected void setupDrawText(ModularGuiContext context, TextFieldTheme widgetTheme) {
         this.renderer.setSimulate(false);
         this.renderer.setPos(getArea().getPadding().left(), getArea().getPadding().top());
@@ -180,8 +169,8 @@ public class BaseTextFieldWidget<W extends BaseTextFieldWidget<W>> extends Abstr
     }
 
     @Override
-    public @NotNull Result onMousePressed(double mouseX, double mouseY, int button) {
-        Result result = super.onMousePressed(mouseX, mouseY, button);
+    public @NotNull Result onMousePressed(int button) {
+        Result result = super.onMousePressed(button);
         if (result != Result.IGNORE) {
             return Result.SUCCESS; // keep focused
         }
@@ -220,8 +209,8 @@ public class BaseTextFieldWidget<W extends BaseTextFieldWidget<W>> extends Abstr
     }
 
     @Override
-    public void onMouseDrag(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        super.onMouseDrag(mouseX, mouseY, button, dragX, dragY);
+    public void onMouseDrag(int button, double dragX, double dragY) {
+        super.onMouseDrag(button, dragX, dragY);
         if (isFocused() && !getScrollArea().isDragging()) {
             int x = getContext().getMouseX() + getScrollX();
             int y = getContext().getMouseY() + getScrollY();

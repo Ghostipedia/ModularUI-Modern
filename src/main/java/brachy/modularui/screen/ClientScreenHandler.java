@@ -12,6 +12,7 @@ import brachy.modularui.api.widget.Interactable;
 import brachy.modularui.core.mixins.client.AbstractContainerScreenAccessor;
 import brachy.modularui.core.mixins.client.ScreenAccessor;
 import brachy.modularui.drawable.GuiDraw;
+import brachy.modularui.drawable.text.FontRenderHelper;
 import brachy.modularui.integration.recipeviewer.handlers.RecipeViewerHandler;
 import brachy.modularui.network.ModularNetwork;
 import brachy.modularui.overlay.OverlayStack;
@@ -34,6 +35,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
@@ -84,6 +87,12 @@ public class ClientScreenHandler {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onOpenScreen(ScreenEvent.Opening event) {
         onGuiChanged(event.getCurrentScreen(), event.getNewScreen());
+    }
+
+    public static void onCloseScreens(Screen closing) {
+        // called when the next screen is null, so that the player returns to the world
+        // we cant use ScreenEvent.Closing since that's also called when transitioning screens
+        onGuiChanged(closing, null);
     }
 
     @SubscribeEvent
@@ -163,7 +172,7 @@ public class ClientScreenHandler {
             return;
         }
         if (currentScreen != null && currentScreen.handleDraggableInput(mouseX, mouseY, button, true) ||
-                doAction(currentScreen, ms -> ms.onMousePressed(mouseX, mouseY, button))) {
+                doAction(currentScreen, ms -> ms.mousePressed(mouseX, mouseY, button))) {
             RecipeViewerHandler.getCurrent().setSearchFocused(false);
             event.setCanceled(true);
         }
@@ -365,8 +374,9 @@ public class ClientScreenHandler {
         }
     }
 
-    public static void dragSlot(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        getMCScreen().mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    public static void dragSlot(int button, double dragX, double dragY) {
+        ModularGuiContext ctx = currentScreen.getContext();
+        getMCScreen().mouseDragged(ctx.getMouseX(), ctx.getMouseY(), button, dragX, dragY);
     }
 
     public static void clickSlot(ModularScreen ms, Slot slot) {
@@ -664,6 +674,11 @@ public class ClientScreenHandler {
                     locatedHovered.applyMatrix(context);
                     Object hoveredElement = richTextWidget.getHoveredElement();
                     locatedHovered.unapplyMatrix(context);
+                    if (hoveredElement instanceof FormattedCharSequence fcs) {
+                        hoveredElement = FontRenderHelper.collectChars(fcs);
+                    } else if (hoveredElement instanceof Component component) {
+                        hoveredElement = component.getString();
+                    }
                     GuiDraw.drawText(graphics, "Hovered: " + hoveredElement, 5, lineY, scale, textColor, false);
                 }
             }

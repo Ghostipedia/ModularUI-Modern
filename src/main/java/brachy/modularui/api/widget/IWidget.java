@@ -66,8 +66,7 @@ public interface IWidget extends ITreeNode<IWidget> {
     /**
      * @return the panel this widget is in
      */
-    @NotNull
-    ModularPanel getPanel();
+    @NotNull ModularPanel<?> getPanel();
 
     /**
      * @return the area this widget occupies

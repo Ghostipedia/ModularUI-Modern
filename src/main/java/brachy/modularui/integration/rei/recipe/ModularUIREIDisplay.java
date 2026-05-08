@@ -19,13 +19,13 @@ import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widgets.slot.FluidSlot;
 import brachy.modularui.widgets.slot.ItemSlot;
 
+import com.mojang.datafixers.util.Either;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
 
 import lombok.Getter;
 import me.shedaniel.math.Rectangle;
@@ -45,10 +45,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> implements Display {
+public class ModularUIREIDisplay implements Display {
 
-    @Getter
-    protected final RecipeHolder<T> recipe;
+    private final ResourceLocation recipeId;
     protected final MemoizedSupplier<ModularScreen> screen;
 
     @Getter
@@ -59,8 +58,8 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
     @Getter
     protected final CategoryIdentifier<?> categoryIdentifier;
 
-    public ModularUIREIDisplay(RecipeHolder<T> recipe, Supplier<W> widgetSupplier, CategoryIdentifier<?> category) {
-        this.recipe = recipe;
+    public ModularUIREIDisplay(ResourceLocation recipeId, Supplier<IWidget> widgetSupplier, CategoryIdentifier<?> category) {
+        this.recipeId = recipeId;
 
         this.inputEntries = new ArrayList<>();
         this.outputEntries = new ArrayList<>();
@@ -68,16 +67,16 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
         this.categoryIdentifier = category;
 
         this.screen = Memoizer.memoize(() -> {
-            W widget = widgetSupplier.get();
-            ModularPanel panel = ModularPanel.defaultPanel(recipe.id().toString(), widget.getArea().w(), widget.getArea().h());
+            IWidget widget = widgetSupplier.get();
+            ModularPanel<?> panel = ModularPanel.defaultPanel(recipeId.toString(), widget.getArea().w(), widget.getArea().h());
             panel.child(widget);
-            return new ModularScreen(recipe.id().getNamespace(), panel);
+            return new ModularScreen(recipeId.getNamespace(), panel);
         }, Duration.ofSeconds(10));
 
         WidgetTree.foreachChildBFS(widgetSupplier.get(), widget -> {
             if (!(widget instanceof IngredientProvider<?> provider)) return true;
 
-            RecipeSlotRole role = provider.recipeRole();
+            RecipeSlotRole role = provider.getRecipeRole();
             if (role == RecipeSlotRole.RENDER_ONLY) return true;
 
             REIStackConverter.Converter<?> converter = REIStackConverter.getForNullable(provider.ingredientClass());
@@ -97,7 +96,7 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
 
     @Override
     public Optional<ResourceLocation> getDisplayLocation() {
-        return Optional.of(this.recipe.id());
+        return Optional.ofNullable(recipeId);
     }
 
     public List<Widget> createWidgets(Rectangle bounds) {
@@ -107,7 +106,7 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
         WidgetTree.foreachChildBFS(this.screen.get().getMainPanel(), widget -> {
             if (!(widget instanceof IngredientProvider<?> provider)) return true;
 
-            RecipeSlotRole role = provider.recipeRole();
+            RecipeSlotRole role = provider.getRecipeRole();
             if (role == RecipeSlotRole.RENDER_ONLY) return true;
 
             REIStackConverter.Converter<?> converter = REIStackConverter.getForNullable(provider.ingredientClass());
@@ -138,8 +137,10 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
                 if (tooltip.tooltip().getRichText() instanceof RichText richText) {
                     var textList = richText.getAsText();
                     entryWidget.tooltipProcessor(text -> {
-                        for (FormattedText line : textList) {
-                            text = text.add(MutableComponent.create(new FormattedTextContents(line)));
+                        for (Either<FormattedText, TooltipComponent> line : textList) {
+                            // TODO this is stupid
+                            line.ifLeft(ft -> text.add(MutableComponent.create(new FormattedTextContents(ft))));
+                            line.ifRight(text::add);
                         }
                         return text;
                     });
@@ -184,12 +185,12 @@ public class ModularUIREIDisplay<T extends Recipe<?>, W extends IWidget> impleme
 
         @Override
         public void mouseMoved(double mouseX, double mouseY) {
-            screen.get().mouseMoved(mouseX, mouseY);
+            //screen.get().mouseMoved(mouseX, mouseY);
         }
 
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            return screen.get().mouseClicked(mouseX, mouseY, button);
+            return screen.get().mousePressed(mouseX, mouseY, button);
         }
 
         @Override

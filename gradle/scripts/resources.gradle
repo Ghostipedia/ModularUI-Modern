@@ -13,9 +13,10 @@ def mod_issue_tracker = getConfig("mod_issue_tracker")
 String suffix = System.getenv("VERSION_SUFFIX")
 String version_toml = "$version" + (suffix ? "+$suffix" : "")
 
-tasks.register('printVersion') {
+tasks.register("printCiInfo") {
     doLast {
-        println mod_version
+        println "mc_version=${libs.versions.minecraft.get()}"
+        println "java_version=${libs.versions.java.get()}"
     }
 }
 

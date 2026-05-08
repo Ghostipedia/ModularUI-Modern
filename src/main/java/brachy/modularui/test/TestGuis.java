@@ -7,7 +7,7 @@ import brachy.modularui.animation.Wait;
 import brachy.modularui.api.IPanelHandler;
 import brachy.modularui.api.IThemeApi;
 import brachy.modularui.api.drawable.IDrawable;
-import brachy.modularui.api.drawable.IKey;
+import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.client.ModularUIRenderTypes;
@@ -27,27 +27,30 @@ import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.utils.Alignment;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.ColorShade;
-import brachy.modularui.utils.math.DAM;
 import brachy.modularui.utils.Interpolation;
 import brachy.modularui.utils.Interpolations;
+import brachy.modularui.utils.math.DAM;
 import brachy.modularui.value.BoolValue;
+import brachy.modularui.value.DoubleValue;
 import brachy.modularui.value.IntValue;
 import brachy.modularui.value.ObjectValue;
 import brachy.modularui.value.StringValue;
+import brachy.modularui.widget.ParentWidget;
 import brachy.modularui.widget.Widget;
 import brachy.modularui.widgets.ButtonWidget;
 import brachy.modularui.widgets.ColorPickerDialog;
+import brachy.modularui.widgets.CycleButtonWidget;
+import brachy.modularui.widgets.ItemDisplayWidget;
 import brachy.modularui.widgets.ListWidget;
+import brachy.modularui.widgets.ProgressWidget;
 import brachy.modularui.widgets.RichTextWidget;
 import brachy.modularui.widgets.SchemaWidget;
 import brachy.modularui.widgets.ScrollingTextWidget;
-import brachy.modularui.widgets.TextWidget;
+import brachy.modularui.widgets.SlotGroupWidget;
 import brachy.modularui.widgets.ToggleButton;
 import brachy.modularui.widgets.TransformWidget;
-import brachy.modularui.widgets.layout.Column;
 import brachy.modularui.widgets.layout.Flow;
 import brachy.modularui.widgets.layout.Grid;
-import brachy.modularui.widgets.layout.Row;
 import brachy.modularui.widgets.menu.ContextMenuButton;
 import brachy.modularui.widgets.menu.DropdownWidget;
 import brachy.modularui.widgets.textfield.TextFieldWidget;
@@ -57,13 +60,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import com.google.common.base.CaseFormat;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-
-import net.minecraftforge.registries.ForgeRegistries;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
@@ -72,7 +73,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
@@ -88,6 +88,13 @@ public class TestGuis extends CustomModularScreen {
             .filter(c -> Color.getHSLSaturation(c) > 0.4f)
             .collect(IntArrayList::new, IntList::add, IntList::addAll);
 
+    public static final IntList DARK_COLORS = ColorShade.getAll().stream()
+            .filter(cs -> !cs.name.contains("accent"))
+            .filter(cs -> cs.darkerShadeCount() > 1)
+            .mapToInt(cs -> cs.darker(1))
+            .filter(c -> Color.getHSLSaturation(c) > 0.4f)
+            .collect(IntArrayList::new, IntList::add, IntList::addAll);
+
     public static boolean withCode = false;
 
     public TestGuis() {
@@ -99,7 +106,7 @@ public class TestGuis extends CustomModularScreen {
      * This makes it very convenient to add and test test-screens without having to swap out the screen that the diamond item opens.
      */
     @Override
-    public @NotNull ModularPanel buildUI(ModularGuiContext context) {
+    public @NotNull ModularPanel<?> buildUI(ModularGuiContext context) {
         // collect all test from all build methods in this class via reflection
         List<Method> uiMethods = new ArrayList<>();
         for (Method method : TestGuis.class.getDeclaredMethods()) {
@@ -112,10 +119,10 @@ public class TestGuis extends CustomModularScreen {
         }
         uiMethods.sort(Comparator.comparing(Method::getName));
 
-        return new ModularPanel("client_tests").height(200).width(170)
+        return new ModularPanel<>("client_tests").height(200).width(170)
                 .padding(7)
                 .child(Flow.column()
-                        .child(IKey.str("Client Test UIs").asWidget().margin(1))
+                        .child(Text.str("Client Test UIs").asWidget().margin(1))
                         .child(new ListWidget<>().widthRel(1f).expanded()
                                 .children(uiMethods.size(), i -> {
                                     Method m = uiMethods.get(i);
@@ -125,9 +132,9 @@ public class TestGuis extends CustomModularScreen {
                                     String codeTextureName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name);
                                     name = name.replaceAll("([a-z])([A-Z])", "$1 $2");
                                     return button(name)
-                                            .onMousePressed((x, y, button) -> {
+                                            .onMousePressed((context1, button) -> {
                                                 try {
-                                                    ModularPanel panel = (ModularPanel) m.invoke(null);
+                                                    ModularPanel<?> panel = (ModularPanel) m.invoke(null);
                                                     if (TestGuis.withCode) {
                                                         // WIP: this is meant to put an image of the code next to ui for showcase purpose
                                                         panel.child(UITexture.builder()
@@ -155,7 +162,7 @@ public class TestGuis extends CustomModularScreen {
                                             return true;
                                         }))*/
                                 .child(button("Test self")
-                                        .onMousePressed((x, y, button) -> {
+                                        .onMousePressed((context1, button) -> {
                                             ClientGUI.open(this);
                                             return true;
                                         }))));
@@ -164,20 +171,16 @@ public class TestGuis extends CustomModularScreen {
     private static ButtonWidget<?> button(String text) {
         return new ButtonWidget<>()
                 .height(16).widthRel(1f).margin(0, 1)
-                .overlay(IKey.str(text));
+                .overlay(Text.str(text));
     }
 
-    public static @NotNull ModularPanel buildToggleGridListUI() {
+    public static @NotNull ModularPanel<?> buildToggleGridListUI() {
         boolean[][] states = new boolean[4][16];
-        // we need to do this to attach the theme since we have no screen yet
+        // we need to do this to attach the theme since we have no screen, yet
         // normally you have either UISettings or a ModularScreen at build to set it directly
-        return new ModularPanel("grid_list") {
-            @Override
-            public void onInit() {
-                super.onInit();
-                getScreen().useTheme(ClientTestEventHandler.TEST_THEME);
-            }
-        }.height(100)
+        return new ModularPanel<>("grid_list")
+                .themeOverride(TestHandler.TEST_THEME)
+                .height(100)
                 .coverChildrenWidth()
                 .padding(7)
                 .child(new ListWidget<>()
@@ -186,7 +189,7 @@ public class TestGuis extends CustomModularScreen {
                         .children(4, i -> new Grid()
                                 .left(0)
                                 .coverChildren()
-                                .mapTo(4, 16, j -> {
+                                .gridOfWidthHeight(4, 4, (x, y, j) -> {
                                     return new ToggleButton()
                                             .overlay(GuiTextures.BOOKMARK)
                                             .value(new BoolValue.Dynamic(() -> states[i][j], val -> states[i][j] = val))
@@ -197,7 +200,7 @@ public class TestGuis extends CustomModularScreen {
 
     }
 
-    public static @NotNull ModularPanel buildPendulumAnimationUI() {
+    public static @NotNull ModularPanel<?> buildPendulumAnimationUI() {
         IWidget widget = GuiTextures.MUI_LOGO.asWidget().size(20).pos(65, 65);
         Animator animator = new Animator()
                 .bounds(0, 1)
@@ -218,7 +221,7 @@ public class TestGuis extends CustomModularScreen {
                         }));
     }
 
-    public static @NotNull ModularPanel buildPostTheLogAnimationUI() {
+    public static @NotNull ModularPanel<?> buildPostTheLogAnimationUI() {
         Animator post = new Animator().curve(Interpolation.SINE_IN).duration(300).bounds(-35, 0);
         Animator the = new Animator().curve(Interpolation.SINE_IN).duration(300).bounds(-20, 0);
         Animator extraordinary = new Animator().curve(Interpolation.SINE_IN).duration(300).bounds(53, 0);
@@ -232,20 +235,20 @@ public class TestGuis extends CustomModularScreen {
                 .followedBy(logGrow);
         animator.animate();
         Random rnd = new Random();
-        return new ModularPanel("main")
+        return new ModularPanel<>("main")
                 .coverChildren()
-                .child(new Column()
+                .child(Flow.col()
                         .margin(12)
                         .coverChildren()
-                        .child(new Row()
+                        .child(Flow.row()
                                 .coverChildren()
-                                .child(IKey.str("Post ").asWidget()
+                                .child(Text.str("Post ").asWidget()
                                         .transform((widget, stack) -> stack.translate(post.getValue(), 0)))
-                                .child(IKey.str("the ").asWidget()
+                                .child(Text.str("the ").asWidget()
                                         .transform((widget, stack) -> stack.translate(0, the.getValue())))
-                                .child(IKey.str("fucking ").style(IKey.OBFUSCATED).asWidget()
+                                .child(Text.str("fucking ").style(Text.OBFUSCATED).asWidget()
                                         .transform((widget, stack) -> stack.translate(extraordinary.getValue(), 0))))
-                        .child(IKey.str("LOOOOGG!!!!").asWidget()
+                        .child(Text.str("LOOOOGG!!!!").asWidget()
                                 .paddingTop(4)
                                 .transform((widget, stack) -> {
                                     float logVal = log.getValue();
@@ -260,7 +263,7 @@ public class TestGuis extends CustomModularScreen {
                                 })));
     }
 
-    /*public static @NotNull ModularPanel buildSpriteAndEntityUI() {
+    /*public static @NotNull ModularPanel<?> buildSpriteAndEntityUI() {
         TextureAtlasSprite sprite = SpriteHelper.getSpriteOfBlockState(GameObjectHelper.getBlockState("minecraft", "command_block"), EnumFacing.UP);
         // SpriteHelper.getSpriteOfItem(new ItemStack(Items.DIAMOND));
         Entity entity = FakeEntity.create(EntityDragon.class);
@@ -304,68 +307,68 @@ public class TestGuis extends CustomModularScreen {
                 }.asWidget().alignX(0.5f).bottom(10).size(100, 75));
     }*/
 
-    public static @NotNull ModularPanel buildRichTextUI() {
+    public static @NotNull ModularPanel<?> buildRichTextUI() {
         IntValue integer = new IntValue(0);
-        return new ModularPanel("main")
-                .size(176, 166)
+        return new ModularPanel<>("main")
+                .size(176, 190)
                 .child(new RichTextWidget()
                         .sizeRel(1f).margin(7)
                         .autoUpdate(true)
                         .textBuilder(text -> text.add("Hello ")
-                                .add(new ItemDrawable(new ItemStack(Blocks.GRASS_BLOCK))
+                                .addDrawable(new ItemDrawable(new ItemStack(Blocks.GRASS_BLOCK))
                                         .asIcon()
                                         .asHoverable()
                                         .tooltip(richTooltip -> richTooltip.addFromItem(new ItemStack(Blocks.GRASS_BLOCK))
-                                                .add(IKey.GRAY + "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.")))
+                                                .add(Text.GRAY + "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.")))
                                 .add(", nice to ")
-                                .add(new ItemDrawable(new ItemStack(Items.PORKCHOP))
+                                .addDrawable(new ItemDrawable(new ItemStack(Items.PORKCHOP))
                                         .asIcon()
                                         .asInteractable()
-                                        .onMousePressed((x, y, button) -> {
+                                        .onMousePressed((context, button) -> {
                                             ModularUI.LOGGER.info("Pressed Pork");
                                             return true;
                                         }))
                                 .add(" you. ")
-                                .add(IKey.GREEN + "This is a long ")
-                                .add(IKey.str("string").style(IKey.DARK_PURPLE)
+                                .add(Text.str("This is a long ").style(Text.GREEN))
+                                .addDrawable(Text.str("string").style(Text.DARK_PURPLE)
                                         .asTextIcon()
                                         .asHoverable()
                                         .addTooltipLine("Text Tooltip"))
-                                .add(" of characters" + IKey.RESET)
+                                .add(" of characters" + Text.RESET)
                                 .add(" and not numbers as some might think...")
                                 .newLine()
                                 .newLine()
-                                .add(IKey.comp(IKey.comp(
-                                                IKey.str("Underline all: "),
-                                                IKey.comp(
-                                                                IKey.str("Green Text, "),
-                                                                IKey.str("this is red").style(IKey.RED),
-                                                                IKey.str(" and this should be green again"))
-                                                        .style(IKey.GREEN),
-                                                IKey.str(". Still underlined, "))
-                                        .style(IKey.UNDERLINE), IKey.str("but not anymore.")))
+                                .add(Text.comp(Text.comp(
+                                                Text.str("Underline all: "),
+                                                Text.comp(
+                                                                Text.str("Green Text, "),
+                                                                Text.str("this is red").style(Text.RED),
+                                                                Text.str(" and this should be green again"))
+                                                        .style(Text.GREEN),
+                                                Text.str(". Still underlined, "))
+                                        .style(Text.UNDERLINE), Text.str("but not anymore.")))
                                 .newLine()
-                                .add(IKey.str("Green, %s, %s and green again",
-                                        IKey.str("red").style(IKey.RED),
-                                        IKey.str("underline").style(null, IKey.UNDERLINE)
-                                ).style(IKey.GREEN))
+                                .addDrawable(Text.str("Green, %s, %s and green again",
+                                        Text.str("red").style(Text.RED),
+                                        Text.str("underline").style(null, Text.UNDERLINE)
+                                ).style(Text.GREEN))
                                 .newLine()
-                                .add(IKey.RESET + "" + IKey.UNDERLINE + "Underlined" + IKey.RESET)
+                                .add(Text.RESET + "" + Text.UNDERLINE + "Underlined" + Text.RESET)
                                 .newLine()
-                                .add("A long line which should wrap around")
+                                .add("A long line which should wrap around. You just need §5I§dm§4a§cg§ei§an§ba§3t§7i§1o§5n§7§r to read this.")
                                 .newLine()
-                                .addLine(IKey.comp(IKey.str("Dynamic ").style(IKey.GOLD), IKey.dynamicKey(() -> {
+                                .addLine(Text.comp(Text.str("Dynamic ").style(Text.GOLD), Text.dynamic(() -> {
                                     int i = integer.getIntValue() + 1;
                                     integer.setIntValue(i);
-                                    return IKey.str("key [%s]", IKey.str("arg")
-                                                    .style(IKey.UNDERLINE, IKey.BLACK))
-                                            .style(i % 30 > 5 ? IKey.RED : IKey.DARK_BLUE);
-                                }).style(IKey.BOLD), IKey.str(" Test")))
+                                    return Text.str("key [%s]", Text.str("arg")
+                                                    .style(Text.UNDERLINE, Text.BLACK))
+                                            .style(i % 30 > 5 ? Text.RED : Text.DARK_BLUE);
+                                }).fallbackStyle(Text.BOLD), Text.str(" Test")))
                                 .textShadow(false)
                         ));
     }
 
-    public static @NotNull ModularPanel buildWorldSchemaUI() {
+    public static @NotNull ModularPanel<?> buildWorldSchemaUI() {
         /*TrackedDummyWorld world = new TrackedDummyWorld();
         world.addBlock(new BlockPos(0, 0, 0), new BlockInfo(Blocks.DIAMOND_BLOCK.getDefaultState()));
         world.addBlock(new BlockPos(0, 1, 0), new BlockInfo(Blocks.BEDROCK.getDefaultState()));
@@ -412,18 +415,18 @@ public class TestGuis extends CustomModularScreen {
         return panel;
     }
 
-    public static ModularPanel buildCollapseDisabledChildrenUI() {
+    public static ModularPanel<?> buildCollapseDisabledChildrenUI() {
         Random rnd = new Random();
         return ModularPanel.defaultPanel("list", 100, 150)
                 .padding(7)
                 .child(new ListWidget<>()
                         .sizeRel(1f)
-                        .collapseDisabledChild()
+                        .collapseDisabledChildren()
                         .children(12, i -> new Widget<>()
                                 .widthRel(1f)
                                 .height(16)
                                 .widgetTheme(IThemeApi.BUTTON)
-                                .overlay(IKey.str(String.valueOf(i + 1)))
+                                .overlay(Text.str(String.valueOf(i + 1)))
                                 .onUpdateListener(w -> {
                                     if (rnd.nextDouble() < 0.05) {
                                         w.setEnabled(!w.isEnabled());
@@ -431,7 +434,7 @@ public class TestGuis extends CustomModularScreen {
                                 })));
     }
 
-    public static @NotNull ModularPanel buildSearchTest() {
+    public static @NotNull ModularPanel<?> buildSearchTest() {
         StringValue searchValue = new StringValue("");
         return ModularPanel.defaultPanel("search", 130, 200)
                 .child(Flow.column()
@@ -442,12 +445,12 @@ public class TestGuis extends CustomModularScreen {
                                 .widthRel(1f)
                                 .autoUpdateOnChange(true))
                         .child(new ListWidget<>()
-                                .collapseDisabledChild()
+                                .collapseDisabledChildren()
                                 .expanded()
                                 .widthRel(1f)
                                 .children(ForgeRegistries.ITEMS, item -> {
                                     ItemStack stack = new ItemStack(item);
-                                    String text = stack.getDisplayName().getString();
+                                    String text = stack.getHoverName().getString();
                                     return Flow.row()
                                             .height(20).widthRel(1f)
                                             .padding(2)
@@ -456,7 +459,7 @@ public class TestGuis extends CustomModularScreen {
                                             .mainAxisAlignment(Alignment.MainAxis.SPACE_BETWEEN)
                                             .setEnabledIf(w -> text.toLowerCase().contains(searchValue.getStringValue()))
                                             .child(new ItemDrawable(stack).asWidget())
-                                            .child(new ScrollingTextWidget(IKey.str(text))
+                                            .child(new ScrollingTextWidget(Text.str(text))
                                                     .widgetTheme(IThemeApi.BUTTON)
                                                     .textAlign(Alignment.CENTER)
                                                     .expanded()
@@ -465,7 +468,7 @@ public class TestGuis extends CustomModularScreen {
                                 })));
     }
 
-    public static @NotNull ModularPanel buildColorTheoryUI() {
+    public static @NotNull ModularPanel<?> buildColorTheoryUI() {
         List<Pair<Integer, Float>> colors = new ArrayList<>();
         for (ColorShade shade : ColorShade.getAll()) {
             for (int c : shade) {
@@ -503,15 +506,17 @@ public class TestGuis extends CustomModularScreen {
             }
         };
 
-        ModularPanel panel = new ModularPanel("colors").width(300).coverChildrenHeight().padding(7);
+        ModularPanel<?> panel = new ModularPanel<>("colors").width(300).coverChildrenHeight().padding(7);
 
-        IPanelHandler colorPicker1 = IPanelHandler.simple(panel, (mainPanel, player) -> new ColorPickerDialog("color_picker1", color1::color, color1.getColor(), true)
-                .setDraggable(true)
+        IPanelHandler colorPicker1 = IPanelHandler.simple(panel, (mainPanel, player) -> new ColorPickerDialog("color_picker1", color1.getColor(), true)
+                .resultConsumer(color1::color)
+                .draggable(true)
                 .relative(panel)
                 .top(0)
                 .rightRel(1f), true);
-        IPanelHandler colorPicker2 = IPanelHandler.simple(panel, (mainPanel, player) -> new ColorPickerDialog("color_picker2", color2::color, color2.getColor(), true)
-                .setDraggable(true)
+        IPanelHandler colorPicker2 = IPanelHandler.simple(panel, (mainPanel, player) -> new ColorPickerDialog("color_picker2", color2.getColor(), true)
+                .resultConsumer(color2::color)
+                .draggable(true)
                 .relative(panel)
                 .top(0)
                 .leftRel(1f), true);
@@ -519,9 +524,9 @@ public class TestGuis extends CustomModularScreen {
         return panel
                 .child(Flow.column()
                         .coverChildrenHeight()
-                        .child(IKey.str("Colors sorted by luminance").asWidget().margin(1))
+                        .child(Text.str("Colors sorted by luminance").asWidget().margin(1))
                         .child(luminanceSortedColors.asWidget().widthRel(1f).height(10))
-                        .child(IKey.str("Blending color").asWidget().margin(1).marginTop(2))
+                        .child(Text.str("Blending color").asWidget().margin(1).marginTop(2))
                         .child(Flow.row()
                                 .coverChildrenHeight()
                                 .mainAxisAlignment(Alignment.MainAxis.SPACE_BETWEEN)
@@ -529,58 +534,58 @@ public class TestGuis extends CustomModularScreen {
                                         .name("color picker button 1")
                                         .background(color1)
                                         .disableHoverBackground()
-                                        .onMousePressed((x, y, mouseButton) -> {
+                                        .onMousePressed((context, mouseButton) -> {
                                             colorPicker1.openPanel();
                                             return true;
                                         }))
-                                .child(IKey.str("<--  Select colors  -->").asWidget())
+                                .child(Text.str("<--  Select colors  -->").asWidget())
                                 .child(new ButtonWidget<>()
                                         .name("color picker button 2")
                                         .background(color2)
                                         .disableHoverBackground()
-                                        .onMousePressed((x, y, mouseButton) -> {
+                                        .onMousePressed((context, mouseButton) -> {
                                             colorPicker2.openPanel();
                                             return true;
                                         })))
-                        .child(IKey.str("OpenGL color gradient").asWidget().margin(1))
+                        .child(Text.str("OpenGL color gradient").asWidget().margin(1))
                         .child(gradient.asWidget().widthRel(1f).height(10))
-                        .child(IKey.str("Gamma corrected gradient").asWidget().margin(1))
+                        .child(Text.str("Gamma corrected gradient").asWidget().margin(1))
                         .child(correctedGradient.asWidget().widthRel(1f).height(10)));
     }
 
-    public static @NotNull ModularPanel buildViewportTransformUI() {
+    public static @NotNull ModularPanel<?> buildViewportTransformUI() {
         return new TestPanel("viewport_transform")
                 .child(new Widget<>()
-                        .align(Alignment.Center)
+                        .center()
                         .size(50, 50)
                         .background(GuiTextures.MC_BUTTON)
                         .hoverBackground(GuiTextures.MC_BUTTON_HOVERED));
     }
 
-    public static ModularPanel buildContextMenu() {
+    public static ModularPanel<?> buildContextMenu() {
         List<String> options1 = IntStream.range(0, 5).mapToObj(i -> "Option " + (i + 1)).collect(Collectors.toList());
         List<String> options2 = IntStream.range(0, 5).mapToObj(i -> "Sub Option " + (i + 1)).collect(Collectors.toList());
         ObjectValue<ItemStack> itemValue = new ObjectValue<>(ItemStack.class, new ItemStack(Items.ACACIA_DOOR));
-        return new ModularPanel("context_menu_test")
+        return new ModularPanel<>("context_menu_test")
                 .size(150)
                 .child(new ContextMenuButton<>("menu")
                         .top(7)
                         .width(100)
                         .horizontalCenter()
                         .height(16)
-                        .overlay(IKey.str("Menu"))
+                        .overlay(Text.str("Menu"))
                         .menuList(l -> l
                                 .maxSize(80)
-                                .children(options1, s -> IKey.str(s).asWidget())
+                                .children(options1, s -> Text.str(s).asWidget())
                                 .child(new ContextMenuButton<>("sub_menu")
                                         .widthRel(1f)
                                         .height(12)
-                                        .overlay(IKey.str("Sub Menu"))
+                                        .overlay(Text.str("Sub Menu"))
                                         .openRightDown()
                                         .menuList(l1 -> l1
                                                 //.width(90)
                                                 .maxSize(80)
-                                                .children(options2, s -> IKey.str(s).asWidget())))))
+                                                .children(options2, s -> Text.str(s).asWidget())))))
                 .child(new DropdownWidget<>("test_dropdown", ItemStack.class)
                         .top(45)
                         .width(100)
@@ -598,17 +603,17 @@ public class TestGuis extends CustomModularScreen {
                                 .padding(4, 1)
                                 .mainAxisAlignment(Alignment.MainAxis.SPACE_BETWEEN)
                                 .child(new ItemDrawable(item).asWidget())
-                                .child(IKey.str(item.getDisplayName().getString()).asWidget()
+                                .child(Text.str(item.getDisplayName().getString()).asWidget()
                                         .widgetTheme(IThemeApi.BUTTON)
                                         .invisible()))
                 );
     }
 
-    public static @NotNull ModularPanel buildGraphUI() {
+    public static @NotNull ModularPanel<?> buildGraphUI() {
         double[] x = DAM.linspace(-25, 25, 200);
         // sin(x) / x
         double[] y1 = DAM.div(DAM.sin(x, null), x, null);
-        return new ModularPanel("graph")
+        return new ModularPanel<>("graph")
                 .size(200, 160)
                 .padding(5)
                 .overlay(new GraphDrawable()
@@ -616,34 +621,34 @@ public class TestGuis extends CustomModularScreen {
                         .plot(x, y1));
     }
 
-    public static @NotNull ModularPanel buildAspectRatioUI() {
-        return new ModularPanel("aspect_ratio")
+    public static @NotNull ModularPanel<?> buildAspectRatioUI() {
+        return new ModularPanel<>("aspect_ratio")
                 .coverChildren()
                 .padding(10)
-                .child(new Row()
+                .child(Flow.row()
                         .childPadding(10)
                         .coverChildren()
                         .child(new Rectangle().color(Color.BLUE_ACCENT.main)
                                 .asIcon().aspectRatio(4f / 3)
                                 .asWidget().size(80)
-                                .overlay(IKey.str("4:3 Free")))
+                                .overlay(Text.str("4:3 Free")))
                         .child(new Rectangle().color(Color.RED_ACCENT.main)
                                 .asIcon().aspectRatio(4f / 3).width(70)
                                 .asWidget().size(80)
-                                .overlay(IKey.str("4:3 | width = 70")))
+                                .overlay(Text.str("4:3 | width = 70")))
                         .child(new Rectangle().color(Color.LIGHT_GREEN.main)
                                 .asIcon().aspectRatio(4f / 3).height(45).alignment(Alignment.BottomRight)
                                 .asWidget().size(80)
-                                .overlay(IKey.str("4:3 | height = 45\nBottom Right"))))
+                                .overlay(Text.str("4:3 | height = 45\nBottom Right"))))
                 .overlay();
     }
 
-    public static @NotNull ModularPanel buildWrappedFlowUI() {
+    public static @NotNull ModularPanel<?> buildWrappedFlowUI() {
         IntList colors = new IntArrayList(LIGHT_COLORS);
         Random rnd = new Random();
         int minRectSize = 10;
         int maxRectSize = 40;
-        return new ModularPanel("wrapped_flow")
+        return new ModularPanel<>("wrapped_flow")
                 .size(150)
                 .padding(4)
                 .child(Flow.row()
@@ -656,7 +661,7 @@ public class TestGuis extends CustomModularScreen {
                         .mainAxisAlignment(Alignment.MainAxis.CENTER)
                         .childPadding(2)
                         .crossAxisChildPadding(2)
-                        .background(rndRect(colors, rnd))
+                        .background(new Rectangle().color(DARK_COLORS.getInt(rnd.nextInt(DARK_COLORS.size()))))
                         .children(5, i -> {
                             IWidget widget = rndRect(colors, rnd).asWidget()
                                     .width(rnd.nextInt(maxRectSize - minRectSize) + minRectSize)
@@ -674,12 +679,66 @@ public class TestGuis extends CustomModularScreen {
         return new Rectangle().color(c);
     }
 
-    private static class TestPanel extends ModularPanel {
+    public static @NotNull ModularPanel<?> buildMachineLikeUI() {
+        return new ModularPanel<>("machine_like")
+                .coverChildren()
+                .padding(7)
+                .child(Flow.col()
+                        .coverChildren()
+                        .childPadding(8)
+                        .child(Flow.row().name("machine_inventory")
+                                .coverChildren()
+                                .childPadding(8)
+                                .child(SlotGroupWidget.builder()
+                                        .matrix("II", "II")
+                                        .key('I', i -> new ItemDisplayWidget().item(TestHandler.getRandomItem()))
+                                        .build()
+                                        .coverChildren())
+                                .child(new ProgressWidget()
+                                        .size(20)
+                                        .texture(GuiTextures.PROGRESS_ARROW, 20)
+                                        .value(new DoubleValue.Dynamic(() -> Util.getMillis() % 5000 / 5000.0, null)))
+                                .child(SlotGroupWidget.builder()
+                                        .matrix("II", "II")
+                                        .key('I', i -> new ItemDisplayWidget().item(TestHandler.getRandomItem()))
+                                        .build()
+                                        .coverChildren()))
+                        .child(SlotGroupWidget.builder()
+                                .matrix("IIIIII", "IIIIII")
+                                .key('I', i -> new ItemDisplayWidget().item(ItemStack.EMPTY))
+                                .build()
+                                .coverChildren()
+                                .name("play_inventory_mimic")))
+                .child(new ParentWidget<>()
+                        .coverChildren()
+                        .decoration()
+                        .padding(3)
+                        .background(GuiTextures.MC_BACKGROUND.getSubArea(0, 0, 1, 0.5f))
+                        .horizontalCenter()
+                        .anchorTop(1)
+                        .child(Text.str("Machine Name").asWidget())
+                        .name("title"))
+                .child(new ParentWidget<>()
+                        .coverChildren()
+                        .decoration()
+                        .padding(3)
+                        .paddingLeft(1)
+                        .background(GuiTextures.MC_BACKGROUND.getSubArea(0.5f, 0, 1, 1f))
+                        .bottom(7)
+                        .rightRelAnchor(0, 1f)
+                        .child(new CycleButtonWidget()
+                                .value(new IntValue(0))
+                                .stateCount(3)
+                                .stateOverlay(GuiTextures.CYCLE_BUTTON_DEMO))
+                        .name("side_options"));
+    }
+
+    private static class TestPanel extends ModularPanel<TestPanel> {
 
         public TestPanel(String name) {
             super(name);
             //background(GuiTextures.BACKGROUND);
-            align(Alignment.Center).size(100, 100);
+            size(100, 100);
         }
 
         @Override

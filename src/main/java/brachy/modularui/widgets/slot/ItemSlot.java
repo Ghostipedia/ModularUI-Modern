@@ -8,7 +8,7 @@ import brachy.modularui.api.widget.Interactable;
 import brachy.modularui.core.mixins.client.AbstractContainerScreenAccessor;
 import brachy.modularui.core.mixins.client.ScreenAccessor;
 import brachy.modularui.drawable.GuiDraw;
-import brachy.modularui.drawable.text.TextRenderer;
+import brachy.modularui.integration.recipeviewer.RecipeSlotRole;
 import brachy.modularui.integration.recipeviewer.entry.item.ItemStackList;
 import brachy.modularui.integration.recipeviewer.handlers.IngredientProvider;
 import brachy.modularui.screen.ClientScreenHandler;
@@ -18,6 +18,8 @@ import brachy.modularui.theme.SlotTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.value.sync.ItemSlotSyncHandler;
 import brachy.modularui.widget.Widget;
+
+import lombok.Getter;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
@@ -44,11 +46,12 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
 
     public static final int SIZE = 18;
 
+    @Getter private RecipeSlotRole recipeRole = RecipeSlotRole.RENDER_ONLY;
+
     public static ItemSlot create(boolean phantom) {
         return phantom ? new PhantomItemSlot() : new ItemSlot();
     }
 
-    private static final TextRenderer textRenderer = new TextRenderer();
     private ItemSlotSyncHandler syncHandler;
     @Setter
     private RichTooltip tooltip;
@@ -144,20 +147,20 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
     }
 
     @Override
-    public @NotNull Result onMousePressed(double mouseX, double mouseY, int button) {
+    public @NotNull Result onMousePressed(int button) {
         ClientScreenHandler.clickSlot(getScreen(), getSlot());
         return Result.SUCCESS;
     }
 
     @Override
-    public boolean onMouseReleased(double mouseX, double mouseY, int button) {
+    public boolean onMouseReleased(int button) {
         ClientScreenHandler.releaseSlot();
         return true;
     }
 
     @Override
-    public void onMouseDrag(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        ClientScreenHandler.dragSlot(mouseX, mouseY, button, dragX, dragY);
+    public void onMouseDrag(int button, double dragX, double dragY) {
+        ClientScreenHandler.dragSlot(button, dragX, dragY);
     }
 
     public ModularSlot getSlot() {
@@ -220,7 +223,7 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
     }
 
     @OnlyIn(Dist.CLIENT)
-    private void drawSlot(ModularGuiContext context, ModularSlot slotIn) {
+    private void drawSlot(ModularGuiContext context, ModularSlot slot) {
         // TODO: NEA animations
         Screen screen = getScreen().getScreenWrapper().wrappedScreen();
         if (!(screen instanceof AbstractContainerScreen<?> containerScreen)) {
@@ -228,39 +231,37 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
         }
 
         AbstractContainerScreenAccessor acc = (AbstractContainerScreenAccessor) containerScreen;
-        ItemStack slotStack = slotIn.getItem();
+        ItemStack slotStack = slot.getItem();
         boolean isDragPreview = false;
-        boolean doDrawItem = slotIn == acc.getClickedSlot() && !acc.getDraggingItem().isEmpty() &&
+        boolean doDrawItem = slot == acc.getClickedSlot() && !acc.getDraggingItem().isEmpty() &&
                 !acc.getIsSplittingStack();
+
         ItemStack carried = containerScreen.getMenu().getCarried();
         int amount = -1;
         String format = null;
 
         if (!getSyncHandler().isPhantom()) {
-            if (slotIn == acc.getClickedSlot() && !acc.getDraggingItem().isEmpty() && acc.getIsSplittingStack() &&
-                    !slotStack.isEmpty()) {
+            if (slot == acc.getClickedSlot() && !acc.getDraggingItem().isEmpty() && acc.getIsSplittingStack() && !slotStack.isEmpty()) {
                 slotStack = slotStack.copy();
                 slotStack.setCount(slotStack.getCount() / 2);
-            } else if (acc.getIsQuickCrafting() && acc.getQuickCraftSlots().contains(slotIn) && !carried.isEmpty()) {
+            } else if (acc.getIsQuickCrafting() && acc.getQuickCraftSlots().contains(slot) && !carried.isEmpty()) {
                 if (acc.getQuickCraftSlots().size() == 1) {
                     return;
                 }
 
-                if (AbstractContainerMenu.canItemQuickReplace(slotIn, carried, true) &&
-                        getScreen().getContainer().canDragTo(slotIn)) {
+                if (AbstractContainerMenu.canItemQuickReplace(slot, carried, true) && getScreen().getContainer().canDragTo(slot)) {
                     slotStack = carried.copy();
                     isDragPreview = true;
-                    AbstractContainerMenu.getQuickCraftPlaceCount(acc.getQuickCraftSlots(), acc.getQuickCraftingType(),
-                            slotStack);
-                    int k = Math.min(slotStack.getMaxStackSize(), slotIn.getMaxStackSize(slotStack));
 
-                    if (slotStack.getCount() > k) {
-                        amount = k;
+                    int maxSize = Math.min(slotStack.getMaxStackSize(), slot.getMaxStackSize(slotStack));
+                    amount = slot.getItem().getCount();
+                    amount += AbstractContainerMenu.getQuickCraftPlaceCount(acc.getQuickCraftSlots(), acc.getQuickCraftingType(), slotStack);
+                    if (amount > maxSize) {
+                        amount = maxSize;
                         format = ChatFormatting.YELLOW.toString();
-                        slotStack.setCount(k);
                     }
                 } else {
-                    acc.getQuickCraftSlots().remove(slotIn);
+                    acc.getQuickCraftSlots().remove(slot);
                     acc.invokeRecalculateQuickCraftRemaining();
                 }
             }
@@ -308,8 +309,13 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
         return ItemStack.class;
     }
 
+    public ItemSlot recipeRole(RecipeSlotRole recipeRole) {
+        this.recipeRole = recipeRole;
+        return this;
+    }
+
     @Override
     public UnaryOperator<ItemStack> renderMappingFunction() {
-        return this.itemHook;
+        return this.itemHook != null ? this.itemHook : UnaryOperator.identity();
     }
 }

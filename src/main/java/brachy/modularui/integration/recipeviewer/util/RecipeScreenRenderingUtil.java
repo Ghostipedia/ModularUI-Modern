@@ -14,7 +14,12 @@ import org.jetbrains.annotations.ApiStatus;
 
 public class RecipeScreenRenderingUtil {
 
-    public static final IItemHandlerModifiable EMPTY_ITEM_HANDLER = new EmptyItemHandler();
+    public static final IItemHandlerModifiable EMPTY_ITEM_HANDLER = new EmptyItemHandler() {
+        @Override
+        public int getSlots() {
+            return 1;
+        }
+    };
 
     @ApiStatus.Internal
     public static void drawScreenBackground(GuiGraphics guiGraphics, ModularScreen screen,

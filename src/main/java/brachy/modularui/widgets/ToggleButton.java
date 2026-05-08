@@ -3,11 +3,14 @@ package brachy.modularui.widgets;
 import brachy.modularui.api.ITheme;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.value.IBoolValue;
+import brachy.modularui.api.value.IIntValue;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.screen.RichTooltip;
 import brachy.modularui.theme.SelectableTheme;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
+
+import brachy.modularui.value.BoolValue;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -50,6 +53,10 @@ public class ToggleButton extends AbstractCycleButtonWidget<ToggleButton> {
         return super.value(boolValue);
     }
 
+    public ToggleButton valueWrapped(IIntValue<?> intValue, int trueValue) {
+        return value(new BoolValue.Dynamic(() -> intValue.getIntValue() == trueValue, v -> intValue.setIntValue(trueValue)));
+    }
+
     public ToggleButton selectedBackground(IDrawable... selectedBackground) {
         return background(true, selectedBackground);
     }
@@ -59,18 +66,18 @@ public class ToggleButton extends AbstractCycleButtonWidget<ToggleButton> {
     }
 
     @Override
-    public ToggleButton background(IDrawable... selectedBackground) {
+    public ToggleButton backgroundOverlay(IDrawable... selectedBackground) {
         return background(false, selectedBackground);
     }
 
     @Override
-    public ToggleButton hoverBackground(IDrawable... selectedHoverBackground) {
+    public ToggleButton hoverBackgroundOverlay(IDrawable... selectedHoverBackground) {
         return hoverBackground(false, selectedHoverBackground);
     }
 
     public ToggleButton background(boolean selected, IDrawable... background) {
         this.background = addToArray(this.background, background, selected ? 1 : 0);
-        return this;
+        return disableThemeBackground(true);
     }
 
     public ToggleButton overlay(boolean selected, IDrawable... overlay) {
@@ -80,7 +87,7 @@ public class ToggleButton extends AbstractCycleButtonWidget<ToggleButton> {
 
     public ToggleButton hoverBackground(boolean selected, IDrawable... background) {
         this.hoverBackground = addToArray(this.hoverBackground, background, selected ? 1 : 0);
-        return this;
+        return disableHoverThemeBackground(true);
     }
 
     public ToggleButton hoverOverlay(boolean selected, IDrawable... overlay) {

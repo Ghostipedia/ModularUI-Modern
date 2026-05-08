@@ -20,11 +20,7 @@ import brachy.modularui.widgets.slot.ItemSlot;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
-import net.minecraft.locale.Language;
-import net.minecraft.network.chat.FormattedText;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
 
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.stack.EmiIngredient;
@@ -42,11 +38,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-public abstract class ModularUIEmiRecipe<T extends Recipe<?>, W extends IWidget> implements EmiRecipe {
+public abstract class ModularUIEmiRecipe implements EmiRecipe {
 
-    @Getter
-    protected final RecipeHolder<T> recipe;
     protected final MemoizedSupplier<ModularScreen> screen;
+
+    private final ResourceLocation recipeId;
 
     @Getter
     public final List<EmiIngredient> inputs;
@@ -62,30 +58,30 @@ public abstract class ModularUIEmiRecipe<T extends Recipe<?>, W extends IWidget>
 
     public boolean allowRecipeTree = true;
 
-    public ModularUIEmiRecipe(RecipeHolder<T> recipe, Supplier<W> widgetSupplier) {
-        this.recipe = recipe;
+    public ModularUIEmiRecipe(ResourceLocation recipeId, Supplier<IWidget> widgetSupplier) {
 
+        this.recipeId = recipeId;
         this.inputs = new ArrayList<>();
         this.outputs = new ArrayList<>();
         this.catalysts = new ArrayList<>();
 
-        W recipeWidget = widgetSupplier.get();
+        IWidget recipeWidget = widgetSupplier.get();
         this.displayWidth = recipeWidget.getArea().width;
         this.displayHeight = recipeWidget.getArea().height;
         this.bounds = new Bounds(0, 0, this.displayWidth, this.displayHeight);
 
         this.screen = Memoizer.memoize(() -> {
-            W widget = widgetSupplier.get();
-            ModularPanel panel = ModularPanel.defaultPanel(recipe.id().toString(), widget.getArea().w(), widget.getArea().h());
+            IWidget widget = widgetSupplier.get();
+            ModularPanel<?> panel = ModularPanel.defaultPanel(recipeId.toString(), widget.getArea().w(), widget.getArea().h());
             panel.child(widget);
-            return new ModularScreen(recipe.id().getNamespace(), panel);
+            return new ModularScreen(recipeId.getNamespace(), panel);
         }, Duration.ofSeconds(10));
 
         WidgetTree.foreachChildBFS(recipeWidget, widget -> {
             if (!(widget instanceof IngredientProvider<?> provider)) {
                 return true;
             }
-            RecipeSlotRole role = provider.recipeRole();
+            RecipeSlotRole role = provider.getRecipeRole();
             if (role == RecipeSlotRole.RENDER_ONLY) {
                 return true;
             }
@@ -117,7 +113,7 @@ public abstract class ModularUIEmiRecipe<T extends Recipe<?>, W extends IWidget>
         WidgetTree.foreachChildBFS(this.screen.get().getMainPanel(), widget -> {
             if (!(widget instanceof IngredientProvider<?> provider)) return true;
 
-            RecipeSlotRole role = provider.recipeRole();
+            RecipeSlotRole role = provider.getRecipeRole();
             if (role == RecipeSlotRole.RENDER_ONLY) return true;
 
             EmiStackConverter.Converter<?> converter = EmiStackConverter.getForNullable(provider.ingredientClass());
@@ -154,10 +150,8 @@ public abstract class ModularUIEmiRecipe<T extends Recipe<?>, W extends IWidget>
             }
             if (widget instanceof ITooltip<?> tooltip && tooltip.hasTooltip()) {
                 if (tooltip.tooltip().getRichText() instanceof RichText richText) {
-                    var textList = richText.getAsText();
-                    for (FormattedText line : textList) {
-                        slotWidget
-                                .appendTooltip(() -> ClientTooltipComponent.create(Language.getInstance().getVisualOrder(line)));
+                    for (ClientTooltipComponent text : richText.getAsText().toClientTooltipComponents()) {
+                        slotWidget.appendTooltip(() -> text);
                     }
                 }
             }
@@ -169,7 +163,7 @@ public abstract class ModularUIEmiRecipe<T extends Recipe<?>, W extends IWidget>
 
     @Override
     public @Nullable ResourceLocation getId() {
-        return this.recipe.id();
+        return recipeId;
     }
 
     @Override
@@ -197,7 +191,7 @@ public abstract class ModularUIEmiRecipe<T extends Recipe<?>, W extends IWidget>
 
         @Override
         public boolean mouseClicked(int mouseX, int mouseY, int button) {
-            return screen.get().onMousePressed(mouseX, mouseY, button);
+            return screen.get().mousePressed(mouseX, mouseY, button);
         }
 
         @Override

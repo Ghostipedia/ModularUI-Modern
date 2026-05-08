@@ -5,7 +5,7 @@ import brachy.modularui.ModularUIConfig;
 import brachy.modularui.api.IThemeApi;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.IIcon;
-import brachy.modularui.api.drawable.IKey;
+import brachy.modularui.api.drawable.Text;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.factory.ClientGUI;
@@ -22,7 +22,9 @@ import brachy.modularui.theme.ThemeBuilder;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Color;
 
+import com.mojang.datafixers.util.Either;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
@@ -30,10 +32,12 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
+import net.minecraftforge.registries.ForgeRegistries;
+
 import org.jetbrains.annotations.NotNull;
 
 @EventBusSubscriber(modid = ModularUI.MOD_ID, value = Dist.CLIENT)
-public class ClientTestEventHandler {
+public class TestHandler {
 
     public static boolean enabledRichTooltipEventTest = false;
     public static final String TEST_THEME = "mui:test_theme";
@@ -57,36 +61,58 @@ public class ClientTestEventHandler {
         }
     }.asIcon().height(3);
 
+    private static List<ItemStack> allItems = null;
+
+    public static ItemStack getRandomItem() {
+        if (allItems == null) {
+            allItems = new ArrayList<>();
+            for (Item item : ForgeRegistries.ITEMS) {
+                allItems.add(new ItemStack(item));
+            }
+        }
+        return allItems.get(new Random().nextInt(allItems.size())).copy();
+    }
+
+    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onItemUse(PlayerInteractEvent.RightClickItem event) {
         if (event.getEntity().level().isClientSide && ModularUI.isDev()) {
             ItemStack itemStack = event.getItemStack();
             if (itemStack.getItem() == Items.DIAMOND) {
                 ClientGUI.open(new TestGuis());
-            } /*else if (itemStack.getItem() == Items.EMERALD) {
-                HoloUI.builder()
-                        .inFrontOf(MCHelper.getPlayer(), 5, false)
-                        .screenScale(0.5f)
-                        .open(new TestGui());
-            }*/
+            }
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
-    public static void onRichTooltip(RichTooltipEvent.Pre event) {
+    public static void onRichTooltip(RichTooltipEvent.Gather.Post event) {
         if (enabledRichTooltipEventTest && ModularUI.isDev()) {
+            // adds decoration to every mui tooltip
             event.getTooltip()
-                    .add(IKey.str("Powered By: ").style(IKey.GOLD, IKey.ITALIC))
-                    .add(GuiTextures.MUI_LOGO.asIcon().size(18)).newLine()
+                    .moveCursorToEnd()
+                    .newLine()
+                    .add(Text.str("Powered By: ").style(Text.GOLD, Text.ITALIC))
+                    .addDrawable(GuiTextures.MUI_LOGO.asIcon().size(18)).newLine()
                     .moveCursorToStart()
                     .moveCursorToNextLine()
-                    .addLine(tooltipLine)
+                    .addDrawableLine(tooltipLine)
                     // replaces the Minecraft mod name in JEI item tooltips
-                    .replace("Minecraft", key -> IKey.str("Chicken Jockey").style(IKey.BLUE, IKey.ITALIC))
+                    .replace("Minecraft", key -> Text.str("Chicken Jockey").style(Text.BLUE, Text.ITALIC))
                     .moveCursorToEnd();
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
+    @SubscribeEvent
+    public static void onVanillaTooltip(RenderTooltipEvent.GatherComponents event) {
+        if (enabledRichTooltipEventTest && event.getItemStack().getItem() == Items.DIAMOND) {
+            // adds a tooltip line to diamond even inside mui uis
+            event.getTooltipElements().add(Either.left(Text.str("Hello from ModularUI").style(Text.GOLD)));
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onThemeReload(ReloadThemeEvent.Pre event) {
         if (ModularUI.isDev()) {
@@ -94,6 +120,7 @@ public class ClientTestEventHandler {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onOpenScreen(OpenScreenEvent event) {
         if (ModularUIConfig.enableTestOverlays()) {
@@ -129,11 +156,12 @@ public class ClientTestEventHandler {
                                 })));
     }*/
 
+    @OnlyIn(Dist.CLIENT)
     private static ModularScreen getContainerOverlayTest(AbstractContainerScreen<?> gui) {
         return new CustomModularScreen(ModularUI.MOD_ID) {
 
             @Override
-            public @NotNull ModularPanel buildUI(ModularGuiContext context) {
+            public @NotNull ModularPanel<?> buildUI(ModularGuiContext context) {
                 return ModularPanel.defaultPanel("watermark_overlay", gui.getXSize(), gui.getYSize())
                         .pos(gui.getGuiLeft(), gui.getGuiTop())
                         .invisible()

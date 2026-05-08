@@ -4,6 +4,7 @@ import brachy.modularui.ModularUIConfig;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.value.IDoubleValue;
 import brachy.modularui.api.value.ISyncOrValue;
+import brachy.modularui.api.value.IValue;
 import brachy.modularui.drawable.UITexture;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.screen.viewport.ModularGuiContext;
@@ -13,11 +14,15 @@ import brachy.modularui.utils.Color;
 import brachy.modularui.value.DoubleValue;
 import brachy.modularui.widget.Widget;
 
+import lombok.Getter;
+
 import net.minecraft.util.Mth;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.DoubleSupplier;
 
@@ -26,14 +31,10 @@ public class ProgressWidget extends Widget<ProgressWidget> {
 
     private final UITexture[] fullTexture = new UITexture[4];
     private UITexture emptyTexture;
-    @Setter
-    private Direction direction = Direction.RIGHT;
+    @Getter private Direction direction = Direction.RIGHT;
     private int imageSize = -1;
 
-    private IDoubleValue<?> doubleValue;
-
-    private IDrawable label;
-    private int labelWidth, labelHeight;
+    @Getter private IDoubleValue<?> doubleValue;
 
     @Override
     public void onInit() {
@@ -93,35 +94,25 @@ public class ProgressWidget extends Widget<ProgressWidget> {
                 case RIGHT:
                     u1 = progress;
                     width *= progress;
-                    labelXOffset = -labelWidth / 2f;
-                    labelYOffset = -height / 2 - 2;
                     break;
                 case LEFT:
                     u0 = 1 - progress;
                     width *= progress;
                     x = getArea().width - width;
-                    labelXOffset = -labelWidth / 2f;
-                    labelYOffset = -height / 2 - 2;
                     break;
                 case DOWN:
                     v1 = progress;
                     height *= progress;
                     labelXOffset = width / 2 + 2;
-                    labelYOffset = -labelHeight / 2f;
                     break;
                 case UP:
                     v0 = 1 - progress;
                     height *= progress;
                     y = getArea().height - height;
                     labelXOffset = width / 2 + 2;
-                    labelYOffset = -labelHeight / 2f;
                     break;
             }
             this.fullTexture[0].drawSubArea(context, x, y, width, height, u0, v0, u1, v1, widgetTheme);
-            if (this.label != null) {
-                this.label.draw(context, (int) (x + labelXOffset - width), (int) (y + labelYOffset), labelWidth,
-                        labelHeight, widgetTheme);
-            }
         }
     }
 
@@ -173,13 +164,15 @@ public class ProgressWidget extends Widget<ProgressWidget> {
                 1.0f, 1.0f, widgetTheme); // BR, draw LEFT
     }
 
+
+    @Override
+    public @Nullable IDoubleValue<?> getValue() {
+        return doubleValue;
+    }
+
     public ProgressWidget value(IDoubleValue<?> value) {
         setSyncOrValue(ISyncOrValue.orEmpty(value));
         return this;
-    }
-
-    public ProgressWidget progress(DoubleSupplier progress) {
-        return value(new DoubleValue.Dynamic(progress, null));
     }
 
     public ProgressWidget progress(double progress) {
@@ -207,10 +200,8 @@ public class ProgressWidget extends Widget<ProgressWidget> {
         return texture(texture.getSubArea(0, 0, 1, 0.5f), texture.getSubArea(0, 0.5f, 1, 1), imageSize);
     }
 
-    public ProgressWidget label(IDrawable label, int width, int height) {
-        this.label = label;
-        this.labelWidth = width;
-        this.labelHeight = height;
+    public ProgressWidget direction(Direction direction) {
+        this.direction = direction;
         return this;
     }
 

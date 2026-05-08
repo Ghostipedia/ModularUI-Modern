@@ -11,7 +11,7 @@ java {
 jar.archiveClassifier = ""
 
 base {
-    archivesName = "${project.name}-${libs.versions.minecraft.get()}"
+    archivesName = "${project.name}-mc${libs.versions.minecraft.get()}"
 }
 
 afterEvaluate {
