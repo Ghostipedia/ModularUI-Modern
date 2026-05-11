@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public abstract class AbstractGenericSyncValue<T> extends ValueSyncHandler<T> {
+public abstract class AbstractGenericSyncValue<T, S extends AbstractGenericSyncValue<T, S>> extends ValueSyncHandler<T, S> {
 
     private final Class<T> type;
     private final Supplier<T> getter;
@@ -124,8 +124,8 @@ public abstract class AbstractGenericSyncValue<T> extends ValueSyncHandler<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public <V> AbstractGenericSyncValue<V> cast() {
-        return (AbstractGenericSyncValue<V>) this;
+    public <V> AbstractGenericSyncValue<V, ?> cast() {
+        return (AbstractGenericSyncValue<V, ?>) this;
     }
 
     /**

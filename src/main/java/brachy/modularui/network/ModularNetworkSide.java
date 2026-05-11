@@ -30,8 +30,7 @@ public abstract class ModularNetworkSide {
     abstract void sendPacket(NetworkHandler.INetPacket packet, Player player);
 
     void activateInternal(int networkId, ModularSyncManager manager) {
-        if (activeScreens.containsKey(networkId))
-            throw new IllegalStateException("Network ID " + networkId + " is already active.");
+        if (activeScreens.containsKey(networkId)) throw new IllegalStateException("Network ID " + networkId + " is already active.");
         activeScreens.put(networkId, manager);
         inverseActiveScreens.put(manager, networkId);
     }
@@ -80,7 +79,7 @@ public abstract class ModularNetworkSide {
     }
 
     @ApiStatus.Internal
-    public void sendSyncHandlerPacket(String panel, SyncHandler syncHandler, FriendlyByteBuf buffer, Player player) {
+    public void sendSyncHandlerPacket(String panel, SyncHandler<?> syncHandler, FriendlyByteBuf buffer, Player player) {
         ModularSyncManager msm = syncHandler.getSyncManager().getModularSyncManager();
         if (!inverseActiveScreens.containsKey(msm)) return;
         int id = inverseActiveScreens.getInt(msm);

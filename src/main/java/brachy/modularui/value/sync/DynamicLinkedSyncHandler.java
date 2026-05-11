@@ -12,8 +12,14 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?>> extends SyncHandler
-        implements IDynamicSyncNotifiable {
+/**
+ * This is a variation of {@link DynamicSyncHandler} with the difference that this is linked to a {@link ValueSyncHandler}.
+ * This sync handler is automatically notified, when the linked value is updated. The widget provider here has the linked sync handler as an
+ * argument instead of a packet.
+ * To use it simply pass in a registered value sync handler into the constructor and link it to a
+ * {@link com.cleanroommc.modularui.widgets.DynamicSyncedWidget DynamicSyncedWidget}.
+ */
+public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?, ?>> extends SyncHandler<DynamicLinkedSyncHandler<S>> implements IDynamicSyncNotifiable {
 
     private IWidgetProvider<S> widgetProvider;
     private Consumer<IWidget> onWidgetUpdate;
@@ -120,7 +126,7 @@ public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?>> extends Syn
         }
     }
 
-    public interface IWidgetProvider<S extends ValueSyncHandler<?>> {
+    public interface IWidgetProvider<S extends ValueSyncHandler<?, ?>> {
 
         /**
          * This is the function which creates a widget on client and server.

@@ -7,7 +7,7 @@ import brachy.modularui.utils.MouseData;
 
 import net.minecraft.network.FriendlyByteBuf;
 
-public class InteractionSyncHandler extends SyncHandler {
+public class InteractionSyncHandler extends SyncHandler<InteractionSyncHandler> {
 
     private IServerMouseAction mousePressed;
     private IServerMouseAction mouseReleased;

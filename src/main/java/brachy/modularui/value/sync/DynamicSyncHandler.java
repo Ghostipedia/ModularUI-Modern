@@ -24,7 +24,7 @@ import java.util.function.Supplier;
  * {@link ISyncRegistrar#getOrCreateSyncHandler(String, int, Class, Supplier)}.
  */
 @ApiStatus.Obsolete
-public class DynamicSyncHandler extends SyncHandler implements IDynamicSyncNotifiable {
+public class DynamicSyncHandler extends SyncHandler<DynamicSyncHandler> implements IDynamicSyncNotifiable {
 
     private IWidgetProvider widgetProvider;
     private Consumer<IWidget> onWidgetUpdate;

@@ -15,8 +15,7 @@ import java.util.Objects;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 
-public class IntSyncValue extends ValueSyncHandler<Integer>
-        implements IIntSyncValue<Integer>, IDoubleSyncValue<Integer>, IStringSyncValue<Integer> {
+public class IntSyncValue extends ValueSyncHandler<Integer, IntSyncValue> implements IIntSyncValue<Integer>, IDoubleSyncValue<Integer>, IStringSyncValue<Integer> {
 
     private int cache;
     private final IntSupplier getter;
@@ -86,7 +85,7 @@ public class IntSyncValue extends ValueSyncHandler<Integer>
 
     @Override
     public double getDoubleValue() {
-        return cache;
+        return this.cache;
     }
 
     @Override

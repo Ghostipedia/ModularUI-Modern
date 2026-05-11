@@ -7,7 +7,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import lombok.Getter;
 import lombok.Setter;
 
-public abstract class ValueSyncHandler<T> extends SyncHandler implements IValueSyncHandler<T> {
+public abstract class ValueSyncHandler<T, S extends ValueSyncHandler<T, S>> extends SyncHandler<S> implements IValueSyncHandler<T> {
 
     public static final int SYNC_VALUE = 0;
 
@@ -42,5 +42,10 @@ public abstract class ValueSyncHandler<T> extends SyncHandler implements IValueS
         if (this.changeListener != null) {
             this.changeListener.run();
         }
+    }
+
+    public S changeListener(Runnable changeListener) {
+        setChangeListener(changeListener);
+        return self();
     }
 }
