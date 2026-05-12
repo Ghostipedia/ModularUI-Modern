@@ -133,7 +133,9 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         }
         Area screen = context.getScreenArea();
         this.maxWidth = Math.min(this.maxWidth, screen.width);
-        int mouseX = context.getAbsMouseX(), mouseY = context.getAbsMouseY();
+        // Correct the mouse pos with the calculated screen offset.
+        // See GuiContext#updateState(int,int,float).
+        int mouseX = context.getAbsMouseX() + screen.x, mouseY = context.getAbsMouseY() + screen.y;
         TextRenderer renderer = TextRenderer.SHARED;
 
         RichText copy = this.text.copy();
@@ -181,7 +183,8 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         RenderSystem.disableBlend();
 
         context.getGraphics().pose().pushPose();
-        context.getGraphics().pose().translate(0, 0, 400);
+        // Since we applied an offset to the mouse pos earlier, we need to correct it back, but only visually.
+        context.getGraphics().pose().translate(-screen.x, -screen.y, 400);
         GuiDraw.drawTooltipBackground(context, stack, components, area.x, area.y, area.width, area.height, copy);
 
         // MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostBackground(stack, textLines, area.x, area.y,
@@ -423,6 +426,23 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
          * }
          */
         area.set(Area.ZERO);
+    }
+
+    public RichTooltip copy() {
+        RichTooltip tooltip = new RichTooltip();
+        tooltip.text.copyPropertiesOf(this.text);
+        tooltip.parent = this.parent;
+        tooltip.pos = this.pos;
+        tooltip.tooltipBuilder = this.tooltipBuilder;
+        tooltip.showUpTimer = this.showUpTimer;
+        tooltip.autoUpdate = this.autoUpdate;
+        tooltip.titleMargin = this.titleMargin;
+        tooltip.appliedMargin = this.appliedMargin;
+        tooltip.x = this.x;
+        tooltip.y = this.y;
+        tooltip.maxWidth = this.maxWidth;
+        tooltip.dirty = this.dirty;
+        return tooltip;
     }
 
     public enum Pos {

@@ -7,6 +7,8 @@ import brachy.modularui.api.UIFactory;
 import brachy.modularui.factory.GuiData;
 import brachy.modularui.factory.PosGuiData;
 
+import lombok.experimental.Accessors;
+
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
@@ -17,6 +19,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.IntFunction;
@@ -31,10 +34,12 @@ public class UISettings {
     @OnlyIn(Dist.CLIENT)
     private GuiCreator guiSupplier;
     private Predicate<Player> canInteractWith;
+    @Getter private String theme;
+    @Getter private final RecipeViewerSettings recipeViewerSettings;
     @Getter
-    private String theme;
-    @Getter
-    private final RecipeViewerSettings recipeViewerSettings;
+    @Setter
+    @Accessors(fluent = true)
+    private boolean drawTooltipExternally;
 
     public UISettings() {
         this(new RecipeViewerSettingsImpl());

@@ -1,164 +1,134 @@
 package brachy.modularui.integration.emi.recipe;
 
+import brachy.modularui.ModularUI;
+import brachy.modularui.api.drawable.IRichTextBuilder;
 import brachy.modularui.api.widget.ITooltip;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.drawable.text.RichText;
-import brachy.modularui.integration.emi.EmiStackConverter;
+import brachy.modularui.integration.emi.EmiRecipeViewerSlot;
 import brachy.modularui.integration.recipeviewer.RecipeSlotRole;
-import brachy.modularui.integration.recipeviewer.RecipeViewerScreenWrapper;
-import brachy.modularui.integration.recipeviewer.handlers.IngredientProvider;
-import brachy.modularui.integration.recipeviewer.handlers.fluid.EmptyFluidTank;
-import brachy.modularui.integration.recipeviewer.util.RecipeScreenRenderingUtil;
+import brachy.modularui.screen.EmbedHandler;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
-import brachy.modularui.utils.memoization.MemoizedSupplier;
-import brachy.modularui.utils.memoization.Memoizer;
-import brachy.modularui.widget.WidgetTree;
-import brachy.modularui.widget.sizer.Area;
-import brachy.modularui.widgets.slot.FluidSlot;
-import brachy.modularui.widgets.slot.ItemSlot;
+import brachy.modularui.screen.RichTooltip;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.resources.ResourceLocation;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.Bounds;
 import dev.emi.emi.api.widget.SlotWidget;
-import dev.emi.emi.api.widget.TankWidget;
 import dev.emi.emi.api.widget.Widget;
 import dev.emi.emi.api.widget.WidgetHolder;
-import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 
 public abstract class ModularUIEmiRecipe implements EmiRecipe {
 
-    protected final MemoizedSupplier<ModularScreen> screen;
+    private static final LoadingCache<ModularUIEmiRecipe, ModularScreen> SCREEN_CACHE = CacheBuilder.newBuilder()
+            .expireAfterAccess(Duration.ofSeconds(5))
+            .maximumSize(20)
+            .build(new CacheLoader<>() {
+                @Override
+                public ModularScreen load(ModularUIEmiRecipe key) {
+                    return key.createScreen();
+                }
+            });
 
     private final ResourceLocation recipeId;
+    private final Supplier<IWidget> recipeUI;
 
-    @Getter
-    public final List<EmiIngredient> inputs;
-    @Getter
-    public final List<EmiStack> outputs;
-    @Getter
-    public final List<EmiIngredient> catalysts;
+    private boolean sizeCalculated = false;
+    private Bounds bounds;
+    private int displayWidth, displayHeight;
 
-    @Getter
-    private final Bounds bounds;
-    @Getter
-    private final int displayWidth, displayHeight;
-
-    public boolean allowRecipeTree = true;
-
-    public ModularUIEmiRecipe(ResourceLocation recipeId, Supplier<IWidget> widgetSupplier) {
-
+    public ModularUIEmiRecipe(ResourceLocation recipeId, Supplier<IWidget> recipeUI) {
         this.recipeId = recipeId;
-        this.inputs = new ArrayList<>();
-        this.outputs = new ArrayList<>();
-        this.catalysts = new ArrayList<>();
+        this.recipeUI = recipeUI;
+    }
 
-        IWidget recipeWidget = widgetSupplier.get();
-        this.displayWidth = recipeWidget.getArea().width;
-        this.displayHeight = recipeWidget.getArea().height;
+    public void onSizeCalculated(ModularScreen screen) {}
+
+    private synchronized void requireSize() {
+        if (this.sizeCalculated) return;
+        ModularScreen screen = SCREEN_CACHE.getUnchecked(this);
+        onSizeCalculated(screen);
+        this.displayWidth = EmbedHandler.getEmbedWidth(screen);
+        this.displayHeight = EmbedHandler.getEmbedHeight(screen);
         this.bounds = new Bounds(0, 0, this.displayWidth, this.displayHeight);
+        this.sizeCalculated = true;
+    }
 
-        this.screen = Memoizer.memoize(() -> {
-            IWidget widget = widgetSupplier.get();
-            ModularPanel<?> panel = ModularPanel.defaultPanel(recipeId.toString(), widget.getArea().w(), widget.getArea().h());
-            panel.child(widget);
-            return new ModularScreen(recipeId.getNamespace(), panel);
-        }, Duration.ofSeconds(10));
+    @Override
+    public int getDisplayWidth() {
+        requireSize();
+        return displayWidth;
+    }
 
-        WidgetTree.foreachChildBFS(recipeWidget, widget -> {
-            if (!(widget instanceof IngredientProvider<?> provider)) {
-                return true;
-            }
-            RecipeSlotRole role = provider.getRecipeRole();
-            if (role == RecipeSlotRole.RENDER_ONLY) {
-                return true;
-            }
+    @Override
+    public int getDisplayHeight() {
+        requireSize();
+        return displayHeight;
+    }
 
-            EmiStackConverter.Converter<?> converter = EmiStackConverter.getForNullable(provider.ingredientClass());
-            if (converter == null) {
-                return true;
-            }
-            @SuppressWarnings({"rawtypes", "unchecked"})
-            EmiIngredient ingredient = ((EmiStackConverter.Converter) converter).convertTo(provider);
+    public Bounds getBounds() {
+        requireSize();
+        return bounds;
+    }
 
-            switch (role) {
-                case INPUT -> inputs.add(ingredient);
-                case OUTPUT -> {
-                    if (ingredient.getEmiStacks().size() > 1) {
-                        allowRecipeTree = false;
-                    }
-                    outputs.addAll(ingredient.getEmiStacks());
-                }
-                case CATALYST -> catalysts.add(ingredient);
-            }
-            return true;
-        }, true);
+    private ModularScreen createScreen() {
+        return createScreen(this.recipeUI.get(), this.recipeId.getNamespace(), "emi_recipe_" + this.recipeId.getPath());
+    }
+
+    public ModularScreen createScreen(IWidget recipeUI, String owner, String name) {
+        ModularUI.LOGGER.info("Creating EMI embed for recipe {}:{}", owner, name);
+        ModularPanel<?> panel;
+        if (recipeUI instanceof ModularPanel<?> panel1) {
+            panel = panel1;
+        } else {
+            panel = new ModularPanel<>(name);
+            panel.coverChildren(60, 40)
+                    .invisible()
+                    .child(recipeUI);
+        }
+        ModularScreen screen = ModularScreen.createEmbed(owner, transform(panel));
+        screen.getContext().getUISettings().drawTooltipExternally(true);
+        return screen;
+    }
+
+    public ModularPanel<?> transform(ModularPanel<?> panel) {
+        Iterator<EmiIngredient> in = getInputs().iterator();
+        Iterator<EmiStack> out = getOutputs().iterator();
+        panel.visitTransformAllChildren(widget -> transformWidget(widget, in, out));
+        return panel;
+    }
+
+    public IWidget transformWidget(IWidget widget, Iterator<EmiIngredient> in, Iterator<EmiStack> out) {
+
+        if (!(widget instanceof EmiRecipeViewerSlot recipeViewerSlot)) return widget;
+
+        if (recipeViewerSlot.recipeSlotRole() == RecipeSlotRole.OUTPUT) {
+            recipeViewerSlot.getSlotWidget().recipeContext(this);
+        }
+
+        return recipeViewerSlot;
     }
 
     @Override
     public void addWidgets(WidgetHolder widgets) {
-        widgets.add(new UIWrapperWidget());
-        WidgetTree.foreachChildBFS(this.screen.get().getMainPanel(), widget -> {
-            if (!(widget instanceof IngredientProvider<?> provider)) return true;
-
-            RecipeSlotRole role = provider.getRecipeRole();
-            if (role == RecipeSlotRole.RENDER_ONLY) return true;
-
-            EmiStackConverter.Converter<?> converter = EmiStackConverter.getForNullable(provider.ingredientClass());
-            if (converter == null) return true;
-
-            @SuppressWarnings({"rawtypes", "unchecked"})
-            EmiIngredient ingredient = ((EmiStackConverter.Converter) converter).convertTo(provider);
-            Area widgetArea = widget.getArea();
-
-            SlotWidget slotWidget = null;
-            // Clear the MUI slots and add EMI slots based on them.
-            if (provider instanceof ItemSlot itemSlot) {
-                itemSlot.slot(RecipeScreenRenderingUtil.EMPTY_ITEM_HANDLER, 0)
-                        .invisible();
-            } else if (provider instanceof FluidSlot fluidSlot) {
-                fluidSlot.syncHandler(EmptyFluidTank.INSTANCE)
-                        .invisible();
-
-                long capacity = Math.max(1, ingredient.getAmount());
-                slotWidget = new TankWidget(ingredient, widgetArea.x, widgetArea.y, widgetArea.width, widgetArea.height,
-                        capacity);
-            }
-            if (slotWidget == null) {
-                slotWidget = new SlotWidget(ingredient, widgetArea.x, widgetArea.y);
-            }
-
-            slotWidget.customBackground(null, widgetArea.x, widgetArea.y, widgetArea.width, widgetArea.height)
-                    .drawBack(false);
-
-            if (role == RecipeSlotRole.CATALYST) {
-                slotWidget.catalyst(true);
-            } else if (role == RecipeSlotRole.OUTPUT) {
-                slotWidget.recipeContext(this);
-            }
-            if (widget instanceof ITooltip<?> tooltip && tooltip.hasTooltip()) {
-                if (tooltip.tooltip().getRichText() instanceof RichText richText) {
-                    for (ClientTooltipComponent text : richText.getAsText().toClientTooltipComponents()) {
-                        slotWidget.appendTooltip(() -> text);
-                    }
-                }
-            }
-            widgets.add(slotWidget);
-            return true;
-        }, true);
-        widgets.add(new UIForegroundRenderWidget());
+        // emi complains when it cant find an output slot
+        widgets.add(new SlotWidget(EmiStack.EMPTY, -1000, -1000).drawBack(false).recipeContext(this));
+        widgets.add(new UIWrapperWidget(this));
     }
 
     @Override
@@ -166,53 +136,54 @@ public abstract class ModularUIEmiRecipe implements EmiRecipe {
         return recipeId;
     }
 
-    @Override
-    public boolean supportsRecipeTree() {
-        return this.allowRecipeTree && EmiRecipe.super.supportsRecipeTree();
-    }
+    public static class UIWrapperWidget extends Widget {
 
-    public class UIWrapperWidget extends Widget {
+        private final ModularUIEmiRecipe recipe;
 
-        public UIWrapperWidget() {
-            ModularScreen screen = ModularUIEmiRecipe.this.screen.get();
-            screen.construct(new RecipeViewerScreenWrapper(screen));
+        public UIWrapperWidget(ModularUIEmiRecipe recipe) {
+            this.recipe = recipe;
         }
 
         @Override
         public Bounds getBounds() {
-            return ModularUIEmiRecipe.this.bounds;
+            return this.recipe.getBounds();
         }
 
         @Override
         public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            ModularScreen screen = ModularUIEmiRecipe.this.screen.get();
-            RecipeScreenRenderingUtil.drawScreenBackground(guiGraphics, screen, mouseX, mouseY, partialTick);
+            ModularScreen screen = SCREEN_CACHE.getUnchecked(this.recipe);
+            EmbedHandler.drawEmbed(screen, guiGraphics, mouseX, mouseY, partialTick);
+            EmbedHandler.drawEmbedForeground(screen, guiGraphics);
+        }
+
+        @Override
+        public List<ClientTooltipComponent> getTooltip(int mouseX, int mouseY) {
+            ModularScreen screen = SCREEN_CACHE.getUnchecked(this.recipe);
+            if (!screen.getContext().getUISettings().drawTooltipExternally()) {
+                return super.getTooltip(mouseX, mouseY);
+            }
+            IWidget hovered = screen.getContext().getTopHovered();
+            if (hovered instanceof ITooltip<?> tooltip && tooltip.getTooltip() != null) {
+                RichTooltip richTooltip = tooltip.getTooltip();
+                richTooltip.isEmpty(); // causes the tooltip to rebuild if necessary
+                IRichTextBuilder<?> richTextBuilder = richTooltip.getRichText();
+                if (richTextBuilder instanceof RichText richText) {
+                    // scuffed conversion, but it works mostly
+                    return richText.getAsText().toClientTooltipComponents();
+                }
+                return List.of();
+            }
+            return List.of();
         }
 
         @Override
         public boolean mouseClicked(int mouseX, int mouseY, int button) {
-            return screen.get().mousePressed(mouseX, mouseY, button);
+            return SCREEN_CACHE.getUnchecked(this.recipe).mousePressed(button);
         }
 
         @Override
         public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-            return screen.get().keyPressed(keyCode, scanCode, modifiers);
-        }
-    }
-
-    public class UIForegroundRenderWidget extends Widget {
-
-        public UIForegroundRenderWidget() {}
-
-        @Override
-        public Bounds getBounds() {
-            return ModularUIEmiRecipe.this.bounds;
-        }
-
-        @Override
-        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            ModularScreen screen = ModularUIEmiRecipe.this.screen.get();
-            RecipeScreenRenderingUtil.drawScreenForeground(guiGraphics, screen, mouseX, mouseY, partialTick);
+            return SCREEN_CACHE.getUnchecked(this.recipe).keyPressed(keyCode, scanCode, modifiers);
         }
     }
 }
