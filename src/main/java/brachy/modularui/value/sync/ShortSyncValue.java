@@ -1,12 +1,12 @@
-package com.cleanroommc.modularui.value.sync;
+package brachy.modularui.value.sync;
 
-import com.cleanroommc.modularui.api.value.sync.IIntSyncValue;
-import com.cleanroommc.modularui.api.value.sync.IShortSyncValue;
-import com.cleanroommc.modularui.api.value.sync.IStringSyncValue;
-import com.cleanroommc.modularui.network.NetworkUtils;
-import com.cleanroommc.modularui.value.ShortValue;
+import brachy.modularui.ModularUI;
+import brachy.modularui.api.value.sync.IIntSyncValue;
+import brachy.modularui.api.value.sync.IShortSyncValue;
+import brachy.modularui.api.value.sync.IStringSyncValue;
+import brachy.modularui.value.ShortValue;
 
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.FriendlyByteBuf;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +42,7 @@ public class ShortSyncValue extends ValueSyncHandler<Short, ShortSyncValue> impl
         if (clientGetter == null && serverGetter == null) {
             throw new NullPointerException("Client or server getter must not be null!");
         }
-        if (NetworkUtils.isClient()) {
+        if (ModularUI.isClientThread()) {
             this.getter = clientGetter != null ? clientGetter : serverGetter;
             this.setter = clientSetter != null ? clientSetter : serverSetter;
         } else {
@@ -92,12 +92,12 @@ public class ShortSyncValue extends ValueSyncHandler<Short, ShortSyncValue> impl
     }
 
     @Override
-    public void write(PacketBuffer buffer) {
+    public void write(FriendlyByteBuf buffer) {
         buffer.writeShort(this.cache);
     }
 
     @Override
-    public void read(PacketBuffer buffer) {
+    public void read(FriendlyByteBuf buffer) {
         setShortValue(buffer.readShort(), true, false);
     }
 
