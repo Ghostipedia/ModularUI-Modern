@@ -64,6 +64,14 @@ public class ModularUIConfig {
             .comment("The format prefix of the mod name tooltip line.", "Default: 'blue italic' (converted to §9§o)")
             .translation("config.modularui.modNameFormat")
             .define("modNameFormat", ChatFormatting.BLUE.getName() + " " + ChatFormatting.ITALIC.getName());
+    public static final ConfigValue<String> DEBUG_TEXT_COLOR = BUILDER
+            .comment("Debug text color. Prefix Hex values with a #. Common colors can be referred by their name.")
+            .translation("config.modularui.debugTextColor")
+            .define("debugTextColor", "#FFAAAAAA");
+    public static final ConfigValue<String> DEBUG_OUTLINE_COLOR = BUILDER
+            .comment("Debug outline color. Prefix Hex values with a #. Common colors can be referred by their name.")
+            .translation("config.modularui.debugOutlineColor")
+            .define("debugOutlineColor", "#DCB42873");
 
     static {
         BUILDER.pop().push("dev");
@@ -73,14 +81,6 @@ public class ModularUIConfig {
             .comment("Debug UI? (Will draw widget outlines and widget information)", "Default: false")
             .translation("config.modularui.dev.debugUI")
             .define("debugUI", ModularUI.isDev());
-    public static final ConfigValue<String> TEXT_COLOR = BUILDER
-            .comment("Color for debug text, in #AARRGGBB")
-            .translation("config.modularui.dev.textColor")
-            .define("textColor", "#DCB42873");
-    public static final ConfigValue<String> OUTLINE_COLOR = BUILDER
-            .comment("Color for outlining widgets in debug mode, in #AARRGGBB")
-            .translation("config.modularui.dev.outlineColor")
-            .define("outlineColor", "#DCB42873");
     public static final ConfigValue<String> CURSOR_COLOR = BUILDER
             .comment("Color for cursor in debug mode, in #AARRGGBB")
             .translation("config.modularui.dev.cursorColor")
@@ -192,11 +192,11 @@ public class ModularUIConfig {
         }
 
         public static int textColor() {
-            return Long.decode(TEXT_COLOR.get()).intValue();
+            return Long.decode(DEBUG_TEXT_COLOR.get()).intValue();
         }
 
         public static int outlineColor() {
-            return Long.decode(OUTLINE_COLOR.get()).intValue();
+            return Long.decode(DEBUG_OUTLINE_COLOR.get()).intValue();
         }
 
         public static int cursorColor() {

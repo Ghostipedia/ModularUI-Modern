@@ -421,10 +421,10 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         /**
          * Specify a sub area of the image in pixels, with a start position and an end position.
          *
-         * @param left   start position on the x-axis (equivalent to x in above methods)
-         * @param top    start position on the y-axis (equivalent to y in above methods)
-         * @param right  end position on the x-axis (equivalent to x + w in above methods)
-         * @param bottom end position on the y-axis (equivalent to y + h in above methods)
+         * @param left   start position on the x-axis (equivalent to x in {@link #subAreaXYWH(int, int, int, int)})
+         * @param top    start position on the y-axis (equivalent to y in {@link #subAreaXYWH(int, int, int, int)})
+         * @param right  end position on the x-axis (equivalent to x + w in {@link #subAreaXYWH(int, int, int, int)})
+         * @param bottom end position on the y-axis (equivalent to y + h in {@link #subAreaXYWH(int, int, int, int)})
          */
         public Builder subAreaLTRB(int left, int top, int right, int bottom) {
             return subAreaXYWH(left, top, right - left, bottom - top);

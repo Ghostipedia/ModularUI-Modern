@@ -13,7 +13,7 @@ import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import lombok.Getter;
@@ -37,8 +37,8 @@ public class ClientProxy extends CommonProxy {
     }
 
     @Override
-    protected void onConstruct(FMLConstructModEvent event) {
-        super.onConstruct(event);
+    protected void onInit(FMLCommonSetupEvent event) {
+        super.onInit(event);
         if (!ModularUI.isDataGen()) {
             // enable stencil bits, must call on render thread
             RenderSystem.recordRenderCall(() -> Minecraft.getInstance().getMainRenderTarget().enableStencil());

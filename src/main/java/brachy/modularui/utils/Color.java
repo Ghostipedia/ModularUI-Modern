@@ -894,22 +894,41 @@ public class Color {
     }
 
     public static int parseString(String colorString) {
-        if (colorString.isEmpty()) return WHITE.main;
+        return parseString(colorString, WHITE.main, false);
+    }
+
+    /**
+     * Parses a color ARGB int from a string.
+     * The string can be a number in decimal (no prefix), hexadecimal (0x, 0X or # prefix) or octal (0 prefix).
+     * Otherwise, it can be a name from a {@link ColorShade} instance. The default instances can be found at the bottom
+     * of this class. These names can be suffixed with colon and a negative number for darker colors or positive number for brighter colors.
+     * The number is an index to an array with predefined shades. 0 is the main color. If no color for a name is found, the fallback value
+     * is returned. The shade index is clamped to valid values.
+     * <p>
+     * Example: "deep_purple:-3" returns 0xFF4527A0
+     * </p>
+     * As a special case "invisible" returns 0x00FFFFFF.
+     *
+     * @param colorString a string which can be a number or a color name
+     * @param fallback    the returned color value when the string is invalid
+     * @return the parsed color ARGB.
+     */
+    public static int parseString(String colorString, int fallback, boolean silent) {
+        if (colorString.isEmpty()) return fallback;
         char c = colorString.charAt(0);
         // a normal int string
         if (Character.isDigit(c) || c == '-' || c == '#') {
-            int color;
             try {
-                color = (int) (long) Long.decode(colorString); // bruh
+                int color = (int) (long) Long.decode(colorString); // bruh
+                if (color != 0 && getAlpha(color) == 0) {
+                    return withAlpha(color, 255);
+                }
+                return color;
             } catch (NumberFormatException e) {
                 ModularUI.LOGGER.error("Failed to decode color of string '{}'. Exception: ", colorString);
                 ModularUI.LOGGER.catching(e);
-                return WHITE.main;
+                return fallback;
             }
-            if (color != 0 && getAlpha(color) == 0) {
-                return withAlpha(color, 255);
-            }
-            return color;
         }
 
         if ("invisible".equals(colorString)) {
@@ -933,7 +952,7 @@ public class Color {
             return colorShade.darkerSafe(-index - 1);
         }
         ModularUI.LOGGER.error("[THEME] No color shade for name '{}' was found", colorString);
-        return WHITE.main;
+        return fallback;
     }
 
     /**

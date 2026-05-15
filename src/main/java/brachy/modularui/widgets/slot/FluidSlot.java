@@ -73,9 +73,9 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
                             formatFluidTooltipAmount(fluid.getAmount()), getUnit()));
                 }
             } else {
-                tooltip.addLine(Text.lang("gtceu.fluid.empty"));
+                tooltip.addLine(Text.lang("modularui.fluid.empty"));
                 tooltip.addLine(
-                        Text.lang("gtceu.fluid_pipe.capacity", formatFluidTooltipAmount(fluidTank.getCapacity()),
+                        Text.lang("modularui.fluid.capacity", formatFluidTooltipAmount(fluidTank.getCapacity()),
                                 getUnit()));
             }
             if (this.syncHandler.controlsAmount()) {
@@ -83,24 +83,24 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
             }
         } else {
             if (fluid != null) {
-                tooltip.addLine(Text.lang("gtceu.fluid.amount", formatFluidTooltipAmount(fluid.getAmount()),
+                tooltip.addLine(Text.lang("modularui.fluid.amount", formatFluidTooltipAmount(fluid.getAmount()),
                         formatFluidTooltipAmount(fluidTank.getCapacity()), getUnit()));
                 addAdditionalFluidInfo(tooltip, fluid);
             } else {
-                tooltip.addLine(Text.lang("gtceu.fluid.empty"));
+                tooltip.addLine(Text.lang("modularui.fluid.empty"));
             }
             if (this.syncHandler.canFillSlot() || this.syncHandler.canDrainSlot()) {
                 tooltip.addLine(Text.EMPTY); // Add an empty line to separate from the bottom material tooltips
                 if (Interactable.hasShiftDown()) {
                     if (this.syncHandler.canFillSlot() && this.syncHandler.canDrainSlot()) {
-                        tooltip.addLine(Text.lang("gtceu.fluid.click_combined"));
+                        tooltip.addLine(Text.lang("modularui.fluid.click_combined"));
                     } else if (this.syncHandler.canDrainSlot()) {
-                        tooltip.addLine(Text.lang("gtceu.fluid.click_to_fill"));
+                        tooltip.addLine(Text.lang("modularui.fluid.click_to_fill"));
                     } else if (this.syncHandler.canFillSlot()) {
-                        tooltip.addLine(Text.lang("gtceu.fluid.click_to_empty"));
+                        tooltip.addLine(Text.lang("modularui.fluid.click_to_empty"));
                     }
                 } else {
-                    tooltip.addLine(Text.lang("gtceu.tooltip.hold_shift"));
+                    tooltip.addLine(Text.lang("modularui.tooltip.shift"));
                 }
             }
         }
