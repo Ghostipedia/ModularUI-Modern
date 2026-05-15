@@ -26,6 +26,7 @@ import dev.emi.emi.api.widget.Bounds;
 import dev.emi.emi.api.widget.SlotWidget;
 import dev.emi.emi.api.widget.Widget;
 import dev.emi.emi.api.widget.WidgetHolder;
+import dev.emi.emi.screen.widget.SizedButtonWidget;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
@@ -152,7 +153,7 @@ public abstract class ModularUIEmiRecipe implements EmiRecipe {
         @Override
         public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
             ModularScreen screen = SCREEN_CACHE.getUnchecked(this.recipe);
-            EmbedHandler.drawEmbed(screen, guiGraphics, mouseX, mouseY, partialTick);
+            EmbedHandler.drawEmbed(screen, guiGraphics, mouseX, mouseY, partialTick, r -> !(r instanceof SizedButtonWidget));
             EmbedHandler.drawEmbedForeground(screen, guiGraphics);
         }
 

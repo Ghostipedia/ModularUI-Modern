@@ -445,8 +445,7 @@ public class ClientScreenHandler {
         }
     }
 
-    public static void drawScreenInternal(GuiGraphics graphics, ModularScreen muiScreen, Screen mcScreen, int mouseX,
-                                          int mouseY, float partialTicks) {
+    public static void drawScreenInternal(GuiGraphics graphics, ModularScreen muiScreen, Screen mcScreen, int mouseX, int mouseY, float partialTicks) {
         Stencil.reset();
         muiScreen.getContext().getStencil().push(muiScreen.getScreenArea());
         muiScreen.render(graphics, mouseX, mouseY, partialTicks);
@@ -548,10 +547,16 @@ public class ClientScreenHandler {
     }
 
     @ApiStatus.Internal
-    public static void drawVanillaElements(GuiGraphics graphics, Screen mcScreen, int mouseX, int mouseY,
-                                           float partialTicks) {
+    public static void drawVanillaElements(GuiGraphics graphics, Screen mcScreen, int mouseX, int mouseY, float partialTicks) {
+        drawVanillaElements(graphics, mcScreen, mouseX, mouseY, partialTicks, r -> true);
+    }
+
+    @ApiStatus.Internal
+    public static void drawVanillaElements(GuiGraphics graphics, Screen mcScreen, int mouseX, int mouseY, float partialTicks, Predicate<Renderable> filter) {
         for (Renderable renderable : mcScreen.renderables) {
-            renderable.render(graphics, mouseX, mouseY, partialTicks);
+            if (filter.test(renderable)) {
+                renderable.render(graphics, mouseX, mouseY, partialTicks);
+            }
         }
     }
 

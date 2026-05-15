@@ -5,9 +5,12 @@ import brachy.modularui.utils.Rectangle;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
+
+import java.util.function.Predicate;
 
 public class EmbedHandler {
 
@@ -20,14 +23,23 @@ public class EmbedHandler {
     }
 
     public static void drawEmbed(ModularScreen screen, GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        drawEmbed(screen, graphics, mouseX, mouseY, partialTicks, r -> true);
+    }
+
+    public static void drawEmbedNoVanillaElements(ModularScreen screen, GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        drawEmbed(screen, graphics, mouseX, mouseY, partialTicks, r -> false);
+    }
+
+    public static void drawEmbed(ModularScreen screen, GuiGraphics graphics, int mouseX, int mouseY, float partialTicks, Predicate<Renderable> vanillaElementFilter) {
         graphics.pose().pushPose();
         screen.render(graphics, mouseX, mouseY, partialTicks);
 
-        RenderSystem.disableDepthTest();
+        if (vanillaElementFilter != null) {
+            RenderSystem.disableDepthTest();
+            ClientScreenHandler.drawVanillaElements(graphics, screen.getScreenWrapper().wrappedScreen(), mouseX, mouseY, partialTicks, vanillaElementFilter);
+            RenderSystem.enableDepthTest();
+        }
 
-        ClientScreenHandler.drawVanillaElements(graphics, screen.getScreenWrapper().wrappedScreen(), mouseX, mouseY, partialTicks);
-
-        RenderSystem.enableDepthTest();
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         graphics.pose().popPose();
     }
