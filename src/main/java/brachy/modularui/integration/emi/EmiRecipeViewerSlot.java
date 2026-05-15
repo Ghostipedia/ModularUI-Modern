@@ -21,7 +21,10 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+
+import net.minecraftforge.fluids.FluidStack;
 
 import org.jetbrains.annotations.ApiStatus;
 
@@ -64,26 +67,23 @@ public class EmiRecipeViewerSlot extends RecipeViewerSlotWidget<EmiRecipeViewerS
     }
 
     @Override
-    public EmiRecipeViewerSlot value(FluidEntryList fluidEntryList) {
-        value = fluidEntryList;
+    public <T> EmiRecipeViewerSlot value(EntryList<T> entryList) {
+        this.value = entryList;
         rebuildEmiSlot();
-        background(GuiTextures.SLOT_FLUID);
+        if (this.value.getType() == FluidStack.class) {
+            background(GuiTextures.SLOT_FLUID);
+        } else {
+            background(GuiTextures.SLOT_ITEM); // TODO other types
+        }
         return getThis();
     }
 
-    @Override
-    public EmiRecipeViewerSlot value(ItemEntryList itemEntryList) {
-        value = itemEntryList;
-        rebuildEmiSlot();
-        background(GuiTextures.SLOT_ITEM);
-        return getThis();
-    }
-
+    @SuppressWarnings("unchecked")
     private void rebuildEmiSlot() {
-        if (value instanceof ItemEntryList itemEntryList) {
-            slotWidget = new SlotWidget(EmiStackConverter.ITEM.convertTo(itemEntryList, chance), 0, 0);
-        } else if (value instanceof FluidEntryList fluidEntryList) {
-            slotWidget = new TankWidget(EmiStackConverter.FLUID.convertTo(fluidEntryList, chance), 0, 0, 18, 18, 1);
+        if (this.value.getType() == ItemStack.class) {
+            slotWidget = new SlotWidget(EmiStackConverter.ITEM.convertTo((EntryList<ItemStack>) this.value, chance), 0, 0);
+        } else if (this.value.getType() == FluidStack.class) {
+            slotWidget = new TankWidget(EmiStackConverter.FLUID.convertTo((EntryList<FluidStack>) this.value, chance), 0, 0, 18, 18, 1);
         }
         slotWidget.drawBack(false);
     }
