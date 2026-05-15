@@ -291,27 +291,20 @@ public class TestMachine {
         }
 
         public static IWidget buildViewerUI(Recipe recipe) {
-            return Flow.row().name("slots")
-                    .center()
-                    .childPadding(8)
-                    .child(SlotGroupWidget.rect(2, 2, i -> {
-                        var in = i >= recipe.in.size() ? ItemStack.EMPTY : recipe.in.get(i);
-                        if (in == null) in = ItemStack.EMPTY;
-                        return RecipeViewerSlotWidget.create()
-                                .recipeSlotRole(RecipeSlotRole.INPUT)
-                                .value(in);
-                    }))
-                    .child(new ProgressWidget()
-                            .value(DoubleValue.simulateProgress(5000))
-                            .size(20)
-                            .texture(GuiTextures.PROGRESS_ARROW, 20))
-                    .child(SlotGroupWidget.rect(2, 2, i -> {
-                        var out = i >= recipe.out.size() ? ItemStack.EMPTY : recipe.out.get(i);
-                        if (out == null) out = ItemStack.EMPTY;
-                        return RecipeViewerSlotWidget.create()
-                                .recipeSlotRole(RecipeSlotRole.OUTPUT)
-                                .value(out);
-                    }));
+            IWidget recipeUI = buildMachineUI(EMPTY_INFINITE_ITEM_HANDLER, EMPTY_INFINITE_ITEM_HANDLER, DoubleValue.simulateProgress(5000));
+            recipeUI.visitTransformAllChildren(w -> {
+                if (w instanceof ItemSlot slot) {
+                    List<ItemStack> l = slot.getRecipeRole() == RecipeSlotRole.INPUT ? recipe.in : recipe.out;
+                    int index = slot.getSlot().getSlotIndex();
+                    ItemStack item = index >= l.size() ? ItemStack.EMPTY : l.get(index);
+                    return RecipeViewerSlotWidget.create()
+                            .recipeSlotRole(slot.getRecipeRole())
+                            .value(item)
+                            .copyResizerOf(w);
+                }
+                return w;
+            });
+            return recipeUI;
         }
     }
 
