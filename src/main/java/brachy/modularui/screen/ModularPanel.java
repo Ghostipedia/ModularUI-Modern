@@ -173,7 +173,13 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
                     }
                 }
             }
-            getAnimator().onFinish(() -> this.screen.getPanelManager().closePanel(this));
+            getAnimator().onFinish(() -> {
+                if (this.screen != null) {
+                    // can happen when multiple panels close at once and animation is enabled, but NEA is currently not ported so screen
+                    // before sub panels can finish animating
+                    this.screen.getPanelManager().closePanel(this);
+                }
+            });
             getAnimator().reset(true);
             getAnimator().animate(true);
         }

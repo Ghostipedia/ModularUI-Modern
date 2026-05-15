@@ -56,7 +56,6 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
 import org.jetbrains.annotations.ApiStatus;
@@ -67,7 +66,6 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -354,20 +352,32 @@ public class ClientScreenHandler {
         } else {
             debugToggleActive = false;
         }
-        if (keyCode == InputConstants.KEY_ESCAPE && screen.shouldCloseOnEsc()) {
-            onClose();
+        boolean hasLevel = Minecraft.getInstance().level != null;
+        boolean closeOnEsc = screen.shouldCloseOnEsc();
+        if (keyCode == InputConstants.KEY_ESCAPE && (!hasLevel || closeOnEsc)) {
+            if (hasLevel) {
+                // close everything in world
+                if (currentScreen.getContext().hasDraggable()) {
+                    currentScreen.getContext().dropDraggable(true);
+                }
+                currentScreen.getPanelManager().closePanelsAndScreen();
+            } else if (closeOnEsc || !currentScreen.getPanelManager().getTopMostPanel().isMainPanel()) {
+                // close top panel if screen can be close or the top panel is not a main panel
+                dropOrClosePanel();
+            }
             return true;
         }
+        if (!hasLevel) return false; // E oly closes in world
         boolean isInventoryKey = Minecraft.getInstance().options.keyInventory
                 .isActiveAndMatches(InputConstants.getKey(keyCode, scanCode));
         if (keyCode == 1 || isInventoryKey) {
-            onClose();
+            dropOrClosePanel();
             return true;
         }
         return false;
     }
 
-    private static void onClose() {
+    private static void dropOrClosePanel() {
         if (currentScreen.getContext().hasDraggable()) {
             currentScreen.getContext().dropDraggable(true);
         } else {
