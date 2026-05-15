@@ -17,6 +17,10 @@ public class InteractionSyncHandler extends SyncHandler<InteractionSyncHandler> 
     private IServerKeyboardAction keyReleased;
     private IServerKeyboardAction keyTapped;
 
+    public InteractionSyncHandler() {
+        allowC2S();
+    }
+
     @Override
     public void readOnClient(int id, FriendlyByteBuf buf) {}
 

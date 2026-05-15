@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
  * Wraps a slot and handles interactions for phantom slots.
  * Use {@link ModularSlot} directly.
  */
-public class ItemSlotSH extends SyncHandler<ItemSlotSH> {
+public class ItemSlotSyncHandler extends SyncHandler<ItemSlotSyncHandler> {
 
     public static final int SYNC_ITEM = 0;
     public static final int SYNC_ENABLED = 1;

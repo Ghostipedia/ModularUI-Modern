@@ -74,7 +74,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
      * since it's called on server and client. Otherwise, this will not work.
      */
     @Nullable
-    private SyncHandler syncHandler;
+    private SyncHandler<?> syncHandler;
     // rendering
     @Getter
     private boolean disableThemeBackground = false;
@@ -157,7 +157,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
      */
     @Override
     public void initialiseSyncHandler(ModularSyncManager syncManager, boolean late) {
-        SyncHandler handler = this.syncHandler;
+        SyncHandler<?> handler = this.syncHandler;
         if (handler == null && this.syncKey != null) {
             handler = syncManager.getSyncHandler(getPanel().getName(), this.syncKey);
             if (handler == null && !syncManager.getMainPSM().getPanelName().equals(getPanel().getName())) {
@@ -165,7 +165,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
             }
         }
         if (handler != null) setSyncOrValue(handler);
-        if (this.syncHandler instanceof ValueSyncHandler<?> valueSyncHandler &&
+        if (this.syncHandler instanceof ValueSyncHandler<?, ?> valueSyncHandler &&
                 valueSyncHandler.getChangeListener() == null) {
             valueSyncHandler.setChangeListener(this::markTooltipDirty);
         }
@@ -697,7 +697,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
      * @throws IllegalStateException if this widget has no sync handler ({@link #isSynced()} returns false)
      */
     @Override
-    public @NotNull SyncHandler getSyncHandler() {
+    public @NotNull SyncHandler<?> getSyncHandler() {
         if (this.syncHandler == null) {
             throw new IllegalStateException("Widget is not initialised or not synced!");
         }
@@ -724,7 +724,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     protected void setSyncOrValue(@NotNull ISyncOrValue syncOrValue) {
         if (!syncOrValue.isSyncHandler() && !syncOrValue.isValueHandler()) return;
         checkValidSyncOrValue(syncOrValue);
-        if (syncOrValue instanceof SyncHandler syncHandler) this.syncHandler = syncHandler;
+        if (syncOrValue instanceof SyncHandler<?> syncHandler) this.syncHandler = syncHandler;
         if (syncOrValue instanceof IValue<?> value) this.value = value;
     }
 
