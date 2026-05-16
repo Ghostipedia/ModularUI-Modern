@@ -14,7 +14,7 @@ import lombok.Getter;
 public class ProgressDrawable extends AbstractProgressDrawable<ProgressDrawable> {
 
     @Getter private Direction direction = Direction.RIGHT;
-    @Getter private int progressPixelStepSize = 0;
+    @Getter private float progressPixelStepSize = 0;
 
     @Override
     public void pushProgressStencil(float progress, GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
@@ -31,7 +31,7 @@ public class ProgressDrawable extends AbstractProgressDrawable<ProgressDrawable>
     @Override
     protected float getCurrentProgressStepSize(int width, int height) {
         float stepSize = this.progressStepSize;
-        int pixelStepSize = this.progressPixelStepSize;
+        float pixelStepSize = this.progressPixelStepSize;
         if (stepSize == 0 && pixelStepSize == 0 && !ModularUIConfig.smoothProgressBars() && getFilledTexture() instanceof UITexture) {
             pixelStepSize = 1;
         }
@@ -113,7 +113,7 @@ public class ProgressDrawable extends AbstractProgressDrawable<ProgressDrawable>
      * @return this
      * @see #progressStepSize(float)
      */
-    public ProgressDrawable progressPixelStepSize(int progressPixelStepSize) {
+    public ProgressDrawable progressPixelStepSize(float progressPixelStepSize) {
         this.progressPixelStepSize = progressPixelStepSize;
         this.progressStepSize = 0;
         return this;
