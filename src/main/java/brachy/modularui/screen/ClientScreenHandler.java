@@ -367,7 +367,7 @@ public class ClientScreenHandler {
             }
             return true;
         }
-        if (!hasLevel) return false; // E oly closes in world
+        if (!hasLevel) return false; // E only closes in world
         if (Minecraft.getInstance().options.keyInventory
                 .isActiveAndMatches(InputConstants.getKey(keyCode, scanCode))) {
             dropOrClosePanel();
