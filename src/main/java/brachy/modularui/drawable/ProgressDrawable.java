@@ -1,32 +1,17 @@
 package brachy.modularui.drawable;
 
-import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 
-import brachy.modularui.utils.math.MathUtils;
-
-import net.minecraft.Util;
-
 import lombok.Getter;
 
-import java.util.concurrent.TimeUnit;
-import java.util.function.DoubleSupplier;
+public class ProgressDrawable extends AbstractProgressDrawable<ProgressDrawable> {
 
-public class ProgressDrawable implements IDrawable {
-
-    @Getter private DoubleSupplier progress;
-    @Getter private IDrawable emptyBackground;
-    @Getter private IDrawable filledTexture;
     @Getter private Direction direction = Direction.RIGHT;
-    @Getter private float progressStepSize = 0;
     @Getter private int progressPixelStepSize = 0;
 
     @Override
-    public void draw(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
-        if (this.emptyBackground != null) this.emptyBackground.draw(context, x, y, width, height, widgetTheme);
-        if (this.filledTexture == null) return;
-
+    public void pushProgressStencil(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
         float p = getCurrentProgress(width, height);
         float u0 = 0, u1 = 1, v0 = 0, v1 = 1;
         switch (this.direction) {
@@ -36,13 +21,10 @@ public class ProgressDrawable implements IDrawable {
             case DOWN -> v1 = p;
         }
         context.getStencil().push(x + u0 * width, y + v0 * height, (u1 - u0) * width, (v1 - v0) * height);
-        this.filledTexture.draw(context, x, y, width, height, widgetTheme);
-        context.getStencil().pop();
     }
 
-    private float getCurrentProgress(int width, int height) {
-        float p = this.progress == null ? 1f : (float) this.progress.getAsDouble();
-        p = MathUtils.clamp(p, 0, 1);
+    @Override
+    protected float getCurrentProgressStepSize(int width, int height) {
         float stepSize = this.progressStepSize;
         if (this.progressPixelStepSize > 0) {
             float s = switch (this.direction) {
@@ -51,75 +33,7 @@ public class ProgressDrawable implements IDrawable {
             };
             stepSize = this.progressPixelStepSize / s;
         }
-        if (stepSize > 0) {
-            int c = (int) (p / stepSize);
-            p = c * stepSize;
-        }
-        return p;
-    }
-
-    /**
-     * Sets the displayed progress value. The progress is clamped between 0 (empty) and 1 (filled).
-     *
-     * @param progress progress supplier
-     * @return this
-     */
-    public ProgressDrawable progress(DoubleSupplier progress) {
-        this.progress = progress;
-        return this;
-    }
-
-    /**
-     * Sets a fixed progress value to display. The progress is clamped between 0 (empty) and 1 (filled).
-     *
-     * @param progress progress
-     * @return this
-     */
-    public ProgressDrawable progress(double progress) {
-        return progress(() -> progress);
-    }
-
-    /**
-     * Sets a progress supplier which linearly increases from 0 to 1 with the given duration in milliseconds.
-     *
-     * @param durationMilliSeconds duration in milliseconds
-     * @return this
-     */
-    public ProgressDrawable progressDuration(int durationMilliSeconds) {
-        return progress(() -> Util.getMillis() % durationMilliSeconds / (double) durationMilliSeconds);
-    }
-
-    /**
-     * Sets a progress supplier which linearly increases from 0 to 1 with the given duration.
-     *
-     * @param duration duration
-     * @param unit     time unit of the previous duration argument
-     * @return this
-     */
-    public ProgressDrawable progressDuration(long duration, TimeUnit unit) {
-        return progressDuration((int) unit.toMillis(duration));
-    }
-
-    /**
-     * Sets the empty texture which is always fully displayed.
-     *
-     * @param drawable empty texture
-     * @return this
-     */
-    public ProgressDrawable emptyTexture(IDrawable drawable) {
-        this.emptyBackground = drawable;
-        return this;
-    }
-
-    /**
-     * Sets the filled texture which is partially drawn based on the current progress.
-     *
-     * @param drawable filled texture.
-     * @return this
-     */
-    public ProgressDrawable filledTexture(IDrawable drawable) {
-        this.filledTexture = drawable;
-        return this;
+        return stepSize;
     }
 
     /**
@@ -176,11 +90,12 @@ public class ProgressDrawable implements IDrawable {
      * @param progressStepSize progress step size
      * @return this.
      */
+    @Override
     public ProgressDrawable progressStepSize(float progressStepSize) {
-        this.progressStepSize = progressStepSize;
         this.progressPixelStepSize = 0;
-        return this;
+        return super.progressStepSize(progressStepSize);
     }
+
 
     /**
      * Sets a pixel progress step size. This is similar to {@link #progressStepSize(float)}, but this in units of pixel.
