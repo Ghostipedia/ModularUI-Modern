@@ -12,6 +12,7 @@ import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.drawable.CircularProgressDrawable;
+import brachy.modularui.drawable.FluidDrawable;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.drawable.ItemDrawable;
@@ -62,6 +63,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import com.google.common.base.CaseFormat;
@@ -768,9 +771,11 @@ public class TestGuis extends CustomModularScreen {
                                         .up()
                                         .progressDuration(3, TimeUnit.SECONDS)
                                         .emptyTexture(rndRect(LIGHT_COLORS, rnd))
-                                        .filledTexture(rndRect(DARK_COLORS, rnd))
+                                        .filledTexture(Text.str("Text"))
                                         .progressPixelStepSize(1)
                                         .asWidget()
+                                        .width(24)
+                                        .height(12)
                                         .addTooltipLine("Down to Up")
                                         .addTooltipLine("1 pixel step size"))
                                 .child(new ProgressDrawable()
@@ -787,12 +792,12 @@ public class TestGuis extends CustomModularScreen {
                                 .childPadding(2)
                                 .child(new CircularProgressDrawable()
                                         .progressDuration(3, TimeUnit.SECONDS)
-                                        .filledTexture(rndRect(DARK_COLORS, rnd))
+                                        .filledTexture(new ItemDrawable(Items.DIAMOND))
                                         .clockwise()
                                         .asWidget())
                                 .child(new CircularProgressDrawable()
                                         .progressDuration(3, TimeUnit.SECONDS)
-                                        .filledTexture(rndRect(DARK_COLORS, rnd))
+                                        .filledTexture(new FluidDrawable(new FluidStack(Fluids.WATER, 1)))
                                         .counterClockwise()
                                         .asWidget()))
                         .coverChildren()
