@@ -11,15 +11,15 @@ import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.widget.IWidget;
-import brachy.modularui.drawable.CircularProgressDrawable;
 import brachy.modularui.drawable.FluidDrawable;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.drawable.ItemDrawable;
-import brachy.modularui.drawable.ProgressDrawable;
 import brachy.modularui.drawable.Rectangle;
 import brachy.modularui.drawable.UITexture;
 import brachy.modularui.drawable.graph.GraphDrawable;
+import brachy.modularui.drawable.progress.CircularProgressDrawable;
+import brachy.modularui.drawable.progress.ProgressDrawable;
 import brachy.modularui.factory.ClientGUI;
 import brachy.modularui.schema.ArraySchema;
 import brachy.modularui.schema.ISchema;
@@ -62,8 +62,8 @@ import net.minecraft.Util;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.world.level.material.Fluids;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -702,7 +702,7 @@ public class TestGuis extends CustomModularScreen {
                                         .coverChildren())
                                 .child(new ProgressWidget()
                                         .size(20)
-                                        .texture(GuiTextures.PROGRESS_ARROW, 20)
+                                        .texture(GuiTextures.PROGRESS_ARROW, ProgressDrawable.Direction.RIGHT)
                                         .value(new DoubleValue.Dynamic(() -> Util.getMillis() % 5000 / 5000.0, null)))
                                 .child(SlotGroupWidget.builder()
                                         .matrix("II", "II")
@@ -753,7 +753,7 @@ public class TestGuis extends CustomModularScreen {
                                 .child(new ProgressDrawable()
                                         .left()
                                         .progressDuration(3, TimeUnit.SECONDS)
-                                        .emptyTexture(rndRect(LIGHT_COLORS, rnd))
+                                        .emptyTexture(new Rectangle().color(0xFFBBBBBB))
                                         .filledTexture(rndRect(DARK_COLORS, rnd))
                                         .asWidget()
                                         .addTooltipLine("Right to Left")
@@ -761,7 +761,7 @@ public class TestGuis extends CustomModularScreen {
                                 .child(new ProgressDrawable()
                                         .right()
                                         .progressDuration(3, TimeUnit.SECONDS)
-                                        .emptyTexture(rndRect(LIGHT_COLORS, rnd))
+                                        .emptyTexture(new Rectangle().color(0xFFBBBBBB))
                                         .filledTexture(rndRect(DARK_COLORS, rnd))
                                         .progressStepSize(0.2f)
                                         .asWidget()
@@ -770,7 +770,7 @@ public class TestGuis extends CustomModularScreen {
                                 .child(new ProgressDrawable()
                                         .up()
                                         .progressDuration(3, TimeUnit.SECONDS)
-                                        .emptyTexture(rndRect(LIGHT_COLORS, rnd))
+                                        .emptyTexture(new Rectangle().color(0xFFBBBBBB))
                                         .filledTexture(Text.str("Text"))
                                         .progressPixelStepSize(1)
                                         .asWidget()
@@ -781,7 +781,7 @@ public class TestGuis extends CustomModularScreen {
                                 .child(new ProgressDrawable()
                                         .down()
                                         .progressDuration(3, TimeUnit.SECONDS)
-                                        .emptyTexture(rndRect(LIGHT_COLORS, rnd))
+                                        .emptyTexture(new Rectangle().color(0xFFBBBBBB))
                                         .filledTexture(rndRect(DARK_COLORS, rnd))
                                         .progressPixelStepSize(4)
                                         .asWidget()

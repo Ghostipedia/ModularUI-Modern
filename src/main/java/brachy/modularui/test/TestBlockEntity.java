@@ -7,6 +7,9 @@ import brachy.modularui.api.drawable.Text;
 import brachy.modularui.drawable.Circle;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.drawable.ItemDrawable;
+import brachy.modularui.drawable.progress.CircularProgressDrawable;
+import brachy.modularui.drawable.progress.CompositeProgress;
+import brachy.modularui.drawable.progress.ProgressDrawable;
 import brachy.modularui.factory.PosGuiData;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
@@ -269,16 +272,19 @@ public class TestBlockEntity extends AbstractBlockEntity implements IUIHolder<Po
                                                                         .overlay(GuiTextures.CYCLE_BUTTON_DEMO.getSubArea(0, 2 / 3f, 1, 1))))
                                                         .child(Flow.row()
                                                                 .name("progress_row")
-                                                                .height(18)
+                                                                .coverChildrenHeight()
                                                                 .mainAxisAlignment(Alignment.MainAxis.SPACE_AROUND)
                                                                 .child(new ProgressWidget()
                                                                         .syncHandler("progress")
-                                                                        .texture(GuiTextures.PROGRESS_ARROW, 20))
-                                                                .child(new ProgressWidget()
+                                                                        .texture(GuiTextures.PROGRESS_ARROW, ProgressDrawable.Direction.RIGHT)
+                                                                        .size(20))
+                                                                .child(CompositeProgress.circularLike4Slice(
+                                                                                GuiTextures.PROGRESS_CYCLE.getSubArea(0, 0f, 1, 0.5f),
+                                                                                GuiTextures.PROGRESS_CYCLE.getSubArea(0, 0.5f, 1, 1f),
+                                                                                CircularProgressDrawable.Direction.CW)
+                                                                        .asWidget()
                                                                         .syncHandler("progress")
-                                                                        .texture(GuiTextures.PROGRESS_CYCLE, 20)
-                                                                        .direction(ProgressWidget.Direction.CIRCULAR_CW))
-                                                        )
+                                                                        .size(20)))
                                                 )
                                                 .child(Flow.col()
                                                         .name("slots_col")

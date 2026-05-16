@@ -7,11 +7,11 @@ import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.value.IDoubleValue;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.drawable.GuiTextures;
+import brachy.modularui.drawable.progress.ProgressDrawable;
 import brachy.modularui.factory.PosGuiData;
 import brachy.modularui.integration.emi.recipe.ModularUIEmiRecipe;
 import brachy.modularui.integration.recipeviewer.RecipeSlotRole;
 import brachy.modularui.integration.recipeviewer.RecipeViewerSlotWidget;
-import brachy.modularui.integration.recipeviewer.entry.fluid.FluidStackList;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
 import brachy.modularui.screen.UISettings;
@@ -28,15 +28,6 @@ import brachy.modularui.widgets.layout.Flow;
 import brachy.modularui.widgets.slot.ItemSlot;
 import brachy.modularui.widgets.slot.ModularSlot;
 
-import dev.emi.emi.api.EmiRegistry;
-
-import dev.emi.emi.api.recipe.EmiRecipeCategory;
-
-import dev.emi.emi.api.stack.EmiIngredient;
-import dev.emi.emi.api.stack.EmiStack;
-
-import lombok.Getter;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -44,19 +35,21 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.wrapper.CombinedInvWrapper;
-
 import net.minecraftforge.items.wrapper.EmptyHandler;
 
+import dev.emi.emi.api.EmiRegistry;
+import dev.emi.emi.api.recipe.EmiRecipeCategory;
+import dev.emi.emi.api.stack.EmiIngredient;
+import dev.emi.emi.api.stack.EmiStack;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -284,7 +277,7 @@ public class TestMachine {
                     .child(new ProgressWidget()
                             .value(progress)
                             .size(20)
-                            .texture(GuiTextures.PROGRESS_ARROW, 20))
+                            .texture(GuiTextures.PROGRESS_ARROW, ProgressDrawable.Direction.RIGHT))
                     .child(SlotGroupWidget.rect(2, 2, i -> new ItemSlot()
                             .slot(new ModularSlot(out, i).canPut(false))
                             .recipeRole(RecipeSlotRole.OUTPUT)));

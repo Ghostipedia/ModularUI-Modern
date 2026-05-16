@@ -1,24 +1,29 @@
-package brachy.modularui.drawable;
+package brachy.modularui.drawable.progress;
 
+import brachy.modularui.ModularUIConfig;
+import brachy.modularui.drawable.UITexture;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 
 import lombok.Getter;
 
+/**
+ * A standard progress drawable which can display a progress bar with any {@link brachy.modularui.api.drawable.IDrawable}
+ * in the directions left, right, up and down.
+ */
 public class ProgressDrawable extends AbstractProgressDrawable<ProgressDrawable> {
 
     @Getter private Direction direction = Direction.RIGHT;
     @Getter private int progressPixelStepSize = 0;
 
     @Override
-    public void pushProgressStencil(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
-        float p = getCurrentProgress(width, height);
+    public void pushProgressStencil(float progress, GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
         float u0 = 0, u1 = 1, v0 = 0, v1 = 1;
         switch (this.direction) {
-            case LEFT -> u0 = 1 - p;
-            case RIGHT -> u1 = p;
-            case UP -> v0 = 1 - p;
-            case DOWN -> v1 = p;
+            case LEFT -> u0 = 1 - progress;
+            case RIGHT -> u1 = progress;
+            case UP -> v0 = 1 - progress;
+            case DOWN -> v1 = progress;
         }
         context.getStencil().push(x + u0 * width, y + v0 * height, (u1 - u0) * width, (v1 - v0) * height);
     }
@@ -26,12 +31,16 @@ public class ProgressDrawable extends AbstractProgressDrawable<ProgressDrawable>
     @Override
     protected float getCurrentProgressStepSize(int width, int height) {
         float stepSize = this.progressStepSize;
-        if (this.progressPixelStepSize > 0) {
+        int pixelStepSize = this.progressPixelStepSize;
+        if (stepSize == 0 && pixelStepSize == 0 && !ModularUIConfig.smoothProgressBars() && getFilledTexture() instanceof UITexture) {
+            pixelStepSize = 1;
+        }
+        if (pixelStepSize > 0) {
             float s = switch (this.direction) {
                 case LEFT, RIGHT -> width;
                 case UP, DOWN -> height;
             };
-            stepSize = this.progressPixelStepSize / s;
+            stepSize = pixelStepSize / s;
         }
         return stepSize;
     }
@@ -96,7 +105,6 @@ public class ProgressDrawable extends AbstractProgressDrawable<ProgressDrawable>
         return super.progressStepSize(progressStepSize);
     }
 
-
     /**
      * Sets a pixel progress step size. This is similar to {@link #progressStepSize(float)}, but this in units of pixel.
      * This can be useful when you have an actual texture.
@@ -109,6 +117,11 @@ public class ProgressDrawable extends AbstractProgressDrawable<ProgressDrawable>
         this.progressPixelStepSize = progressPixelStepSize;
         this.progressStepSize = 0;
         return this;
+    }
+
+    @Override
+    public ProgressDrawable smooth() {
+        return super.smooth().progressPixelStepSize(-1);
     }
 
     public enum Direction {

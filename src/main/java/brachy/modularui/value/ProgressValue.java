@@ -4,6 +4,8 @@ import lombok.Getter;
 
 import net.minecraft.Util;
 
+import java.util.concurrent.TimeUnit;
+
 public class ProgressValue extends DoubleValue {
 
     @Getter private final int duration;
@@ -11,6 +13,10 @@ public class ProgressValue extends DoubleValue {
     public ProgressValue(int duration) {
         super(0);
         this.duration = duration;
+    }
+
+    public ProgressValue(long duration, TimeUnit unit) {
+        this((int) unit.toMillis(duration));
     }
 
     @Override

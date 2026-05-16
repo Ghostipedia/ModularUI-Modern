@@ -1,4 +1,4 @@
-package brachy.modularui.drawable;
+package brachy.modularui.drawable.progress;
 
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
@@ -16,17 +16,16 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import lombok.Getter;
 import org.joml.Matrix4f;
 
+/**
+ * A progress texture which translates the progress into a circular angle. This works with any {@link brachy.modularui.api.drawable.IDrawable}.
+ */
 public class CircularProgressDrawable extends AbstractProgressDrawable<CircularProgressDrawable> {
 
     @Getter private Direction direction = Direction.CW;
 
     @Override
-    protected void pushProgressStencil(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
-        float p = getCurrentProgress(width, height);
-        if (p == 0) {
-            context.getStencil().push(x, y, width, height);
-            return;
-        }
+    protected void pushProgressStencil(float progress, GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
+        float p = progress;
         float angle = p * MathUtils.PI2;
         context.getStencil().push(() -> {
             ShaderInstance lastShader = RenderSystem.getShader();
