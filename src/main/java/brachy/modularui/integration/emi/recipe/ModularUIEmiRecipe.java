@@ -92,7 +92,6 @@ public abstract class ModularUIEmiRecipe implements EmiRecipe {
     }
 
     public ModularScreen createScreen(IWidget recipeUI, String owner, String name) {
-        ModularUI.LOGGER.info("Creating EMI embed for recipe {}:{}", owner, name);
         ModularPanel<?> panel;
         if (recipeUI instanceof ModularPanel<?> panel1) {
             panel = panel1;
