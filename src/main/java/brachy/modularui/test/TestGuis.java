@@ -14,6 +14,7 @@ import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.drawable.ItemDrawable;
+import brachy.modularui.drawable.ProgressDrawable;
 import brachy.modularui.drawable.Rectangle;
 import brachy.modularui.drawable.UITexture;
 import brachy.modularui.drawable.graph.GraphDrawable;
@@ -76,6 +77,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -731,6 +733,51 @@ public class TestGuis extends CustomModularScreen {
                                 .stateCount(3)
                                 .stateOverlay(GuiTextures.CYCLE_BUTTON_DEMO))
                         .name("side_options"));
+    }
+
+    public static @NotNull ModularPanel<?> buildProgressUI() {
+        Random rnd = new Random();
+        return new ModularPanel<>("progress")
+                .coverChildren()
+                .padding(5)
+                .child(Flow.row()
+                        .coverChildren()
+                        .childPadding(2)
+                        .child(new ProgressDrawable()
+                                .left()
+                                .progressDuration(3, TimeUnit.SECONDS)
+                                .emptyTexture(rndRect(LIGHT_COLORS, rnd))
+                                .filledTexture(rndRect(DARK_COLORS, rnd))
+                                .asWidget()
+                                .addTooltipLine("Right to Left")
+                                .addTooltipLine("No step size (smooth)"))
+                        .child(new ProgressDrawable()
+                                .right()
+                                .progressDuration(3, TimeUnit.SECONDS)
+                                .emptyTexture(rndRect(LIGHT_COLORS, rnd))
+                                .filledTexture(rndRect(DARK_COLORS, rnd))
+                                .progressStepSize(0.2f)
+                                .asWidget()
+                                .addTooltipLine("Left to Right")
+                                .addTooltipLine("0.2 step size"))
+                        .child(new ProgressDrawable()
+                                .up()
+                                .progressDuration(3, TimeUnit.SECONDS)
+                                .emptyTexture(rndRect(LIGHT_COLORS, rnd))
+                                .filledTexture(rndRect(DARK_COLORS, rnd))
+                                .progressPixelStepSize(1)
+                                .asWidget()
+                                .addTooltipLine("Down to Up")
+                                .addTooltipLine("1 pixel step size"))
+                        .child(new ProgressDrawable()
+                                .down()
+                                .progressDuration(3, TimeUnit.SECONDS)
+                                .emptyTexture(rndRect(LIGHT_COLORS, rnd))
+                                .filledTexture(rndRect(DARK_COLORS, rnd))
+                                .progressPixelStepSize(4)
+                                .asWidget()
+                                .addTooltipLine("Up to Down")
+                                .addTooltipLine("4 pixel step size")));
     }
 
     private static class TestPanel extends ModularPanel<TestPanel> {

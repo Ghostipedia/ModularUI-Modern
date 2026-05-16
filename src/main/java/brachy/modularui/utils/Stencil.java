@@ -69,8 +69,9 @@ public class Stencil {
      * null, it's viewport
      * transformations are applied to the area that will be stored in the stack, but not to the actual stencil.
      */
-    public void push(int x, int y, int w, int h) {
-        push(() -> drawRectangleStencilShape(context.getGraphics(), x, y, w, h), x, y, w, h);
+    public void push(float x, float y, float w, float h) {
+        push(() -> drawRectangleStencilShape(context.getGraphics(), x, y, w, h),
+                (int) Math.floor(x), (int) Math.floor(y), (int) Math.ceil(w), (int) Math.ceil(h));
     }
 
     // should not be used inside GUI'S
@@ -127,7 +128,7 @@ public class Stencil {
         }
     }
 
-    private static void drawRectangleStencilShape(GuiGraphics graphics, int x, int y, int w, int h) {
+    private static void drawRectangleStencilShape(GuiGraphics graphics, float x, float y, float w, float h) {
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
         ShaderInstance lastShader = RenderSystem.getShader();
