@@ -3,6 +3,7 @@ package brachy.modularui.api.drawable;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.drawable.DrawableStack;
 import brachy.modularui.drawable.Icon;
+import brachy.modularui.drawable.SubAreaDrawable;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetTheme;
@@ -111,8 +112,7 @@ public interface IDrawable {
      */
     @OnlyIn(Dist.CLIENT)
     default void drawAtZeroPadded(GuiContext context, Area area, WidgetTheme widgetTheme) {
-        draw(context, area.getPadding().left(), area.getPadding().top(), area.paddedWidth(), area.paddedHeight(),
-                widgetTheme);
+        draw(context, area.getPadding().left(), area.getPadding().top(), area.paddedWidth(), area.paddedHeight(), widgetTheme);
     }
 
     /**
@@ -158,6 +158,10 @@ public interface IDrawable {
      */
     default Icon asIcon() {
         return new Icon(this).size(getDefaultWidth(), getDefaultHeight());
+    }
+
+    default IDrawable getSubArea(float u0, float v0, float u1, float v1) {
+        return new SubAreaDrawable(this).uv(u0, v0, u1, v1);
     }
 
     /**

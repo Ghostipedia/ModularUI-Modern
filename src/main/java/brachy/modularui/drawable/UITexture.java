@@ -151,10 +151,6 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
         return this;
     }
 
-    public UITexture getSubArea(Area bounds) {
-        return getSubArea(bounds.x, bounds.y, bounds.ex(), bounds.ey());
-    }
-
     /**
      * Returns a texture with a sub area relative to this area texture
      *
@@ -164,6 +160,7 @@ public class UITexture implements IDrawable, IJsonSerializable<UITexture> {
      * @param vEnd   y end offset of the image (0-1)
      * @return relative sub area
      */
+    @Override
     public UITexture getSubArea(float uStart, float vStart, float uEnd, float vEnd) {
         return new UITexture(this.location, lerpU(uStart), lerpV(vStart), lerpU(uEnd), lerpV(vEnd), this.colorType);
     }
