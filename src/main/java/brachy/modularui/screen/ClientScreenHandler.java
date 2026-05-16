@@ -368,9 +368,8 @@ public class ClientScreenHandler {
             return true;
         }
         if (!hasLevel) return false; // E oly closes in world
-        boolean isInventoryKey = Minecraft.getInstance().options.keyInventory
-                .isActiveAndMatches(InputConstants.getKey(keyCode, scanCode));
-        if (keyCode == 1 || isInventoryKey) {
+        if (Minecraft.getInstance().options.keyInventory
+                .isActiveAndMatches(InputConstants.getKey(keyCode, scanCode))) {
             dropOrClosePanel();
             return true;
         }
