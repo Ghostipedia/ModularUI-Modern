@@ -31,6 +31,7 @@ public class DynamicLinkedSyncHandler<S extends ValueSyncHandler<?, ?>> extends 
     public DynamicLinkedSyncHandler(S linkedValue) {
         this.linkedValue = linkedValue;
         linkedValue.setChangeListener(() -> notifyUpdate(false));
+        allowC2S();
     }
 
     @Override

@@ -32,6 +32,10 @@ public class DynamicSyncHandler extends SyncHandler<DynamicSyncHandler> implemen
     private IPacketWriter lastRejectedPacket;
     private IWidget lastRejectedWidget;
 
+    public DynamicSyncHandler() {
+        allowC2S();
+    }
+
     @Override
     public void readOnClient(int id, FriendlyByteBuf buf) {
         if (id == 0) {
