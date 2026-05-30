@@ -32,7 +32,6 @@ import brachy.modularui.widget.EmptyWidget;
 import brachy.modularui.widget.ParentWidget;
 import brachy.modularui.widgets.ButtonWidget;
 import brachy.modularui.widgets.CycleButtonWidget;
-import brachy.modularui.widgets.DynamicSyncedWidget;
 import brachy.modularui.widgets.Expandable;
 import brachy.modularui.widgets.ItemDisplayWidget;
 import brachy.modularui.widgets.PageButton;
@@ -40,6 +39,7 @@ import brachy.modularui.widgets.PagedWidget;
 import brachy.modularui.widgets.ProgressWidget;
 import brachy.modularui.widgets.SlotGroupWidget;
 import brachy.modularui.widgets.ToggleButton;
+import brachy.modularui.widgets.dynamic.DynamicWidget;
 import brachy.modularui.widgets.layout.Flow;
 import brachy.modularui.widgets.slot.FluidSlot;
 import brachy.modularui.widgets.slot.ItemSlot;
@@ -325,11 +325,11 @@ public class TestBlockEntity extends AbstractBlockEntity implements IUIHolder<Po
                                                                         dynamicSyncHandler.notifyUpdate(packet -> packet.writeItemStack(newItem, false));
                                                                     }
                                                                 }))))
-                                                .child(new DynamicSyncedWidget<>()
+                                                .child(new DynamicWidget<>()
                                                         .widthRel(1f)
                                                         .syncHandler(dynamicSyncHandler))
                                                 .child(Text.str("Dynamic linked sync handler demo.").asWidget().scale(0.7f).marginTop(6))
-                                                .child(new DynamicSyncedWidget<>()
+                                                .child(new DynamicWidget<>()
                                                         .widthRel(1f)
                                                         .coverChildrenHeight()
                                                         .syncHandler(dynamicLinkedSyncHandler))
