@@ -13,6 +13,8 @@ import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.Rectangle;
 import brachy.modularui.utils.TooltipLines;
+import brachy.modularui.utils.serialization.codec.CodecUtil;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 import brachy.modularui.widget.sizer.Area;
 
 import net.minecraft.client.gui.screens.Screen;
@@ -20,29 +22,28 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.Mth;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.serialization.Codec;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.common.MinecraftForge;
 
-import com.mojang.datafixers.util.Either;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.experimental.Tolerate;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Accessors(fluent = true, chain = true)
@@ -50,10 +51,18 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
 
     private static final Area HOLDER = new Area();
 
+    public static final MutableObjectCodec<RichTooltip> CODEC = MutableObjectCodec.builder(RichTooltip::new)
+            .addOpt("posType", RichTooltip::pos, RichTooltip::pos, CodecUtil.wrapNullsafe(Pos.CODEC), null)
+            .addOpt("showUpTimer", RichTooltip::showUpTimer, RichTooltip::showUpTimer, Codec.INT, 0)
+            .addOpt("titleMargin", RichTooltip::titleMargin, RichTooltip::titleMargin, Codec.INT, 0)
+            .addFieldsOf(RichText.CODEC, tooltip -> tooltip.text)
+            .build();
+
     private final RichText text = new RichText();
     @Setter
     private Consumer<Area> parent;
     @Setter
+    @Getter
     private Pos pos = null;
     private Consumer<RichTooltip> tooltipBuilder;
     @Getter
@@ -62,11 +71,11 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
     @Getter
     @Setter
     private boolean autoUpdate = false;
-    private int titleMargin = 0;
+    @Getter private int titleMargin = 0;
     private boolean appliedMargin = true;
 
     private int x = 0, y = 0;
-    private int maxWidth = Integer.MAX_VALUE;
+    @Getter private int maxWidth = Integer.MAX_VALUE;
 
     private boolean dirty;
 
@@ -152,11 +161,8 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
 
         // vanilla event to gather additional tooltip
         TooltipLines textLines = copy.getAsText();
-        List<Either<FormattedText, TooltipComponent>> vanillaLines = textLines.stream()
-                .map(either -> either.mapBoth(c -> (FormattedText) c, Function.identity()))
-                .toList();
         // noinspection UnstableApiUsage
-        var vanillaGatherEvent = new RenderTooltipEvent.GatherComponents(stack, screen.width, screen.height, vanillaLines, this.maxWidth);
+        var vanillaGatherEvent = new RenderTooltipEvent.GatherComponents(stack, screen.width, screen.height, textLines, this.maxWidth);
         if (MinecraftForge.EVENT_BUS.post(vanillaGatherEvent)) return;
         this.maxWidth = vanillaGatherEvent.getMaxWidth();
 
@@ -195,7 +201,7 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         context.getGraphics().pose().translate(-screen.x, -screen.y, 400);
         GuiDraw.drawTooltipBackground(context, stack, components, area.x, area.y, area.width, area.height, copy);
 
-        // MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostBackground(stack, vanillaLines, area.x, area.y,
+        // MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostBackground(stack, textLines, area.x, area.y,
         // TextRenderer.getFont(), area.width, area.height));
 
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
@@ -393,10 +399,6 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         return this;
     }
 
-    public RichTooltip titleMargin() {
-        return titleMargin(0);
-    }
-
     public RichTooltip titleMargin(int margin) {
         this.titleMargin = margin;
         this.appliedMargin = false;
@@ -480,7 +482,7 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         return result;
     }
 
-    public enum Pos {
+    public enum Pos implements StringRepresentable {
 
         ABOVE(GuiAxis.Y),
         BELOW(GuiAxis.Y),
@@ -491,10 +493,19 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         NEXT_TO_MOUSE(null),
         FIXED(null);
 
+        public static final Codec<Pos> CODEC = StringRepresentable.fromEnum(Pos::values);
+
         public final GuiAxis axis;
+        public final String name;
 
         Pos(GuiAxis axis) {
             this.axis = axis;
+            this.name = name().toLowerCase(Locale.ENGLISH);
+        }
+
+        @Override
+        public @NotNull String getSerializedName() {
+            return this.name;
         }
     }
 }

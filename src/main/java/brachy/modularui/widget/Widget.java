@@ -20,15 +20,21 @@ import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.theme.WidgetThemeKey;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 import brachy.modularui.value.sync.ISyncRegistrar;
 import brachy.modularui.value.sync.ModularSyncManager;
 import brachy.modularui.value.sync.PanelSyncManager;
 import brachy.modularui.value.sync.SyncHandler;
 import brachy.modularui.value.sync.ValueSyncHandler;
+import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widget.sizer.StandardResizer;
 import brachy.modularui.widgets.slot.ItemSlot;
 
+import com.mojang.serialization.Codec;
+
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -53,9 +60,35 @@ import java.util.function.Predicate;
  */
 public class Widget<W extends Widget<W>> extends AbstractWidget implements IPositioned<W>, ITooltip<W>, ISynced<W> {
 
+    public static final MutableObjectCodec<Widget<?>> CODEC = MutableObjectCodec.<Widget<?>>widgetBuilder("Widget")
+            .instance(Widget::new)
+            .addOpt("name", Widget::name, Widget::getName, Codec.STRING, null)
+            .addOpt("enabled", Widget::setEnabled, Widget::isEnabled, Codec.BOOL, true)
+            .addOpt("syncKey", Widget::setSyncKey, Widget::getSyncKey, Codec.STRING, null)
+            .addOpt("disableThemeBackground", Widget::disableThemeBackground, Widget::isDisableThemeBackground, Codec.BOOL, false)
+            .addOpt("disableHoverThemeBackground", Widget::disableHoverThemeBackground, Widget::isDisableHoverThemeBackground, Codec.BOOL, false)
+            .addOpt("shadow", Widget::shadow, Widget::getShadow, IDrawable.CODEC, null)
+            .addOpt("background", Widget::setBackground, Widget::getBackground, IDrawable.CODEC, null)
+            .addOpt("backgroundOverlay", Widget::setBackground, Widget::getBackground, IDrawable.CODEC, null)
+            .addOpt("overlay", Widget::overlay, Widget::getOverlay, IDrawable.CODEC, null)
+            .addOpt("hoverBackground", Widget::setHoverBackground, Widget::getHoverBackground, IDrawable.CODEC, null)
+            .addOpt("hoverBackgroundOverlay", Widget::setHoverBackgroundOverlay, Widget::getHoverBackground, IDrawable.CODEC, null)
+            .addOpt("hoverOverlay", Widget::hoverOverlay, Widget::getHoverOverlay, IDrawable.CODEC, null)
+            .addOpt("widgetTheme", Widget::widgetTheme, Widget::getWidgetThemeOverride, WidgetThemeKey.CODEC, null)
+            .addOpt("excludeAreaInRecipeViewer", Widget::excludeAreaInRecipeViewer, Widget::isExcludeAreaInRecipeViewer, Codec.BOOL, false)
+            .addOpt("tooltip", Widget::setTooltip, Widget::getTooltip, RichTooltip.CODEC, null)
+            .addFieldsOf(StandardResizer.COMPACT_CODEC, Widget::resizer)
+            .addFieldOf(Area.CODEC, Widget::getArea, "margin")
+            .addFieldOf(Area.CODEC, Widget::getArea, "padding")
+            .addUnencodable("transform", Widget::setTransform, Widget::getTransform)
+            .addUnencodable("guiActionListeners", Widget::setGuiActionListeners, Widget::getGuiActionListeners)
+            .addUnencodable("onUpdateListener", Widget::setOnUpdateListener, Widget::getOnUpdateListener)
+            .build();
+
     // other
     @Getter private boolean excludeAreaInRecipeViewer = false;
     // sizing
+    @Getter
     private BiConsumer<W, IViewportStack> transform;
     // syncing
     /**
@@ -66,6 +99,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     @Getter
     @Nullable
     private IValue<?> value;
+    @Getter
     @Nullable
     private String syncKey;
     /**
@@ -117,6 +151,8 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     @Nullable
     private WidgetThemeKey<?> widgetThemeOverride = null;
     // listener
+    @Getter
+    @Setter(AccessLevel.PRIVATE)
     @Nullable
     private List<IGuiAction> guiActionListeners; // TODO replace with proper event system
     @Getter
@@ -335,6 +371,10 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
         return getThis();
     }
 
+    private void setTooltip(RichTooltip tooltip) {
+        this.tooltip = tooltip != null ? tooltip.parent(this) : null;
+    }
+
     /**
      * Should be called when information which is displayed in the tooltip via
      * {@link ITooltip#tooltipDynamic(Consumer)}.
@@ -435,7 +475,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
      * @return this
      */
     public W background(IDrawable... background) {
-        return backgroundOverlay(background).disableThemeBackground(true);
+        return backgroundOverlay(background).disableThemeBackground(background != null);
     }
 
     /**
@@ -483,7 +523,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
      * @return this
      */
     public W hoverBackground(IDrawable... background) {
-        return hoverBackgroundOverlay(background).disableHoverThemeBackground(true);
+        return hoverBackgroundOverlay(background).disableHoverThemeBackground(background != null);
     }
 
     /**
@@ -514,6 +554,27 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     public W disableHoverThemeBackground(boolean b) {
         this.disableHoverThemeBackground = b;
         return getThis();
+    }
+
+    // background setter for codec
+    private void setBackground(IDrawable d) {setBackground(d, true, false);}
+
+    private void setHoverBackground(IDrawable d) {setBackground(d, true, true);}
+
+    private void setBackgroundOverlay(IDrawable d) {setBackground(d, false, false);}
+
+    private void setHoverBackgroundOverlay(IDrawable d) {setBackground(d, false, true);}
+
+    private void setBackground(IDrawable drawable, boolean disableTheme, boolean hover) {
+        if (drawable != null) {
+            if (hover) {
+                this.hoverBackground = drawable;
+                if (disableTheme) disableThemeBackground(true);
+            } else {
+                this.background = drawable;
+                if (disableTheme) disableHoverThemeBackground(true);
+            }
+        }
     }
 
     /**
@@ -640,6 +701,11 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
         return getThis();
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void setOnUpdateListener(Consumer listener) {
+        onUpdateListener(listener);
+    }
+
     /**
      * Sets a condition for when to enable/disable this widget. This register an update listener which checks the
      * condition every tick.
@@ -679,6 +745,11 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
         return getThis();
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void setTransform(BiConsumer listener) {
+        transform(listener);
+    }
+
     // ---------------
     // === Syncing ===
     // --------------
@@ -716,8 +787,12 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
      */
     @Override
     public W syncHandler(String name, int id) {
-        this.syncKey = ISyncRegistrar.makeSyncKey(name, id);
+        this.syncKey = name == null ? null : ISyncRegistrar.makeSyncKey(name, id);
         return getThis();
+    }
+
+    private void setSyncKey(String syncKey) {
+        this.syncKey = syncKey;
     }
 
     @MustBeInvokedByOverriders
@@ -819,5 +894,29 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     @Override
     public W getThis() {
         return (W) this;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || obj.getClass() != Widget.class) return false;
+        return isEqual((Widget<?>) obj);
+    }
+
+    public boolean isEqual(Widget<?> o) {
+        return o != null &&
+                Objects.equals(getName(), o.getName()) &&
+                isEnabled() == o.isEnabled() &&
+                Objects.equals(this.syncKey, o.syncKey) &&
+                this.disableThemeBackground == o.disableThemeBackground &&
+                this.disableHoverThemeBackground == o.disableHoverThemeBackground &&
+                Objects.equals(this.shadow, o.shadow) &&
+                Objects.equals(this.background, o.background) &&
+                Objects.equals(this.hoverBackground, o.hoverBackground) &&
+                Objects.equals(this.overlay, o.overlay) &&
+                Objects.equals(this.hoverOverlay, o.hoverOverlay) &&
+                this.widgetThemeOverride == o.widgetThemeOverride &&
+                this.excludeAreaInRecipeViewer == o.excludeAreaInRecipeViewer &&
+                Objects.equals(this.tooltip, o.tooltip) &&
+                resizer().isEqual(o.resizer());
     }
 }

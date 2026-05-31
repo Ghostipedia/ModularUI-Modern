@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * A list that lazily parses a list of text-like and drawable types into a vanilla compatible types.
  */
-public class TooltipLines extends AbstractList<Either<Component, TooltipComponent>> {
+public class TooltipLines extends AbstractList<Either<FormattedText, TooltipComponent>> {
 
     private final List<Object> elements;
     private final List<Line> lines = new ArrayList<>(8);
@@ -96,7 +96,7 @@ public class TooltipLines extends AbstractList<Either<Component, TooltipComponen
     }
 
     @Override
-    public Either<Component, TooltipComponent> get(int index) {
+    public Either<FormattedText, TooltipComponent> get(int index) {
         buildUntil(index);
         return lines.get(index).text;
     }
@@ -108,7 +108,7 @@ public class TooltipLines extends AbstractList<Either<Component, TooltipComponen
     }
 
     @Override
-    public Either<Component, TooltipComponent> remove(int index) {
+    public Either<FormattedText, TooltipComponent> remove(int index) {
         buildUntil(index);
         Line line = lines.remove(index);
 
@@ -126,7 +126,7 @@ public class TooltipLines extends AbstractList<Either<Component, TooltipComponen
     }
 
     @Override
-    public void add(int index, Either<Component, TooltipComponent> s) {
+    public void add(int index, Either<FormattedText, TooltipComponent> s) {
         buildUntil(index);
         int elementIndex = index >= this.lines.size() ? this.lastElementIndex : this.lines.get(index).index;
         lines.add(index, new Line(s, elementIndex, 1));
@@ -134,6 +134,9 @@ public class TooltipLines extends AbstractList<Either<Component, TooltipComponen
             lines.get(i).index++;
         }
         s.ifLeft(ft -> {
+            if (!(ft instanceof Component)) {
+                throw new IllegalArgumentException("Tooltip text must be components");
+            }
             this.elements.add(elementIndex, ft);
             this.lastElementIndex++;
         });
@@ -149,8 +152,13 @@ public class TooltipLines extends AbstractList<Either<Component, TooltipComponen
     }
 
     @Override
-    public Either<Component, TooltipComponent> set(int index, Either<Component, TooltipComponent> element) {
+    public Either<FormattedText, TooltipComponent> set(int index, Either<FormattedText, TooltipComponent> element) {
         Line line = lines.get(index);
+        element.ifLeft(ft -> {
+            if (!(ft instanceof Component)) {
+                throw new IllegalArgumentException("Tooltip text must be components");
+            }
+        });
         if (line.length == 1) {
             this.elements.set(line.index, element);
             this.lines.set(index, new Line(element, line.index, line.length));
@@ -197,17 +205,17 @@ public class TooltipLines extends AbstractList<Either<Component, TooltipComponen
 
     private static class Line {
 
-        private final Either<Component, TooltipComponent> text;
+        private final Either<FormattedText, TooltipComponent> text;
         private final int length;
         private int index;
 
-        private Line(Either<Component, TooltipComponent> text, int index, int length) {
+        private Line(Either<FormattedText, TooltipComponent> text, int index, int length) {
             this.text = text;
             this.index = index;
             this.length = length;
         }
 
-        private Line(Component text, int index, int length) {
+        private Line(FormattedText text, int index, int length) {
             this(Either.left(text), index, length);
         }
 

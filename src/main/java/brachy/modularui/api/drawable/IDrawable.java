@@ -9,12 +9,19 @@ import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.Color;
+import brachy.modularui.utils.serialization.codec.CodecRegistry;
+import brachy.modularui.utils.serialization.codec.CodecUtil;
 import brachy.modularui.widget.Widget;
 import brachy.modularui.widget.sizer.Area;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.MapCodec;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import com.google.gson.JsonElement;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -32,6 +39,55 @@ public interface IDrawable {
         } else {
             return new DrawableStack(drawables);
         }
+    }
+
+    /**
+     * An empty drawable. Does nothing.
+     */
+    IDrawable EMPTY = new IDrawable() {
+        @Override
+        public void draw(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {}
+
+        @Override
+        public String toString() {
+            return "IDrawable.EMPTY";
+        }
+    };
+
+    /**
+     * An empty drawable used to mark hover textures as "should not be used"!
+     */
+    IDrawable NONE = new IDrawable() {
+        @Override
+        public void draw(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {}
+
+        @Override
+        public String toString() {
+            return "IDrawable.NONE";
+        }
+    };
+
+    CodecRegistry<IDrawable> CODECS = new CodecRegistry<>();
+    MapCodec<IDrawable> CODEC_DISPATCH = CodecUtil.dispatchNullable(Codec.STRING, IDrawable::getTypeName, CODECS::getNullableCodec);
+    Codec<IDrawable> CODEC_EMPTY_NONE = Codec.STRING.flatXmap(s -> {
+        if (s == null || s.equals("empty") || s.equals("null")) return DataResult.success(EMPTY);
+        if (s.equals("none")) return DataResult.success(NONE);
+        return DataResult.error(() -> "Only valid options are empty, null and none");
+    }, d -> {
+        if (d == EMPTY) return DataResult.success("empty");
+        if (d == NONE) return DataResult.success("none");
+        return DataResult.error(() -> "Only works for empty and none");
+    });
+    Codec<IDrawable> CODEC = CodecUtil.chainedCodec(
+            CodecUtil.nullCodec(EMPTY), CODEC_EMPTY_NONE,
+            DrawableStack.CODEC, CODEC_DISPATCH.codec());
+
+    static DataResult<JsonElement> toJson(IDrawable drawable) {
+        return CODEC.encodeStart(JsonOps.INSTANCE, drawable);
+    }
+
+    static JsonElement toJsonOrThrow(IDrawable drawable) {
+        return toJson(drawable).getOrThrow(false, s -> {});
     }
 
     /**
@@ -164,15 +220,9 @@ public interface IDrawable {
         return new SubAreaDrawable(this).uv(u0, v0, u1, v1);
     }
 
-    /**
-     * An empty drawable. Does nothing.
-     */
-    IDrawable EMPTY = (context, x, y, width, height, widgetTheme) -> {};
-
-    /**
-     * An empty drawable used to mark hover textures as "should not be used"!
-     */
-    IDrawable NONE = (context, x, y, width, height, widgetTheme) -> {};
+    default String getTypeName() {
+        return getClass().getSimpleName();
+    }
 
     static boolean isVisible(@Nullable IDrawable drawable) {
         if (drawable == null || drawable == EMPTY || drawable == NONE) return false;

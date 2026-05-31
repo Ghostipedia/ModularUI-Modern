@@ -1,23 +1,23 @@
 package brachy.modularui.utils.serialization.json;
 
-import brachy.modularui.api.drawable.IDrawable;
-import brachy.modularui.drawable.DrawableSerialization;
-import brachy.modularui.utils.Alignment;
-import brachy.modularui.utils.Color;
+import brachy.modularui.ModularUI;
+import brachy.modularui.utils.serialization.codec.MutableCodec;
+
+import com.mojang.serialization.Decoder;
+import com.mojang.serialization.Encoder;
+import com.mojang.serialization.JsonOps;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSerializationContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -28,23 +28,7 @@ public class JsonHelper {
 
     public static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
-            .registerTypeAdapter(IDrawable.class, new DrawableSerialization())
-            .registerTypeAdapter(Alignment.class, new Alignment.Json())
             .create();
-
-    public static final JsonDeserializationContext DESERIALIZER = GSON::fromJson;
-    public static final JsonSerializationContext SERIALIZER = new JsonSerializationContext() {
-        @Override
-        public JsonElement serialize(Object o) {
-            return GSON.toJsonTree(o);
-        }
-
-        @Override
-        public JsonElement serialize(Object o, Type type) {
-            return GSON.toJsonTree(o, type);
-        }
-    };
-
 
     public static JsonElement serialize(Object object) {
         return GSON.toJsonTree(object);
@@ -189,23 +173,6 @@ public class JsonHelper {
         return defaultValue;
     }
 
-    public static int getColor(JsonObject json, int defaultValue, String... keys) {
-        JsonElement element = getJsonElement(json, keys);
-        if (element != null) {
-            return Color.ofJson(element);
-        }
-        return defaultValue;
-    }
-
-    public static int getColorWithFallback(JsonObject json, JsonObject fallback, int defaultValue,
-                                           String @NotNull ... keys) {
-        JsonElement element = getJsonElement(json, keys);
-        if (element != null) {
-            return Color.ofJson(element);
-        }
-        return getColor(fallback, defaultValue, keys);
-    }
-
     public static @Nullable JsonElement getJsonElement(JsonObject json, String @NotNull ... keys) {
         if (json == null) return null;
         for (String key : keys) {
@@ -231,5 +198,35 @@ public class JsonHelper {
         JsonObject json = new JsonObject();
         writer.accept(json);
         return json;
+    }
+
+    public static <T> JsonElement toJson(Encoder<T> codec, T input) {
+        var d = codec.encodeStart(JsonOps.INSTANCE, input);
+        if (d.error().isPresent()) ModularUI.LOGGER.error("Error encoding '{}' to json: {}", input, d.error().get());
+        return d.result().orElse(JsonNull.INSTANCE);
+    }
+
+    public static <T> String toJsonString(Encoder<T> codec, T input) {
+        return GSON.toJson(toJson(codec, input));
+    }
+
+    public static <T> T fromJson(MutableCodec<T> codec, JsonElement json, T instance) {
+        var d = codec.parse(JsonOps.INSTANCE, json, instance);
+        if (d.error().isPresent()) ModularUI.LOGGER.error("Error decoding from json: {}", d.error().get());
+        return instance;
+    }
+
+    public static <T> T fromJson(Decoder<T> codec, JsonElement json) {
+        var d = codec.parse(JsonOps.INSTANCE, json);
+        if (d.error().isPresent()) ModularUI.LOGGER.error("Error decoding from json: {}", d.error().get());
+        return d.result().orElseThrow();
+    }
+
+    public static <T> T fromJsonString(MutableCodec<T> codec, String json, T instance) {
+        return fromJson(codec, JsonParser.parseString(json), instance);
+    }
+
+    public static <T> T fromJsonString(Decoder<T> codec, String json) {
+        return fromJson(codec, JsonParser.parseString(json));
     }
 }

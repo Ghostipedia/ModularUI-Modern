@@ -1,25 +1,36 @@
 package brachy.modularui.utils;
 
-import brachy.modularui.utils.serialization.json.JsonHelper;
+import brachy.modularui.utils.serialization.codec.CodecUtil;
+
+import net.minecraft.util.ExtraCodecs;
+import net.minecraft.util.StringRepresentable;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import com.google.common.base.CaseFormat;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import lombok.AccessLevel;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Type;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 public class Alignment {
 
     private static final Map<String, Alignment> ALIGNMENT_MAP = new Object2ObjectOpenHashMap<>();
 
-    public final float x, y;
+    private static final Codec<Alignment> CODEC_OF_INSTANCE = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.FLOAT.fieldOf("x").forGetter(Alignment::getX),
+            Codec.FLOAT.fieldOf("y").forGetter(Alignment::getY)
+    ).apply(instance, Alignment::new));
+    private static final Codec<Alignment> CODEC_OF_NAME = ExtraCodecs.stringResolverCodec(Alignment::getName, ALIGNMENT_MAP::get);
+
+    public static final Codec<Alignment> CODEC = CodecUtil.chainedCodec(CODEC_OF_NAME, CODEC_OF_INSTANCE);
+
+    @Getter public final float x, y;
+    @Getter(AccessLevel.PRIVATE) private final String name;
 
     public static final Alignment TopLeft = new Alignment(0, 0, "TopLeft");
     public static final Alignment TopCenter = new Alignment(0.5f, 0, "TopCenter");
@@ -53,6 +64,7 @@ public class Alignment {
     private Alignment(float x, float y, String name) {
         this.x = x;
         this.y = y;
+        this.name = name;
         if (name != null) {
             ALIGNMENT_MAP.put(name, this);
             ALIGNMENT_MAP.put(CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name), this);
@@ -63,17 +75,33 @@ public class Alignment {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof Alignment other)) return false;
-        return this.x == other.x && this.y == other.y;
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Alignment alignment = (Alignment) o;
+        return Float.compare(x, alignment.x) == 0 && Float.compare(y, alignment.y) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y);
+    }
+
+    @Override
+    public String toString() {
+        if (this.name != null) {
+            return "Alignment{" + this.name + "}";
+        }
+        return "Alignment{" +
+                "x=" + x +
+                ", y=" + y +
+                '}';
     }
 
     /**
      * Defines how elements should be aligned on the main axis.
      * In a row this would mean the x coordinates.
      */
-    public enum MainAxis {
+    public enum MainAxis implements StringRepresentable {
 
         /**
          * All children will be put at the start of the Flow next to each other.
@@ -102,14 +130,27 @@ public class Alignment {
          * flow has exactly one
          * child, then this behaves the same as {@link #CENTER}.
          */
-        SPACE_AROUND
+        SPACE_AROUND;
+
+        public static final Codec<MainAxis> CODEC = StringRepresentable.fromEnum(MainAxis::values);
+
+        public final String name;
+
+        MainAxis() {
+            this.name = name().toLowerCase(Locale.ENGLISH);
+        }
+
+        @Override
+        public @NotNull String getSerializedName() {
+            return this.name;
+        }
     }
 
     /**
      * Defines how elements should be aligned on the cross axis.
      * In a row this would mean the y coordinates.
      */
-    public enum CrossAxis {
+    public enum CrossAxis implements StringRepresentable {
 
         /**
          * All children will be put at the start of the Flow next to each other.
@@ -122,37 +163,19 @@ public class Alignment {
         /**
          * All children will be put at the end of the Flow next to each other (this does not reverse children order).
          */
-        END
-    }
+        END;
 
-    public static class Json implements JsonDeserializer<Alignment>, JsonSerializer<Alignment> {
+        public static final Codec<CrossAxis> CODEC = StringRepresentable.fromEnum(CrossAxis::values);
 
-        @Override
-        public Alignment deserialize(JsonElement json, Type typeOfT,
-                                     JsonDeserializationContext context) throws JsonParseException {
-            if (!json.isJsonObject()) {
-                Alignment alignment = ALIGNMENT_MAP.get(json.getAsString());
-                if (alignment == null) {
-                    throw new JsonParseException("Can't find alignment for " + json.getAsString());
-                }
-                return alignment;
-            }
-            float x = JsonHelper.getFloat(json.getAsJsonObject(), 0f, "x");
-            float y = JsonHelper.getFloat(json.getAsJsonObject(), 0f, "y");
-            return new Alignment(x, y);
+        public final String name;
+
+        CrossAxis() {
+            this.name = name().toLowerCase(Locale.ENGLISH);
         }
 
         @Override
-        public JsonElement serialize(Alignment src, Type typeOfSrc, JsonSerializationContext context) {
-            for (Map.Entry<String, Alignment> entry : ALIGNMENT_MAP.entrySet()) {
-                if (entry.getValue() == src) {
-                    return new JsonPrimitive(entry.getKey());
-                }
-            }
-            return JsonHelper.makeJson(json -> {
-                json.addProperty("x", src.x);
-                json.addProperty("y", src.y);
-            });
+        public @NotNull String getSerializedName() {
+            return this.name;
         }
     }
 }

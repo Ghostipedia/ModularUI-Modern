@@ -1,5 +1,10 @@
 package brachy.modularui.theme;
 
+import brachy.modularui.api.IThemeApi;
+
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.RecordBuilder;
+
 public record WidgetThemeEntry<T extends WidgetTheme>(WidgetThemeKey<T> key, T theme, T hoverTheme) {
 
     public WidgetThemeEntry(WidgetThemeKey<T> key, T theme) {
@@ -7,7 +12,7 @@ public record WidgetThemeEntry<T extends WidgetTheme>(WidgetThemeKey<T> key, T t
     }
 
     public T getTheme(boolean hover) {
-        return hover ? hoverTheme : theme;
+        return hover ? this.hoverTheme : this.theme;
     }
 
     @SuppressWarnings("unchecked")
@@ -18,5 +23,15 @@ public record WidgetThemeEntry<T extends WidgetTheme>(WidgetThemeKey<T> key, T t
         throw new IllegalStateException(
                 String.format("Got widget theme with invalid type. Got type '%s', but expected type '%s'",
                         this.key.getWidgetThemeType().getSimpleName(), expectedType.getSimpleName()));
+    }
+
+    public <J> void encode(DynamicOps<J> ops, RecordBuilder<J> mapBuilder, boolean fallback) {
+        if (fallback) {
+            this.key.getCodec().encode(this.theme, ops, mapBuilder);
+        } else {
+            mapBuilder.add(this.key.getFullName(), this.key.getCodec().codec().encodeStart(ops, this.theme));
+        }
+        if (this.theme == this.hoverTheme) return;
+        mapBuilder.add(this.key.getFullName() + IThemeApi.HOVER_SUFFIX, this.key.getCodec().codec().encodeStart(ops, this.hoverTheme));
     }
 }

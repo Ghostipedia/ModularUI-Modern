@@ -7,25 +7,30 @@ import brachy.modularui.api.drawable.IRichTextBuilder;
 import brachy.modularui.api.drawable.ITextLine;
 import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.layout.IViewportStack;
-import brachy.modularui.client.component.DrawableTooltipComponent;
-import brachy.modularui.client.component.TooltipComponentIcon;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Alignment;
 import brachy.modularui.utils.TooltipLines;
-
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import brachy.modularui.utils.serialization.codec.CodecUtil;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
-import net.minecraft.world.inventory.tooltip.TooltipComponent;
+import net.minecraft.util.ExtraCodecs;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.Decoder;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.Encoder;
 
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -34,6 +39,35 @@ import java.util.regex.Pattern;
 public class RichText implements IDrawable, IRichTextBuilder<RichText> {
 
     private static final TextRenderer renderer = new TextRenderer();
+
+    private static final Decoder<Object> RICH_ELEMENT_DECODER = CodecUtil.optionsDecoder(
+            ModularComponent.CODEC.codec(), ExtraCodecs.COMPONENT,
+            Spacer.CODEC_MAP.codec(), Codec.STRING, IDrawable.CODEC);
+    private static final Encoder<Object> RICH_ELEMENT_ENCODER = new Encoder<>() {
+        @Override
+        public <T> DataResult<T> encode(Object input, DynamicOps<T> ops, T prefix) {
+            if (input == null) return DataResult.success(ops.empty());
+            if (input instanceof ModularComponent v) {
+                if (v == Text.LINE_FEED) {
+                    return DataResult.success(ops.createString("\\n"));
+                }
+                return Text.CODEC.codec().encode(v, ops, prefix);
+            }
+            if (input instanceof Component v) return ExtraCodecs.COMPONENT.encode(v, ops, prefix);
+            if (input instanceof IDrawable v) return IDrawable.CODEC.encode(v, ops, prefix);
+            if (input instanceof Spacer v) return Spacer.CODEC_MAP.codec().encode(v, ops, prefix);
+            return DataResult.error(() -> "RichText is currently unable to encode objects of type " + input.getClass().getSimpleName());
+        }
+    };
+    public static final Codec<Object> RICH_ELEMENT_CODEC = Codec.of(RICH_ELEMENT_ENCODER, RICH_ELEMENT_DECODER);
+
+    public static final MutableObjectCodec<RichText> CODEC = MutableObjectCodec.drawableBuilder(RichText::new)
+            .addOpt("alignment", RichText::alignment, RichText::getAlignment, Alignment.CODEC, Alignment.CenterLeft)
+            .addOpt("scale", RichText::scale, RichText::getScale, Codec.FLOAT, 1f)
+            .addOpt("color", RichText::textColor, RichText::getColor, CodecUtil.wrapNullsafe(Codec.INT), null)
+            .addOpt("shadow", RichText::textShadow, RichText::getShadow, CodecUtil.wrapNullsafe(Codec.BOOL), null)
+            .add("elements", RichText::setElements, RichText::getElementsForCodec, RICH_ELEMENT_CODEC.listOf())
+            .build();
 
     private final List<Object> elements = new ArrayList<>();
     private TooltipLines componentList;
@@ -57,6 +91,25 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
             this.componentList = new TooltipLines(this.elements);
         }
         return this.componentList;
+    }
+
+    private void setElements(List<Object> elements) {
+        clearText();
+        elements.stream().filter(Objects::nonNull).map(o -> {
+            if (o instanceof String s) {
+                if ("\\n".equals(s)) return Text.LINE_FEED;
+                return Text.str(s);
+            }
+            if (o instanceof IDrawable d && !(d instanceof IIcon)) {
+                return d.asIcon();
+            }
+            return o;
+        }).forEach(this::addElement);
+        verifyListElements(this.elements);
+    }
+
+    private List<Object> getElementsForCodec() {
+        return this.elements;
     }
 
     private void clearComponents() {
@@ -166,6 +219,11 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
         return this;
     }
 
+    public RichText textColor(Integer color) {
+        this.color = color;
+        return this;
+    }
+
     @Override
     public RichText scale(float scale) {
         this.scale = scale;
@@ -174,6 +232,11 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
 
     @Override
     public RichText textShadow(boolean shadow) {
+        this.shadow = shadow;
+        return this;
+    }
+
+    public RichText textShadow(Boolean shadow) {
         this.shadow = shadow;
         return this;
     }
@@ -377,6 +440,22 @@ public class RichText implements IDrawable, IRichTextBuilder<RichText> {
         this.scale = richText.scale;
         this.color = richText.color;
         this.shadow = richText.shadow;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        RichText text = (RichText) o;
+        return Float.compare(scale, text.scale) == 0 &&
+                Objects.equals(elements, text.elements) &&
+                Objects.equals(alignment, text.alignment) &&
+                Objects.equals(color, text.color) &&
+                Objects.equals(shadow, text.shadow);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(elements, alignment, scale, color, shadow);
     }
 
     public static void verifyListElements(List<Object> elements) {
