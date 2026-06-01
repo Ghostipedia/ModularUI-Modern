@@ -200,18 +200,29 @@ public class CodecUtil {
         return dispatchNullable("type", keyCodec, type, codec);
     }
 
-    /**
-     * Creates a dispatch codec, but with nullable type and codec functions.
-     * If the functions return null, an error data result is returned instead of crashing.
-     */
     public static <K, V> MapCodec<V> dispatchNullable(String key, Codec<K> keyCodec,
                                                       Function<? super V, ? extends K> type,
                                                       Function<? super K, ? extends Codec<? extends V>> codec) {
+        return dispatchNullable(key, keyCodec, type, codec, null);
+    }
+
+    /**
+     * Creates a dispatch codec, but with nullable type and codec functions.
+     * If the functions return null, an error data result is returned instead of crashing.
+     * If the codec function returns null, the default supplier will be used if non-null.
+     */
+    public static <K, V> MapCodec<V> dispatchNullable(String key, Codec<K> keyCodec,
+                                                      Function<? super V, ? extends K> type,
+                                                      Function<? super K, ? extends Codec<? extends V>> codec,
+                                                      Supplier<? extends Codec<? extends V>> defaultCodec) {
         return partialDispatchMap(key, keyCodec, v -> {
             K k = type.apply(v);
             return k == null ? DataResult.error(() -> "No key found") : DataResult.success(k);
         }, k -> {
             Codec<? extends V> e = codec.apply(k);
+            if (e == null && defaultCodec != null) {
+                e = defaultCodec.get();
+            }
             return e == null ? DataResult.error(() -> "No codec found for key " + k) : DataResult.success(e);
         });
     }

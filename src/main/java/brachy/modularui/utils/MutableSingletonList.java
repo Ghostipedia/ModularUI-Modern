@@ -42,6 +42,10 @@ public class MutableSingletonList<T> implements List<T> {
         this.hasValue = false;
     }
 
+    public boolean hasNonNullValue() {
+        return this.hasValue && this.value != null;
+    }
+
     @Override
     public int size() {
         return hasValue ? 1 : 0;

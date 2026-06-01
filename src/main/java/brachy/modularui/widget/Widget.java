@@ -75,7 +75,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
             .addOpt("hoverBackgroundOverlay", Widget::setHoverBackgroundOverlay, Widget::getHoverBackground, IDrawable.CODEC, null)
             .addOpt("hoverOverlay", Widget::hoverOverlay, Widget::getHoverOverlay, IDrawable.CODEC, null)
             .addOpt("widgetTheme", Widget::widgetTheme, Widget::getWidgetThemeOverride, WidgetThemeKey.CODEC, null)
-            .addOpt("excludeAreaInRecipeViewer", Widget::excludeAreaInRecipeViewer, Widget::isExcludeAreaInRecipeViewer, Codec.BOOL, false)
+            .addOpt("excludeAreaInRecipeViewer", Widget::excludeAreaInRecipeViewer, w -> w.excludeAreaInRecipeViewer, Codec.BOOL, false)
             .addOpt("tooltip", Widget::setTooltip, Widget::getTooltip, RichTooltip.CODEC, null)
             .addFieldsOf(StandardResizer.COMPACT_CODEC, Widget::resizer)
             .addFieldOf(Area.CODEC, Widget::getArea, "margin")
@@ -918,5 +918,14 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
                 this.excludeAreaInRecipeViewer == o.excludeAreaInRecipeViewer &&
                 Objects.equals(this.tooltip, o.tooltip) &&
                 resizer().isEqual(o.resizer());
+    }
+
+    @Override
+    public final IWidget copy() {
+        return copyExact();
+    }
+
+    public W copyExact() {
+        return (W) CODEC.copy(this);
     }
 }

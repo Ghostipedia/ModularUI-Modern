@@ -40,6 +40,7 @@ import brachy.modularui.value.ObjectValue;
 import brachy.modularui.value.StringValue;
 import brachy.modularui.widget.ParentWidget;
 import brachy.modularui.widget.Widget;
+import brachy.modularui.widget.WidgetSerializer;
 import brachy.modularui.widgets.ButtonWidget;
 import brachy.modularui.widgets.ColorPickerDialog;
 import brachy.modularui.widgets.CycleButtonWidget;
@@ -59,6 +60,7 @@ import brachy.modularui.widgets.menu.DropdownWidget;
 import brachy.modularui.widgets.textfield.TextFieldWidget;
 
 import net.minecraft.Util;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -129,6 +131,11 @@ public class TestGuis extends CustomModularScreen {
                 .padding(7)
                 .child(Flow.column()
                         .child(Text.str("Client Test UIs").asWidget().margin(1))
+                        .child(button("Json Test")
+                                .onMousePressed((ctx, button) -> {
+                                    ClientGUI.open(new ModularScreen(ModularUI.MOD_ID, TestGuis.buildJsonUI()));
+                                    return true;
+                                }))
                         .child(new ListWidget<>().widthRel(1f).expanded()
                                 .children(uiMethods.size(), i -> {
                                     Method m = uiMethods.get(i);
@@ -178,6 +185,13 @@ public class TestGuis extends CustomModularScreen {
         return new ButtonWidget<>()
                 .height(16).widthRel(1f).margin(0, 1)
                 .overlay(Text.str(text));
+    }
+
+    private static ModularPanel<?> buildJsonUI() {
+        IWidget w = WidgetSerializer.loadWidget(new ResourceLocation("modularui", "test"));
+        if (w == null) return new ModularPanel<>("json_fail").overlay(Text.str("JSON could not be loaded"));
+        if (w instanceof ModularPanel<?> p) return p;
+        return new ModularPanel<>("json").child(w);
     }
 
     public static @NotNull ModularPanel<?> buildToggleGridListUI() {

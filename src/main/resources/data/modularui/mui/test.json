@@ -1,0 +1,32 @@
+{
+    "type": "Panel",
+    "name": "json",
+    "children": [
+        {
+            "type": "Widget",
+            "top": {
+                "value": 0.5,
+                "measure": "relative"
+            },
+            "left": {
+                "value": 20
+            },
+            "right": {
+                "value": 20
+            },
+            "height": {
+                "value": 30
+            },
+            "background": {
+                "type": "texture",
+                "name": "mc_button"
+            },
+            "overlay": {
+                "type": "text",
+                "text": "This is written in JSON",
+                "color": "white",
+                "shadow": true
+            }
+        }
+    ]
+}

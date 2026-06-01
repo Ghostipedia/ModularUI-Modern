@@ -22,6 +22,7 @@ import brachy.modularui.utils.HoveredWidgetList;
 import brachy.modularui.utils.Interpolation;
 import brachy.modularui.utils.Interpolations;
 import brachy.modularui.utils.ObjectList;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 import brachy.modularui.value.sync.PanelSyncHandler;
 import brachy.modularui.value.sync.PanelSyncManager;
 import brachy.modularui.widget.ParentWidget;
@@ -30,6 +31,10 @@ import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widgets.SlotGroupWidget;
 
 import net.minecraft.Util;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.MapLike;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -54,6 +59,25 @@ import java.util.function.Supplier;
  * or {@link PanelSyncManager#syncedPanel(String, boolean, PanelSyncHandler.IPanelBuilder)} if the panel should be synced.
  */
 public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> implements IViewport, IDragResizeable {
+
+    public static final MutableObjectCodec<ModularPanel<?>> CODEC = MutableObjectCodec.<ModularPanel<?>>widgetBuilder("Panel")
+            .instanceDecoder(ModularPanel::decodeInstance)
+            .baseCopy(p -> new ModularPanel<>(p.getName()))
+            .addFieldsOf(ParentWidget.CODEC, w -> w)
+            .addOpt("theme", ModularPanel::themeOverride, ModularPanel::getThemeOverride, Codec.STRING, null)
+            .addOpt("invisible", ModularPanel::invisible, ModularPanel::isInvisible, Codec.BOOL, false)
+            .addOpt("resizeable", ModularPanel::resizeableOnDrag, ModularPanel::isResizeable, Codec.BOOL, false)
+            .addOpt("draggable", ModularPanel::draggable, ModularPanel::isDraggable, Codec.BOOL, true)
+            .addOpt("disablePanelsBelow", ModularPanel::disablePanelsBelow, ModularPanel::disablePanelsBelow, Codec.BOOL, false)
+            .addOpt("closeOnOutOfBoundsClick", ModularPanel::closeOnOutOfBoundsClick, ModularPanel::closeOnOutOfBoundsClick, Codec.BOOL, false)
+            .removeField("name")
+            .build();
+
+    private static <T> DataResult<ModularPanel<?>> decodeInstance(DynamicOps<T> ops, MapLike<T> input) {
+        var name = input.get("name");
+        if (name == null) return DataResult.error(() -> "Panel widget needs a name property");
+        return ops.getStringValue(name).map(ModularPanel::new);
+    }
 
     public static ModularPanel<?> defaultPanel(@NotNull String name) {
         return defaultPanel(name, 176, 166);
@@ -86,14 +110,14 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
     private int dragX, dragY;
 
     private final List<IPanelHandler> clientSubPanels = new ArrayList<>();
-    private boolean invisible = false;
+    @Getter private boolean invisible = false;
     private Animator animator;
 
-    private String themeOverride;
+    @Getter private String themeOverride;
     private ITheme theme;
 
     private Runnable onCloseAction;
-    private boolean resizeable = false;
+    @Getter private boolean resizeable = false;
     /**
      * True if this panel can be dragged. Never works on the main panel.
      */
@@ -826,6 +850,11 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
         return super.invisible();
     }
 
+    public W invisible(boolean inv) {
+        this.invisible = inv;
+        return getThis();
+    }
+
     public W fullScreenInvisible() {
         return invisible().full();
     }
@@ -865,6 +894,16 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
     @Override
     public W name(String name) {
         throw new IllegalStateException("Name for ModularPanels are final!");
+    }
+
+    @Override
+    public String getTypeName() {
+        return "Panel";
+    }
+
+    @Override
+    public W copyExact() {
+        return (W) CODEC.copy(this);
     }
 
     public enum State {

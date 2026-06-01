@@ -8,6 +8,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.MapDecoder;
 import com.mojang.serialization.MapLike;
 import com.mojang.serialization.RecordBuilder;
 
@@ -316,11 +317,15 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
             return this;
         }
 
+        public Builder<T> instanceDecoder(MapDecoder<T> instanceDecoder) {
+            return instanceDecoder(instanceDecoder::decode);
+        }
+
         /**
          * Sets the instance supplier. This is needed when parsing from JSON and for copying. This MUST always return a new instance.
          */
         public Builder<T> instance(Supplier<T> instance) {
-            return instanceDecoder(new InstanceMapDecoder<T>() {
+            return instanceDecoder(new InstanceMapDecoder<>() {
                 @Override
                 public <J> DataResult<T> decodeInstance(DynamicOps<J> ops, MapLike<J> input) {
                     return DataResult.success(instance.get());
@@ -479,6 +484,11 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
         public <V> Builder<T> addUnencodableDynOpt(String name, FieldWriter<T, V> fieldWriter, FieldReader<T, V> fieldReader,
                                                    @Nullable Supplier<V> defaultSupplier) {
             return addDynOpt(name, fieldWriter, fieldReader, (Codec<V>) null, defaultSupplier);
+        }
+
+        public Builder<T> removeField(String name) {
+            this.fields.remove(name);
+            return this;
         }
 
         public Builder<T> alwaysEncode() {

@@ -9,6 +9,8 @@ import brachy.modularui.screen.ModularContainerMenu;
 import brachy.modularui.test.TestRegistration;
 import brachy.modularui.theme.ThemeManager;
 
+import brachy.modularui.widget.WidgetSerializer;
+
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import com.mojang.brigadier.Command;
@@ -63,6 +65,7 @@ public class CommonProxy {
 
     private void onRegisterDataReloadListener(AddReloadListenerEvent event) {
         ModularUI.updateFrozenRegistry(event.getRegistryAccess());
+        event.addListener(WidgetSerializer.ReloadDataListener.INSTANCE);
     }
 
     private void onRegisterCommand(RegisterCommandsEvent event) {

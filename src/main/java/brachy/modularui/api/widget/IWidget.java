@@ -11,18 +11,24 @@ import brachy.modularui.utils.FormattingUtil;
 import brachy.modularui.utils.ObjectList;
 import brachy.modularui.utils.Stencil;
 import brachy.modularui.utils.serialization.codec.CodecRegistry;
+import brachy.modularui.utils.serialization.codec.CodecUtil;
+import brachy.modularui.widget.Widget;
 import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widget.sizer.StandardResizer;
 
 import com.mojang.serialization.Codec;
 
 import com.google.common.base.CharMatcher;
+
+import com.mojang.serialization.MapCodec;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
@@ -31,7 +37,13 @@ import java.util.function.UnaryOperator;
 public interface IWidget extends ITreeNode<IWidget> {
 
     CodecRegistry<IWidget> CODECS = new CodecRegistry<>();
-    Codec<IWidget> CODEC = Codec.STRING.dispatch("widget", IWidget::getTypeName, CODECS::getNullableCodec);
+    @SuppressWarnings("Convert2MethodRef") MapCodec<IWidget> CODEC = CodecUtil.dispatchNullable(
+            "type",
+            Codec.STRING,
+            IWidget::getTypeName,
+            CODECS::getNullableCodec,
+            () -> Widget.CODEC.codec()
+    );
 
     String WIDGET_TRANSLATION_KEY_FORMAT = "widget.%s.name";
     /**
@@ -403,4 +415,6 @@ public interface IWidget extends ITreeNode<IWidget> {
     default boolean isNameAndType(String name, Class<? extends IWidget> type) {
         return isName(name) && isType(type);
     }
+
+    IWidget copy();
 }

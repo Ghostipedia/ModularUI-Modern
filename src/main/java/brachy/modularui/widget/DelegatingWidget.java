@@ -105,4 +105,9 @@ public class DelegatingWidget extends AbstractWidget implements IDelegatingWidge
     public IWidget getDelegate() {
         return delegate.getOrNull();
     }
+
+    @Override
+    public IWidget copy() {
+        return new DelegatingWidget(this.delegate.hasNonNullValue() ? this.delegate.get().copy() : null);
+    }
 }
