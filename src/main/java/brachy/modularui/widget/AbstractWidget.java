@@ -334,15 +334,6 @@ public abstract class AbstractWidget implements IWidget {
     }
 
     /**
-     * This is only used in {@link #toString()}.
-     *
-     * @return the simple class name or other fitting name
-     */
-    public String getTypeName() {
-        return getClass().getSimpleName();
-    }
-
-    /**
      * @return the simple class plus the debug name if set
      */
     @Override

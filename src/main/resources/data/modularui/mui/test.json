@@ -1,9 +1,9 @@
 {
-    "type": "Panel",
+    "type": "panel",
     "name": "json",
     "children": [
         {
-            "type": "Widget",
+            "type": "widget",
             "top": {
                 "value": 0.5,
                 "measure": "relative"

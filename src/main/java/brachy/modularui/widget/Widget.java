@@ -60,7 +60,7 @@ import java.util.function.Predicate;
  */
 public class Widget<W extends Widget<W>> extends AbstractWidget implements IPositioned<W>, ITooltip<W>, ISynced<W> {
 
-    public static final MutableObjectCodec<Widget<?>> CODEC = MutableObjectCodec.<Widget<?>>widgetBuilder("Widget")
+    public static final MutableObjectCodec<Widget<?>> CODEC = MutableObjectCodec.<Widget<?>>builder()
             .instance(Widget::new)
             .addOpt("name", Widget::name, Widget::getName, Codec.STRING, null)
             .addOpt("enabled", Widget::setEnabled, Widget::isEnabled, Codec.BOOL, true)
@@ -883,6 +883,11 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     public W name(String name) {
         setName(name);
         return getThis();
+    }
+
+    @Override
+    public WidgetType<?> getType() {
+        return WidgetType.WIDGET;
     }
 
     /**

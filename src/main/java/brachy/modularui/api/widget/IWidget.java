@@ -7,20 +7,17 @@ import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetThemeEntry;
-import brachy.modularui.utils.FormattingUtil;
 import brachy.modularui.utils.ObjectList;
 import brachy.modularui.utils.Stencil;
-import brachy.modularui.utils.serialization.codec.CodecRegistry;
 import brachy.modularui.utils.serialization.codec.CodecUtil;
-import brachy.modularui.widget.Widget;
+import brachy.modularui.widget.EmptyWidget;
+import brachy.modularui.widget.WidgetRegistry;
+import brachy.modularui.widget.WidgetType;
 import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widget.sizer.StandardResizer;
 
 import com.mojang.serialization.Codec;
-
-import com.google.common.base.CharMatcher;
-
-import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.DataResult;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +25,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
@@ -36,30 +32,14 @@ import java.util.function.UnaryOperator;
  */
 public interface IWidget extends ITreeNode<IWidget> {
 
-    CodecRegistry<IWidget> CODECS = new CodecRegistry<>();
-    @SuppressWarnings("Convert2MethodRef") MapCodec<IWidget> CODEC = CodecUtil.dispatchNullable(
-            "type",
-            Codec.STRING,
-            IWidget::getTypeName,
-            CODECS::getNullableCodec,
-            () -> Widget.CODEC.codec()
-    );
-
-    String WIDGET_TRANSLATION_KEY_FORMAT = "widget.%s.name";
-    /**
-     * This char matcher is used to remove any non-{@code [a-z0-9_.-]} characters in translation keys.
-     * In essence, it
-     */
-    CharMatcher DISALLOWED_TRANSLATION_KEY_CHARS = CharMatcher.inRange('a', 'z')
-            .or(CharMatcher.inRange('0', '9'))
-            .or(CharMatcher.anyOf("-_."))
-            .negate();
-
-    default String getTranslationId() {
-        String className = FormattingUtil.toLowerCaseUnderscore(this.getClass().getSimpleName());
-        className = DISALLOWED_TRANSLATION_KEY_CHARS.removeFrom(className);
-        return WIDGET_TRANSLATION_KEY_FORMAT.formatted(className);
-    }
+    Codec<IWidget> CODEC_EMPTY_NONE = Codec.STRING.flatXmap(s -> {
+        if (s == null || s.equals("empty") || s.equals("null")) return DataResult.success(new EmptyWidget());
+        return DataResult.error(() -> "Only valid options are empty and null");
+    }, d -> {
+        if (d instanceof EmptyWidget) return DataResult.success("empty");
+        return DataResult.error(() -> "Only works for empty");
+    });
+    Codec<IWidget> CODEC = CodecUtil.chainedCodec(WidgetRegistry.INSTANCE.dispatchCodec.codec(), CODEC_EMPTY_NONE);
 
     /**
      * @return the screen this element is in
@@ -414,6 +394,10 @@ public interface IWidget extends ITreeNode<IWidget> {
 
     default boolean isNameAndType(String name, Class<? extends IWidget> type) {
         return isName(name) && isType(type);
+    }
+
+    default WidgetType<?> getType() {
+        return null;
     }
 
     IWidget copy();

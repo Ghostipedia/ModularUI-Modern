@@ -1,7 +1,9 @@
 package brachy.modularui.api.drawable;
 
 import brachy.modularui.api.widget.IWidget;
+import brachy.modularui.drawable.DrawableRegistry;
 import brachy.modularui.drawable.DrawableStack;
+import brachy.modularui.drawable.DrawableType;
 import brachy.modularui.drawable.Icon;
 import brachy.modularui.drawable.SubAreaDrawable;
 import brachy.modularui.screen.viewport.GuiContext;
@@ -9,7 +11,6 @@ import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.Color;
-import brachy.modularui.utils.serialization.codec.CodecRegistry;
 import brachy.modularui.utils.serialization.codec.CodecUtil;
 import brachy.modularui.widget.Widget;
 import brachy.modularui.widget.sizer.Area;
@@ -17,7 +18,6 @@ import brachy.modularui.widget.sizer.Area;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
-import com.mojang.serialization.MapCodec;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -67,8 +67,6 @@ public interface IDrawable {
         }
     };
 
-    CodecRegistry<IDrawable> CODECS = new CodecRegistry<>();
-    MapCodec<IDrawable> CODEC_DISPATCH = CodecUtil.dispatchNullable(Codec.STRING, IDrawable::getTypeName, CODECS::getNullableCodec);
     Codec<IDrawable> CODEC_EMPTY_NONE = Codec.STRING.flatXmap(s -> {
         if (s == null || s.equals("empty") || s.equals("null")) return DataResult.success(EMPTY);
         if (s.equals("none")) return DataResult.success(NONE);
@@ -80,7 +78,7 @@ public interface IDrawable {
     });
     Codec<IDrawable> CODEC = CodecUtil.chainedCodec(
             CodecUtil.nullCodec(EMPTY), CODEC_EMPTY_NONE,
-            DrawableStack.CODEC, CODEC_DISPATCH.codec());
+            DrawableStack.CODEC, DrawableRegistry.INSTANCE.dispatchCodec.codec());
 
     static DataResult<JsonElement> toJson(IDrawable drawable) {
         return CODEC.encodeStart(JsonOps.INSTANCE, drawable);
@@ -220,8 +218,8 @@ public interface IDrawable {
         return new SubAreaDrawable(this).uv(u0, v0, u1, v1);
     }
 
-    default String getTypeName() {
-        return getClass().getSimpleName();
+    default DrawableType<?> getType() {
+        return null;
     }
 
     static boolean isVisible(@Nullable IDrawable drawable) {

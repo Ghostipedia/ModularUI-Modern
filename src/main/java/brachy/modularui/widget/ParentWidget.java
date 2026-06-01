@@ -14,10 +14,10 @@ import java.util.List;
  */
 public class ParentWidget<W extends ParentWidget<W>> extends AbstractParentWidget<IWidget, W> implements IParentWidget<IWidget, W> {
 
-    public static final MutableObjectCodec<ParentWidget<?>> CODEC = MutableObjectCodec.<ParentWidget<?>>widgetBuilder("Parent")
+    public static final MutableObjectCodec<ParentWidget<?>> CODEC = MutableObjectCodec.<ParentWidget<?>>builder()
             .instance(ParentWidget::new)
             .addFieldsOf(Widget.CODEC, w -> w)
-            .addOpt("children", ParentWidget::setChildren, ParentWidget::getChildren, IWidget.CODEC.codec().listOf(), Collections.emptyList())
+            .addOpt("children", ParentWidget::setChildren, ParentWidget::getChildren, IWidget.CODEC.listOf(), Collections.emptyList())
             .build();
 
     private void setChildren(List<IWidget> children) {
@@ -45,8 +45,8 @@ public class ParentWidget<W extends ParentWidget<W>> extends AbstractParentWidge
     }
 
     @Override
-    public String getTypeName() {
-        return "Parent";
+    public WidgetType<?> getType() {
+        return WidgetType.PARENT;
     }
 
     @Override

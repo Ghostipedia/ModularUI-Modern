@@ -32,8 +32,7 @@ public class UITexture implements IDrawable {
 
     public static final MapCodec<UITexture> CODEC_FROM_BUILDER = Builder.CODEC.xmap(Builder::buildForCodec, UITexture::toBuilder);
     public static final Codec<UITexture> CODEC_FROM_NAME = ExtraCodecs.stringResolverCodec(TextureRegistry::getTextureId, TextureRegistry::getTexture);
-    public static final MapCodec<UITexture> CODEC = IDrawable.CODECS.register("texture",
-            CodecUtil.chainedMapCodec(CODEC_FROM_NAME.fieldOf("name"), CODEC_FROM_BUILDER));
+    public static final MapCodec<UITexture> CODEC = CodecUtil.chainedMapCodec(CODEC_FROM_NAME.fieldOf("name"), CODEC_FROM_BUILDER);
 
     public static final UITexture DEFAULT = fullImage("gui/options_background", ColorType.DEFAULT);
     public static final FileToIdConverter GUI_TEXTURE_ID_CONVERTER = new FileToIdConverter("textures/gui", ".png");
@@ -221,8 +220,8 @@ public class UITexture implements IDrawable {
     }
 
     @Override
-    public String getTypeName() {
-        return "texture";
+    public DrawableType<UITexture> getType() {
+        return DrawableType.TEXTURE;
     }
 
     public Builder toBuilder() {

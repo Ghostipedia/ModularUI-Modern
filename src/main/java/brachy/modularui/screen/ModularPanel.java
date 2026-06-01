@@ -27,6 +27,7 @@ import brachy.modularui.value.sync.PanelSyncHandler;
 import brachy.modularui.value.sync.PanelSyncManager;
 import brachy.modularui.widget.ParentWidget;
 import brachy.modularui.widget.WidgetTree;
+import brachy.modularui.widget.WidgetType;
 import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widgets.SlotGroupWidget;
 
@@ -60,7 +61,7 @@ import java.util.function.Supplier;
  */
 public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> implements IViewport, IDragResizeable {
 
-    public static final MutableObjectCodec<ModularPanel<?>> CODEC = MutableObjectCodec.<ModularPanel<?>>widgetBuilder("Panel")
+    public static final MutableObjectCodec<ModularPanel<?>> CODEC = MutableObjectCodec.<ModularPanel<?>>builder()
             .instanceDecoder(ModularPanel::decodeInstance)
             .baseCopy(p -> new ModularPanel<>(p.getName()))
             .addFieldsOf(ParentWidget.CODEC, w -> w)
@@ -897,8 +898,8 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
     }
 
     @Override
-    public String getTypeName() {
-        return "Panel";
+    public WidgetType<?> getType() {
+        return WidgetType.PANEL;
     }
 
     @Override

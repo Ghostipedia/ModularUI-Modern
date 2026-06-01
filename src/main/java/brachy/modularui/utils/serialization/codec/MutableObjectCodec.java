@@ -1,8 +1,5 @@
 package brachy.modularui.utils.serialization.codec;
 
-import brachy.modularui.api.drawable.IDrawable;
-import brachy.modularui.api.widget.IWidget;
-
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
@@ -12,7 +9,6 @@ import com.mojang.serialization.MapDecoder;
 import com.mojang.serialization.MapLike;
 import com.mojang.serialization.RecordBuilder;
 
-import com.google.common.base.CaseFormat;
 import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceLinkedOpenHashMap;
 import lombok.Getter;
@@ -122,70 +118,6 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
 
     public static <T> Builder<T> builder(Supplier<T> instance) {
         return new Builder<T>().instance(instance);
-    }
-
-    public static <T extends IDrawable> Builder<T> drawableBuilder(Class<T> type) {
-        return new DrawableBuilder<>(type.getTypeName());
-    }
-
-    public static <T extends IDrawable> Builder<T> drawableBuilder(String typeName) {
-        return new DrawableBuilder<>(typeName);
-    }
-
-    public static <T extends IDrawable> Builder<T> drawableBuilder(Class<T> type, String typeName) {
-        return new DrawableBuilder<>(typeName);
-    }
-
-    public static <T extends IDrawable> Builder<T> drawableBuilder(String typeName, InstanceMapDecoder<T> instanceDecoder) {
-        return new DrawableBuilder<T>(typeName).instanceDecoder(instanceDecoder);
-    }
-
-    public static <T extends IDrawable> Builder<T> drawableBuilder(String typeName, Supplier<T> instance) {
-        return new DrawableBuilder<T>(typeName).instance(instance);
-    }
-
-    public static <T extends IDrawable> Builder<T> drawableBuilder(Class<T> type, InstanceMapDecoder<T> instanceDecoder) {
-        return new DrawableBuilder<T>(type.getSimpleName()).instanceDecoder(instanceDecoder);
-    }
-
-    public static <T extends IDrawable> Builder<T> drawableBuilder(Supplier<T> instance) {
-        return drawableBuilder(instance.get().getTypeName(), instance);
-    }
-
-    public static <T extends IDrawable> Builder<T> drawableBuilder(Class<T> type, Supplier<T> instance) {
-        return new DrawableBuilder<T>(type.getSimpleName()).instance(instance);
-    }
-
-    public static <T extends IWidget> Builder<T> widgetBuilder(Class<T> type) {
-        return new WidgetBuilder<>(type.getTypeName());
-    }
-
-    public static <T extends IWidget> Builder<T> widgetBuilder(String typeName) {
-        return new WidgetBuilder<>(typeName);
-    }
-
-    public static <T extends IWidget> Builder<T> widgetBuilder(Class<T> type, String typeName) {
-        return new WidgetBuilder<>(typeName);
-    }
-
-    public static <T extends IWidget> Builder<T> widgetBuilder(String typeName, InstanceMapDecoder<T> instanceDecoder) {
-        return new WidgetBuilder<T>(typeName).instanceDecoder(instanceDecoder);
-    }
-
-    public static <T extends IWidget> Builder<T> widgetBuilder(String typeName, Supplier<T> instance) {
-        return new WidgetBuilder<T>(typeName).instance(instance);
-    }
-
-    public static <T extends IWidget> Builder<T> widgetBuilder(Class<T> type, InstanceMapDecoder<T> instanceDecoder) {
-        return new WidgetBuilder<T>(type.getSimpleName()).instanceDecoder(instanceDecoder);
-    }
-
-    public static <T extends IWidget> Builder<T> widgetBuilder(Class<T> type, Supplier<T> instance) {
-        return new WidgetBuilder<T>(type.getSimpleName()).instance(instance);
-    }
-
-    public static <T extends IWidget> Builder<T> widgetBuilder(Supplier<T> instance) {
-        return widgetBuilder(instance.get().getTypeName(), instance);
     }
 
     @Override
@@ -301,8 +233,6 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
         private final Object2ReferenceLinkedOpenHashMap<String, Field<T, ?>> fields = new Object2ReferenceLinkedOpenHashMap<>();
         private InstanceMapDecoder<T> instanceDecoder;
         private UnaryOperator<T> baseCopy;
-        private CodecRegistry<T> registry;
-        private String[] names;
         private Codec<T> wrapped;
 
         private Field<T, ?> lastField;
@@ -353,20 +283,6 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
         public Builder<T> wrapped(Codec<T> codec) {
             this.wrapped = codec;
             return this;
-        }
-
-        public Builder<T> registry(CodecRegistry<T> registry, String... names) {
-            this.registry = registry;
-            this.names = names;
-            return this;
-        }
-
-        public Builder<T> registryTypeName(CodecRegistry<T> registry, String typeName) {
-            return registry(registry, typeName, CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, typeName));
-        }
-
-        public Builder<T> registryTypeName(CodecRegistry<T> registry, Class<T> typeName) {
-            return registryTypeName(registry, typeName.getSimpleName());
         }
 
         public Builder<T> addField(Field<T, ?> field) {
@@ -527,27 +443,7 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
         }
 
         public MutableObjectCodec<T> build() {
-            var c = new MutableObjectCodec<>(new ArrayList<>(this.fields.values()), this.instanceDecoder, this.baseCopy, this.wrapped);
-            if (this.registry != null) {
-                this.registry.register(c, this.names);
-            }
-            return c;
-        }
-    }
-
-    public static class DrawableBuilder<T extends IDrawable> extends Builder<T> {
-
-        @SuppressWarnings("unchecked")
-        public DrawableBuilder(String typeName) {
-            registryTypeName((CodecRegistry<T>) IDrawable.CODECS, typeName);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static class WidgetBuilder<T extends IWidget> extends Builder<T> {
-
-        public WidgetBuilder(String typeName) {
-            registryTypeName((CodecRegistry<T>) IWidget.CODECS, typeName);
+            return new MutableObjectCodec<>(new ArrayList<>(this.fields.values()), this.instanceDecoder, this.baseCopy, this.wrapped);
         }
     }
 }

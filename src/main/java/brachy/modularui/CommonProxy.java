@@ -8,7 +8,6 @@ import brachy.modularui.network.NetworkHandler;
 import brachy.modularui.screen.ModularContainerMenu;
 import brachy.modularui.test.TestRegistration;
 import brachy.modularui.theme.ThemeManager;
-
 import brachy.modularui.widget.WidgetSerializer;
 
 import net.minecraft.commands.Commands;
