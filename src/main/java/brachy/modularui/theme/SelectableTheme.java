@@ -94,6 +94,9 @@ public class SelectableTheme extends WidgetTheme {
         }
 
         public B selectedBackground(JsonBuilder builder) {
+            if (builder instanceof WidgetThemeBuilder<?,?>) {
+                throw new IllegalArgumentException(".selectedBackground() does not accept widget theme builders");
+            }
             add(IThemeApi.SELECTED_BACKGROUND, builder);
             return getThis();
         }

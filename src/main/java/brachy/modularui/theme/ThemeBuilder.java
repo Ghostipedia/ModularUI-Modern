@@ -116,6 +116,9 @@ public class ThemeBuilder<B extends ThemeBuilder<B>> extends JsonBuilder {
     }
 
     public B background(WidgetThemeKey<?> widgetTheme, JsonBuilder builder) {
+        if (builder instanceof WidgetThemeBuilder<?,?>) {
+            throw new IllegalArgumentException("Did you mean to call .widgetTheme() instead of .background()?");
+        }
         mergeAdd(widgetTheme.getFullName(),
                 new JsonBuilder().add(IThemeApi.BACKGROUND, builder));
         return getThis();
@@ -132,6 +135,9 @@ public class ThemeBuilder<B extends ThemeBuilder<B>> extends JsonBuilder {
     }
 
     public B hoverBackground(WidgetThemeKey<?> widgetTheme, JsonBuilder builder) {
+        if (builder instanceof WidgetThemeBuilder<?,?>) {
+            throw new IllegalArgumentException("Did you mean to call .widgetTheme() instead of .hoverBackground()?");
+        }
         mergeAdd(widgetTheme.getFullName() + IThemeApi.HOVER_SUFFIX,
                 new JsonBuilder().add(IThemeApi.BACKGROUND, builder));
         return getThis();

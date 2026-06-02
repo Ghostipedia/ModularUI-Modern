@@ -2,11 +2,13 @@ package brachy.modularui.value.sync;
 
 import brachy.modularui.api.IPanelHandler;
 import brachy.modularui.api.widget.ISynced;
+import brachy.modularui.screen.BuildPanelEvent;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
 import brachy.modularui.widget.WidgetTree;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.common.MinecraftForge;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -43,8 +45,16 @@ public final class PanelSyncHandler extends SyncHandler<PanelSyncHandler> implem
         allowC2S();
     }
 
-    public ModularPanel<?> createUI(PanelSyncManager syncManager) {
-        return this.panelBuilder.buildUI(syncManager, this);
+    public ModularPanel<?> createUI(PanelSyncManager syncManager, boolean client) {
+        var panel = this.panelBuilder.buildUI(syncManager, this);
+        if (!client) return panel;
+        ModularScreen screen = syncManager.getContainer().getScreen();
+        BuildPanelEvent.SubPanel event = new BuildPanelEvent.SubPanel(screen, panel);
+        MinecraftForge.EVENT_BUS.post(event);
+        if (event.getOpeningPanel() != null) {
+            panel = event.getOpeningPanel();
+        }
+        return panel;
     }
 
     @Override
@@ -64,7 +74,7 @@ public final class PanelSyncHandler extends SyncHandler<PanelSyncHandler> implem
             throw new IllegalStateException("Can't reopen synced panel in another screen!");
         } else if (this.syncManager == null) {
             this.syncManager = new PanelSyncManager(getSyncManager().getModularSyncManager(), false);
-            this.openedPanel = Objects.requireNonNull(createUI(this.syncManager));
+            this.openedPanel = Objects.requireNonNull(createUI(this.syncManager, client));
             this.panelName = this.openedPanel.getName();
             this.openedPanel.setPanelSyncHandler(this);
             WidgetTree.collectSyncValues(this.syncManager, this.openedPanel, false);
