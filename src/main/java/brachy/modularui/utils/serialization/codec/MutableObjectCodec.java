@@ -1,6 +1,7 @@
 package brachy.modularui.utils.serialization.codec;
 
 import brachy.modularui.api.codec.InstanceMapDecoder;
+import brachy.modularui.utils.EqualityTest;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
@@ -15,6 +16,7 @@ import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceLinkedOpenHashMap;
 import lombok.experimental.Accessors;
 import org.apache.commons.lang3.ArrayUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -41,13 +43,15 @@ public class MutableObjectCodec<T> extends ExtendedMutableMapCodec<T> {
     private final List<Field<T, ?>> fields;
     private final InstanceMapDecoder<T> instanceDecoder;
     private final UnaryOperator<T> baseCopy;
+    private final EqualityTest<T> equals;
     private final Codec<T> wrapped;
 
-    private MutableObjectCodec(List<Field<T, ?>> fields,
-                               InstanceMapDecoder<T> instanceDecoder, UnaryOperator<T> baseCopy, Codec<T> wrapped) {
+    private MutableObjectCodec(List<Field<T, ?>> fields, InstanceMapDecoder<T> instanceDecoder, UnaryOperator<T> baseCopy,
+                               EqualityTest<T> equals, Codec<T> wrapped) {
         this.fields = Collections.unmodifiableList(fields);
         this.instanceDecoder = instanceDecoder;
         this.baseCopy = baseCopy;
+        this.equals = equals != null ? equals : EqualityTest.defaultTester();
         this.wrapped = wrapped;
     }
 
@@ -207,6 +211,7 @@ public class MutableObjectCodec<T> extends ExtendedMutableMapCodec<T> {
         return DataResult.error(() -> "Instance can not be created since no instance decoder or wrapped codec was provided.");
     }
 
+    @Override
     public String convertToString(T instance, int indent) {
         if (instance == null) return "null";
         StringBuilder b = new StringBuilder();
@@ -229,11 +234,17 @@ public class MutableObjectCodec<T> extends ExtendedMutableMapCodec<T> {
         return b.append("}").toString();
     }
 
+    @Override
+    public boolean areEqual(@NotNull T t1, @NotNull T t2) {
+        return this.equals.areEqual(t1, t2);
+    }
+
     public static class Builder<T> {
 
         private final Object2ReferenceLinkedOpenHashMap<String, Field<T, ?>> fields = new Object2ReferenceLinkedOpenHashMap<>();
         private InstanceMapDecoder<T> instanceDecoder;
         private UnaryOperator<T> baseCopy;
+        private EqualityTest<T> equals;
         private Codec<T> wrapped;
 
         private Field<T, ?> lastField;
@@ -274,6 +285,11 @@ public class MutableObjectCodec<T> extends ExtendedMutableMapCodec<T> {
                 if (copy == t) throw new IllegalArgumentException("The copy function must return a new object!");
                 return copy;
             };
+            return this;
+        }
+
+        public Builder<T> equalityTest(EqualityTest<T> equals) {
+            this.equals = equals;
             return this;
         }
 
@@ -455,7 +471,7 @@ public class MutableObjectCodec<T> extends ExtendedMutableMapCodec<T> {
         }
 
         public MutableObjectCodec<T> build() {
-            return new MutableObjectCodec<>(new ArrayList<>(this.fields.values()), this.instanceDecoder, this.baseCopy, this.wrapped);
+            return new MutableObjectCodec<>(new ArrayList<>(this.fields.values()), this.instanceDecoder, this.baseCopy, this.equals, this.wrapped);
         }
     }
 }

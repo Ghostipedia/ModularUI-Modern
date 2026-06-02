@@ -14,6 +14,7 @@ import com.mojang.serialization.MapEncoder;
 import com.mojang.serialization.MapLike;
 import com.mojang.serialization.RecordBuilder;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.stream.Stream;
@@ -82,6 +83,11 @@ public abstract class ExtendedMutableMapCodec<A> extends MutableMapCodec<A> impl
         @Override
         public String convertToString(A a, int indent) {
             return this.extendedCodec.convertToString(a, indent);
+        }
+
+        @Override
+        public boolean areEqual(@NotNull A t1, @NotNull A t2) {
+            return this.extendedCodec.areEqual(t1, t2);
         }
 
         @Override

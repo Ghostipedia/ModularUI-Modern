@@ -1,13 +1,17 @@
 package brachy.modularui.api.codec;
 
+import brachy.modularui.utils.EqualityTest;
 import brachy.modularui.utils.serialization.codec.MutableMapCodec;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface IExtendedCodec<A> {
+import java.util.Objects;
+
+public interface IExtendedCodec<A> extends EqualityTest<A> {
 
     @SuppressWarnings("unchecked")
     static <A> @Nullable IExtendedCodec<A> getFrom(Codec<A> codec) {
@@ -30,4 +34,9 @@ public interface IExtendedCodec<A> {
     }
 
     String convertToString(A a, int indent);
+
+    @Override
+    default boolean areEqual(@NotNull A t1, @NotNull A t2) {
+        return Objects.equals(t1, t2);
+    }
 }

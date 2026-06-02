@@ -73,6 +73,7 @@ public class Unit {
     };
 
     public static final MutableObjectCodec<Unit> FULL_CODEC = MutableObjectCodec.builder(Unit::new)
+            .equalityTest(Unit::areEqual)
             .addOpt("autoAnchor", Unit::setAutoAnchor, Unit::isAutoAnchor, Codec.BOOL, true)
             .addOpt("value", Unit::setValue, Unit::getValue, Codec.FLOAT, 0f)
             .addOpt("measure", Unit::setMeasure, Unit::getMeasure, Measure.CODEC, Measure.PIXEL)
@@ -306,16 +307,6 @@ public class Unit {
 
     public static boolean areEqual(Unit a, Unit b) {
         return a == null ? b == null : a.isEqual(b);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj != null && obj.getClass() == Unit.class && isEqual((Unit) obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(autoAnchor, value, valueSupplier, measure, anchor, offset, state);
     }
 
     public enum Measure implements StringRepresentable {

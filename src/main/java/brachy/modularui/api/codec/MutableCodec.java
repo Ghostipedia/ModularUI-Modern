@@ -9,6 +9,7 @@ import com.mojang.serialization.JsonOps;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.BiConsumer;
@@ -173,6 +174,11 @@ public interface MutableCodec<A> extends Codec<A>, MutableDecoder<A> {
         @Override
         public String convertToString(A a, int indent) {
             return this.extendedCodec.convertToString(a, indent);
+        }
+
+        @Override
+        public boolean areEqual(@NotNull A t1, @NotNull A t2) {
+            return this.extendedCodec.areEqual(t1, t2);
         }
 
         @Override

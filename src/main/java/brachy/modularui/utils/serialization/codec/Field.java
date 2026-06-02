@@ -78,6 +78,11 @@ public final class Field<T, V> {
         return v;
     }
 
+    public boolean areValuesEqual(V a, V b) {
+        var e = IExtendedCodec.getFrom(this.codec);
+        return e != null ? e.areEqual(a, b) : Objects.equals(a, b);
+    }
+
     public boolean isUnencodable() {
         return this.codec == null;
     }
@@ -90,7 +95,7 @@ public final class Field<T, V> {
         if (!hasDefault()) return false;
         V current = this.fieldReader.readField(holder);
         V def = getDefault();
-        return Objects.equals(current, def);
+        return areValuesEqual(current, def);
     }
 
     public <J> void encode(T holder, DynamicOps<J> ops, RecordBuilder<J> map) {
@@ -121,7 +126,7 @@ public final class Field<T, V> {
     public boolean shouldEncode(V value) {
         if (decodeOnly() || this.encodeWhen == EncodeWhen.NEVER) return false;
         if (this.encodeWhen == EncodeWhen.ALWAYS) return true;
-        return !hasDefault() || !Objects.equals(value, getDefault());
+        return !hasDefault() || !areValuesEqual(value, getDefault());
     }
 
     public <J> @Nullable String decode(T holder, DynamicOps<J> ops, MapLike<J> map) {

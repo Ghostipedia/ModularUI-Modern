@@ -62,6 +62,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
 
     public static final MutableObjectCodec<Widget<?>> CODEC = MutableObjectCodec.<Widget<?>>builder()
             .instance(Widget::new)
+            .equalityTest(Widget::areEqual)
             .addOpt("name", Widget::name, Widget::getName, Codec.STRING, null)
             .addOpt("enabled", Widget::setEnabled, Widget::isEnabled, Codec.BOOL, true)
             .addOpt("syncKey", Widget::setSyncKey, Widget::getSyncKey, Codec.STRING, null)
@@ -901,12 +902,6 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
         return (W) this;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != Widget.class) return false;
-        return isEqual((Widget<?>) obj);
-    }
-
     public boolean isEqual(Widget<?> o) {
         return o != null &&
                 Objects.equals(getName(), o.getName()) &&
@@ -923,6 +918,11 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
                 this.excludeAreaInRecipeViewer == o.excludeAreaInRecipeViewer &&
                 Objects.equals(this.tooltip, o.tooltip) &&
                 resizer().isEqual(o.resizer());
+    }
+
+    public static boolean areEqual(Widget<?> a, Widget<?> b) {
+        if (a == null || b == null) return a == b;
+        return a.isEqual(b);
     }
 
     @Override

@@ -183,7 +183,7 @@ public class CodecTest {
         System.out.println(codec.convertToString(obj1, true));
         A obj2 = fromJson(codec.mutableCodec(), json1, supplier.get());
         if (checkObjEquals) {
-            assertEq(codec, obj1, obj2, Objects::equals, null);
+            assertEq(codec, obj1, obj2, codec::areEqual, null);
             return;
         }
         JsonElement json2 = toJson(codec.codec(), obj2);

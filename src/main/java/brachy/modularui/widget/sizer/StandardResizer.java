@@ -54,6 +54,7 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
 
     public static final MutableObjectCodec<StandardResizer> CODEC = MutableObjectCodec.builder(StandardResizer.class)
             .baseCopy(resizer -> new StandardResizer(resizer.getWidget()))
+            .equalityTest(StandardResizer::areEqual)
             .addOpt("expanded", StandardResizer::expanded, StandardResizer::isExpanded, Codec.BOOL, false)
             .addOpt("decoration", StandardResizer::decoration, StandardResizer::isDecoration, Codec.BOOL, false)
             .addDecoder("coverChildren", StandardResizer::coverChildren, COVER_CHILDREN_DECODER)
@@ -64,6 +65,7 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
 
     public static final MutableObjectCodec<StandardResizer> COMPACT_CODEC = MutableObjectCodec.builder(StandardResizer.class)
             .baseCopy(resizer -> new StandardResizer(resizer.getWidget()))
+            .equalityTest(StandardResizer::areEqual)
             .addOpt("expanded", StandardResizer::expanded, StandardResizer::isExpanded, Codec.BOOL, false)
             .addOpt("decoration", StandardResizer::decoration, StandardResizer::isDecoration, Codec.BOOL, false)
             .addDecoder("coverChildren", StandardResizer::coverChildren, COVER_CHILDREN_DECODER)
