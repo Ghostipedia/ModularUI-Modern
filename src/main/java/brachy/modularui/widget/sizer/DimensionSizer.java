@@ -7,8 +7,6 @@ import brachy.modularui.api.GuiAxis;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 
-import com.mojang.serialization.Codec;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -90,7 +88,7 @@ public class DimensionSizer {
     }
 
     public void setCoverChildren(int minSize, IWidget widget) {
-        if (minSize >= 0) getSize(widget);
+        if (minSize != Unit.DISABLE_COVER_CHILDREN) getSize(widget);
         if (this.size != null) {
             this.size.setCoverChildren(minSize);
         }

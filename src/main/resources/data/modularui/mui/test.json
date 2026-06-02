@@ -1,12 +1,12 @@
 {
     "type": "panel",
     "name": "json",
+    "padding": 5,
+    "coverChildren": true,
     "children": [
         {
             "type": "widget",
-            "top": "50%",
-            "width": "fill",
-            "margin": 20,
+            "width": 100,
             "height": 30,
             "background": {
                 "type": "texture",

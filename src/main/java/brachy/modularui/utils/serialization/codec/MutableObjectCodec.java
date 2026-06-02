@@ -4,6 +4,7 @@ import brachy.modularui.api.codec.InstanceMapDecoder;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.Decoder;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.MapDecoder;
@@ -375,8 +376,8 @@ public class MutableObjectCodec<T> extends ExtendedMutableMapCodec<T> {
         public <V> Builder<T> addDynOpt(String name, FieldWriter<T, V> fieldWriter, FieldReader<T, V> fieldReader, Codec<V> codec,
                                         @Nullable Supplier<V> defaultSupplier) {
             Objects.requireNonNull(name, "Name of field must not be null!");
-            Objects.requireNonNull(fieldWriter, "Field encoder must not be null!");
-            Objects.requireNonNull(fieldReader, "Field decoder must not be null!");
+            Objects.requireNonNull(fieldWriter, "Field writer must not be null!");
+            Objects.requireNonNull(fieldReader, "Field reader must not be null!");
             return addField(new Field<>(name, fieldWriter, fieldReader, codec, defaultSupplier, defaultSupplier != null)
                     .encodeWhen(Field.EncodeWhen.ALWAYS));
         }
@@ -400,6 +401,17 @@ public class MutableObjectCodec<T> extends ExtendedMutableMapCodec<T> {
         public <V> Builder<T> addUnencodableDynOpt(String name, FieldWriter<T, V> fieldWriter, FieldReader<T, V> fieldReader,
                                                    @Nullable Supplier<V> defaultSupplier) {
             return addDynOpt(name, fieldWriter, fieldReader, (Codec<V>) null, defaultSupplier);
+        }
+
+        /**
+         * Adds a decoder field. These are additional fields which can only decode, but not encode, copy or convert to string.
+         * This is useful when to give JSON additional flexibility.
+         */
+        public <V> Builder<T> addDecoder(String name, FieldWriter<T, V> fieldWriter, Decoder<V> decoder) {
+            Objects.requireNonNull(name, "Name of field must not be null!");
+            Objects.requireNonNull(fieldWriter, "Field writer must not be null!");
+            Objects.requireNonNull(decoder, "Field decoder must not be null!");
+            return addField(new Field<>(name, fieldWriter, decoder));
         }
 
         public Builder<T> removeField(String name) {

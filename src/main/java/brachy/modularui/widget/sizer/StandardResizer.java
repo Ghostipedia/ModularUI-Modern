@@ -13,7 +13,11 @@ import brachy.modularui.utils.TreeUtil;
 import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 import brachy.modularui.widgets.layout.IExpander;
 
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.Decoder;
+import com.mojang.serialization.DynamicOps;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -28,10 +32,32 @@ import java.util.function.DoubleSupplier;
  */
 public class StandardResizer extends WidgetResizeNode implements IPositioned<StandardResizer> {
 
+    private static final Decoder<Integer> COVER_CHILDREN_DECODER = new Decoder<>() {
+        @Override
+        public <T> DataResult<Pair<Integer, T>> decode(DynamicOps<T> ops, T input) {
+            return ops.getNumberValue(input).map(n -> {
+                int i = n.intValue();
+                // 0 = false, 1 = true
+                if (i == 0) return Unit.DISABLE_COVER_CHILDREN;
+                if (i == 1) return -1;
+                return i;
+            }).map(i -> new Pair<>(i, ops.empty()));
+        }
+    };
+
+    private static final Decoder<Integer> COVER_CHILDREN_MIN_SIZE_DECODER = new Decoder<>() {
+        @Override
+        public <T> DataResult<Pair<Integer, T>> decode(DynamicOps<T> ops, T input) {
+            return ops.getNumberValue(input).map(n -> new Pair<>(n.intValue(), ops.empty()));
+        }
+    };
+
     public static final MutableObjectCodec<StandardResizer> CODEC = MutableObjectCodec.builder(StandardResizer.class)
             .baseCopy(resizer -> new StandardResizer(resizer.getWidget()))
             .addOpt("expanded", StandardResizer::expanded, StandardResizer::isExpanded, Codec.BOOL, false)
             .addOpt("decoration", StandardResizer::decoration, StandardResizer::isDecoration, Codec.BOOL, false)
+            .addDecoder("coverChildren", StandardResizer::coverChildren, COVER_CHILDREN_DECODER)
+            .addDecoder("coverChildrenMinSize", StandardResizer::coverChildren, COVER_CHILDREN_MIN_SIZE_DECODER)
             .add("x", StandardResizer::setX, StandardResizer::getX, DimensionSizer.CODEC)
             .add("y", StandardResizer::setY, StandardResizer::getY, DimensionSizer.CODEC)
             .build();
@@ -40,6 +66,8 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
             .baseCopy(resizer -> new StandardResizer(resizer.getWidget()))
             .addOpt("expanded", StandardResizer::expanded, StandardResizer::isExpanded, Codec.BOOL, false)
             .addOpt("decoration", StandardResizer::decoration, StandardResizer::isDecoration, Codec.BOOL, false)
+            .addDecoder("coverChildren", StandardResizer::coverChildren, COVER_CHILDREN_DECODER)
+            .addDecoder("coverChildrenMinSize", StandardResizer::coverChildren, COVER_CHILDREN_MIN_SIZE_DECODER)
             .addFieldOf(DimensionSizer.CODEC, StandardResizer::getX, "start", "left")
             .addFieldOf(DimensionSizer.CODEC, StandardResizer::getX, "end", "right")
             .addFieldOf(DimensionSizer.CODEC, StandardResizer::getX, "size", "width")
