@@ -11,10 +11,13 @@ import com.mojang.serialization.MapLike;
 import com.mojang.serialization.RecordBuilder;
 import com.mojang.serialization.codecs.KeyDispatchCodec;
 
+import com.google.common.collect.Iterators;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -89,14 +92,7 @@ public class CodecUtil {
         return new Decoder<>() {
             @Override
             public <T> DataResult<Pair<A, T>> decode(DynamicOps<T> ops, T input) {
-                StringBuilder message = new StringBuilder();
-                DataResult<Pair<A, T>> last;
-                for (var codec : decoder) {
-                    last = codec.decode(ops, input);
-                    if (last.result().isPresent()) return last;
-                    message.append(last.error().orElseThrow().message()).append("; ");
-                }
-                return DataResult.error(() -> message.substring(0, message.length() - 2));
+                return CodecUtil.orElse(Arrays.stream(decoder).map(d -> () -> d.decode(ops, input)));
             }
         };
     }
@@ -108,14 +104,7 @@ public class CodecUtil {
         return new Encoder<>() {
             @Override
             public <T> DataResult<T> encode(A input, DynamicOps<T> ops, T prefix) {
-                StringBuilder message = new StringBuilder();
-                DataResult<T> last = null;
-                for (var codec : encoder) {
-                    last = codec.encode(input, ops, prefix);
-                    if (last.result().isPresent()) return last;
-                    message.append(last.error().orElseThrow().message()).append("; ");
-                }
-                return last.mapError(s -> message.substring(0, message.length() - 2));
+                return CodecUtil.orElse(Arrays.stream(encoder).map(e -> () -> e.encode(input, ops, prefix)));
             }
         };
     }
@@ -137,14 +126,7 @@ public class CodecUtil {
 
             @Override
             public <T> DataResult<A> decode(DynamicOps<T> ops, MapLike<T> input) {
-                StringBuilder message = new StringBuilder();
-                DataResult<A> last;
-                for (var codec : codecs) {
-                    last = codec.decode(ops, input);
-                    if (last.result().isPresent()) return last;
-                    message.append(last.error().orElseThrow().message()).append("; ");
-                }
-                return DataResult.error(() -> message.substring(0, message.length() - 2));
+                return CodecUtil.orElse(Arrays.stream(codecs).map(c -> () -> c.decode(ops, input)));
             }
 
             @Override
@@ -181,6 +163,51 @@ public class CodecUtil {
                 return DataResult.error(() -> message.substring(0, message.length() - 2));
             }
         };
+    }
+
+    /**
+     * Returns the first data result which has no error.
+     * If all results have errors, the errors will be merged into a single result.
+     */
+    public static <R> DataResult<R> orElse(DataResult<R> result, Iterator<Supplier<DataResult<R>>> orElse) {
+        if (orElse == null || !orElse.hasNext() || result.result().isPresent()) return result;
+        while (orElse.hasNext()) {
+            var d = orElse.next().get();
+            var res = d.result();
+            if (res.isPresent()) return d;
+            result = result.mapError(s -> s + "; " + d.error().orElseThrow().message());
+        }
+        return result;
+    }
+
+    /**
+     * Returns the first data result which has no error.
+     * If all results have errors, the errors will be merged into a single result.
+     */
+    @SafeVarargs
+    public static <R> DataResult<R> orElse(DataResult<R> result, Supplier<DataResult<R>>... orElse) {
+        if (orElse == null || orElse.length == 0) return result;
+        return orElse(result, Iterators.forArray(orElse));
+    }
+
+    @SafeVarargs
+    public static <R> DataResult<R> orElse(Supplier<DataResult<R>>... results) {
+        if (results == null || results.length == 0) throw new IllegalArgumentException();
+        var it = Iterators.forArray(results);
+        return orElse(it.next().get(), it);
+    }
+
+    public static <R> DataResult<R> orElse(Iterator<Supplier<DataResult<R>>> results) {
+        if (results == null || !results.hasNext()) throw new IllegalArgumentException();
+        return orElse(results.next().get(), results);
+    }
+
+    public static <R> DataResult<R> orElse(Iterable<Supplier<DataResult<R>>> results) {
+        return orElse(results.iterator());
+    }
+
+    public static <R> DataResult<R> orElse(Stream<Supplier<DataResult<R>>> results) {
+        return orElse(results.iterator());
     }
 
     public static <A, J> DataResult<A> ifMap(DynamicOps<J> ops, J input, Function<MapLike<J>, DataResult<A>> map) {

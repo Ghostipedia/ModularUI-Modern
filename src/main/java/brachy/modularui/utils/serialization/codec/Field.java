@@ -1,9 +1,12 @@
 package brachy.modularui.utils.serialization.codec;
 
+import brachy.modularui.api.codec.IExtendedCodec;
+import brachy.modularui.api.codec.MutableDecoder;
+import brachy.modularui.api.codec.MutableMapDecoder;
+
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
-import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.MapLike;
 import com.mojang.serialization.RecordBuilder;
 
@@ -55,15 +58,28 @@ public final class Field<T, V> {
 
     public V getModifiableDefault() {
         V v = getDefault();
-        if (!this.dynamicSupplier && this.codec instanceof MapCodec.MapCodecCodec<V> mcc &&
-                mcc.codec() instanceof MutableObjectCodec<V> moc && moc.canCopy()) {
-            v = moc.copy(v);
+        if (this.dynamicSupplier) return v;
+        var e = IExtendedCodec.getFrom(this.codec);
+        if (e != null) {
+            V copy = e.copy(v);
+            if (copy != null) return copy;
         }
         return v;
     }
 
     public boolean isUnencodable() {
         return this.codec == null;
+    }
+
+    public boolean canEncode() {
+        return this.codec != null && this.encodeWhen != EncodeWhen.NEVER;
+    }
+
+    public boolean isValueDefault(T holder) {
+        if (!hasDefault()) return false;
+        V current = this.fieldReader.readField(holder);
+        V def = getDefault();
+        return Objects.equals(current, def);
     }
 
     public <J> void encode(T holder, DynamicOps<J> ops, RecordBuilder<J> map) {
@@ -96,7 +112,6 @@ public final class Field<T, V> {
         return !hasDefault() || !Objects.equals(value, getDefault());
     }
 
-    @SuppressWarnings("unchecked")
     public <J> @Nullable String decode(T holder, DynamicOps<J> ops, MapLike<J> map) {
         J element = map.get(this.name);
         if (element == null && this.altNames != null) {
@@ -116,23 +131,20 @@ public final class Field<T, V> {
         if (isUnencodable()) {
             return String.format("Field '%s' is unencodable, but data still contains value", this.name);
         }
-        if (this.codec instanceof MapCodec.MapCodecCodec<V> mcc && mcc.codec() instanceof MutableMapDecoder<?>) {
-            var d = decode(holder, ops, element, (MutableMapDecoder<V>) mcc.codec());
-            var res = d.result();
-            if (res.isEmpty()) return d.error().orElseThrow().message();
-            this.fieldWriter.writeField(holder, res.get());
-            return null;
+        DataResult<V> result;
+        var mapDecoder = MutableMapDecoder.getFrom(this.codec);
+        if (mapDecoder != null) {
+            result = decode(holder, ops, element, mapDecoder);
+        } else {
+            var decoder = MutableDecoder.getFrom(this.codec);
+            if (decoder != null) {
+                result = decode(holder, ops, element, decoder);
+            } else {
+                result = this.codec.parse(ops, element);
+            }
         }
-        if (this.codec instanceof MutableDecoder<?> mutableCodec) {
-            var d = decode(holder, ops, element, (MutableDecoder<V>) mutableCodec);
-            var res = d.result();
-            if (res.isEmpty()) return d.error().orElseThrow().message();
-            this.fieldWriter.writeField(holder, res.get());
-            return null;
-        }
-        var d = this.codec.parse(ops, element);
-        var res = d.result();
-        if (res.isEmpty()) return d.error().orElseThrow().message();
+        var res = result.result();
+        if (res.isEmpty()) return result.error().orElseThrow().message();
         this.fieldWriter.writeField(holder, res.get());
         return null;
     }
@@ -180,8 +192,9 @@ public final class Field<T, V> {
 
     public void copyValue(T from, T to) {
         V value = this.fieldReader.readField(from);
-        if (this.codec instanceof MapCodec.MapCodecCodec<V> mcc && mcc.codec() instanceof MutableObjectCodec<V> moc) {
-            value = moc.copy(value);
+        var e = IExtendedCodec.getFrom(this.codec);
+        if (e != null) {
+            value = e.copy(value);
         }
         this.fieldWriter.writeField(to, value);
     }
@@ -219,11 +232,11 @@ public final class Field<T, V> {
     }
 
     public void convertToString(T instance, StringBuilder b, int indent) {
-        b.append(this.name)
-                .append(": ");
+        b.append(this.name).append(": ");
         V value = this.fieldReader.readField(instance);
-        if (this.codec instanceof MapCodec.MapCodecCodec<V> mcc && mcc.codec() instanceof MutableObjectCodec<V> moc) {
-            b.append(moc.convertToString(value, indent));
+        var e = IExtendedCodec.getFrom(this.codec);
+        if (e != null) {
+            b.append(e.convertToString(value, indent));
         } else {
             b.append(value);
         }

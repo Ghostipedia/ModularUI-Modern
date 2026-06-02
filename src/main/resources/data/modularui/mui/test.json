@@ -4,19 +4,10 @@
     "children": [
         {
             "type": "widget",
-            "top": {
-                "value": 0.5,
-                "measure": "relative"
-            },
-            "left": {
-                "value": 20
-            },
-            "right": {
-                "value": 20
-            },
-            "height": {
-                "value": 30
-            },
+            "top": "50%",
+            "left": 20,
+            "right": 20,
+            "height": 30,
             "background": {
                 "type": "texture",
                 "name": "mc_button"

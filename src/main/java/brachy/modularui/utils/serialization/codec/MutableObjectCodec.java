@@ -1,6 +1,7 @@
 package brachy.modularui.utils.serialization.codec;
 
-import com.mojang.datafixers.util.Pair;
+import brachy.modularui.api.codec.InstanceMapDecoder;
+
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
@@ -11,8 +12,8 @@ import com.mojang.serialization.RecordBuilder;
 
 import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceLinkedOpenHashMap;
-import lombok.Getter;
 import lombok.experimental.Accessors;
+import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -34,13 +35,12 @@ import java.util.stream.Stream;
  * @param <T> type of property
  */
 @Accessors(fluent = true)
-public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDecoder<T> {
+public class MutableObjectCodec<T> extends ExtendedMutableMapCodec<T> {
 
     private final List<Field<T, ?>> fields;
     private final InstanceMapDecoder<T> instanceDecoder;
     private final UnaryOperator<T> baseCopy;
     private final Codec<T> wrapped;
-    @Getter private final MutableCodecCodec<T> mutableCodec = new MutableCodecCodec<>(this);
 
     private MutableObjectCodec(List<Field<T, ?>> fields,
                                InstanceMapDecoder<T> instanceDecoder, UnaryOperator<T> baseCopy, Codec<T> wrapped) {
@@ -81,18 +81,22 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
         return this.baseCopy != null;
     }
 
+    @Override
     public T copy(T from) {
         if (from == null) return null;
         if (this.baseCopy == null) {
             throw new IllegalStateException("Can't copy instance since no base copy function is supplied.");
         }
         T copy = this.baseCopy.apply(from);
-        copyFields(from, copy);
-        return copy;
+        if (copy == null) return null;
+        return copyFields(from, copy);
     }
 
-    public void copyFields(T from, T to) {
+    @Override
+    public <B extends T> B copyFields(T from, B to) {
+        if (from == null || to == null) throw new NullPointerException();
         forEachField(f -> f.copyValue(from, to));
+        return to;
     }
 
     public void applyDefaults(T instance) {
@@ -102,6 +106,24 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
     @Override
     public boolean canDecodeInstance() {
         return this.instanceDecoder != null || this.wrapped != null;
+    }
+
+    public boolean areFieldsDefaultExcept(T instance, String exception) {
+        return areFieldsDefaultExcept(instance, f -> f.name().equals(exception));
+    }
+
+    public boolean areFieldsDefaultExcept(T instance, String... exceptions) {
+        return areFieldsDefaultExcept(instance, f -> ArrayUtils.contains(exceptions, f.name()));
+    }
+
+    public boolean areFieldsDefaultExcept(T instance, Predicate<Field<T, ?>> test) {
+        for (Field<T, ?> f : fields) {
+            if (!test.test(f) && !f.isValueDefault(instance)) {
+                return false;
+            }
+        }
+        return true;
+        //return testEachField(f -> !test.test(f) && !f.isValueDefault(instance));
     }
 
     public static <T> Builder<T> builder() {
@@ -184,11 +206,7 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
         return DataResult.error(() -> "Instance can not be created since no instance decoder or wrapped codec was provided.");
     }
 
-    public String convertToString(T instance, boolean pretty) {
-        return convertToString(instance, pretty ? 0 : -1);
-    }
-
-    String convertToString(T instance, int indent) {
+    public String convertToString(T instance, int indent) {
         if (instance == null) return "null";
         StringBuilder b = new StringBuilder();
         b.append(instance.getClass().getSimpleName())
@@ -208,24 +226,6 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
             b.append("  ".repeat(indent));
         }
         return b.append("}").toString();
-    }
-
-    public record MutableCodecCodec<A>(MutableObjectCodec<A> codec) implements MutableCodec<A> {
-
-        @Override
-        public <T> DataResult<Pair<A, T>> decode(DynamicOps<T> ops, T input, A instance) {
-            return CodecUtil.ifMap(ops, input, map -> this.codec.decode(ops, map, instance)).map(t -> new Pair<>(t, input));
-        }
-
-        @Override
-        public <T> DataResult<Pair<A, T>> decodeInstance(DynamicOps<T> ops, T input) {
-            return CodecUtil.ifMap(ops, input, map -> this.codec.decodeInstance(ops, map)).map(t -> new Pair<>(t, input));
-        }
-
-        @Override
-        public <T> DataResult<T> encode(A input, DynamicOps<T> ops, T prefix) {
-            return this.codec.codec().encode(input, ops, prefix);
-        }
     }
 
     public static class Builder<T> {

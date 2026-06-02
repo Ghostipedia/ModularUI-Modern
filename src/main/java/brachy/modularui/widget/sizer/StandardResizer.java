@@ -40,8 +40,6 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
             .baseCopy(resizer -> new StandardResizer(resizer.getWidget()))
             .addOpt("expanded", StandardResizer::expanded, StandardResizer::isExpanded, Codec.BOOL, false)
             .addOpt("decoration", StandardResizer::decoration, StandardResizer::isDecoration, Codec.BOOL, false)
-            .addFieldOf(DimensionSizer.CODEC, StandardResizer::getX, "coverChildrenMinSize", "coverChildrenMinSizeX")
-            .addFieldOf(DimensionSizer.CODEC, StandardResizer::getY, "coverChildrenMinSize", "coverChildrenMinSizeY")
             .addFieldOf(DimensionSizer.CODEC, StandardResizer::getX, "start", "left")
             .addFieldOf(DimensionSizer.CODEC, StandardResizer::getX, "end", "right")
             .addFieldOf(DimensionSizer.CODEC, StandardResizer::getX, "size", "width")

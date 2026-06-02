@@ -11,7 +11,7 @@ import brachy.modularui.drawable.text.ModularComponent;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Alignment;
 import brachy.modularui.utils.Color;
-import brachy.modularui.utils.serialization.codec.MutableDecoder;
+import brachy.modularui.api.codec.MutableDecoder;
 import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 import brachy.modularui.utils.serialization.json.JsonHelper;
 import brachy.modularui.widget.Widget;
@@ -47,7 +47,7 @@ public class CodecTest {
                 .coverChildrenHeight(11)
                 .left(5)
                 .bottomRel(0.75f, -67, 0.42f)
-                .width(20)
+                .widthRel(0.8f)
                 .decoration());
     }
 
@@ -179,6 +179,8 @@ public class CodecTest {
 
     private static <A> void test(MutableObjectCodec<A> codec, A obj1, Supplier<A> supplier, boolean checkObjEquals) {
         JsonElement json1 = toJson(codec.codec(), obj1);
+        System.out.println(JsonHelper.GSON.toJson(json1));
+        System.out.println(codec.convertToString(obj1, true));
         A obj2 = fromJson(codec.mutableCodec(), json1, supplier.get());
         if (checkObjEquals) {
             assertEq(codec, obj1, obj2, Objects::equals, null);
@@ -186,7 +188,6 @@ public class CodecTest {
         }
         JsonElement json2 = toJson(codec.codec(), obj2);
         assertEquals(json1, json2);
-        System.out.println(JsonHelper.GSON.toJson(json1));
     }
 
     private static <A> void test(Codec<A> codec, A obj, boolean checkObjEquals) {
