@@ -53,7 +53,10 @@ public class TestHandler {
                     .selectedColor(Color.WHITE.main)
                     .selectedIconColor(Color.RED.brighter(0)))
             .widgetThemeHover(IThemeApi.TOGGLE_BUTTON, new SelectableTheme.Builder<>()
-                    .selectedIconColor(Color.DEEP_PURPLE.brighter(0)))
+                    .selectedIconColor(Color.DEEP_PURPLE.brighter(0))
+                    .selectedBackground("slot_fluid")
+                    .background("slot_item")
+            )
             .textColor(IThemeApi.TEXT_FIELD, Color.DEEP_PURPLE.main);
 
     private static final IIcon tooltipLine = new IDrawable() {
