@@ -104,7 +104,7 @@ public class SelectableTheme extends WidgetTheme {
         }
 
         public B selectedBackground(String textureId) {
-            return background(new JsonBuilder().add("type", "texture").add("id", textureId));
+            return background(new JsonBuilder().add("type", "texture").add("name", textureId));
         }
     }
 }

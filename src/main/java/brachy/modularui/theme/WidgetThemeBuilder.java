@@ -47,6 +47,6 @@ public class WidgetThemeBuilder<T extends WidgetTheme, B extends WidgetThemeBuil
     }
 
     public B background(String textureId) {
-        return background(new JsonBuilder().add("type", "texture").add("id", textureId));
+        return background(new JsonBuilder().add("type", "texture").add("name", textureId));
     }
 }
