@@ -30,7 +30,7 @@ import java.util.Objects;
 @Accessors(fluent = true, chain = true)
 public class UITexture implements IDrawable {
 
-    public static final MapCodec<UITexture> CODEC_FROM_BUILDER = Builder.CODEC.xmap(Builder::buildForCodec, UITexture::toBuilder);
+    public static final MapCodec<UITexture> CODEC_FROM_BUILDER = Builder.CODEC.flatXmap(Builder::buildForCodec, t -> DataResult.success(t.toBuilder()));
     public static final Codec<UITexture> CODEC_FROM_NAME = ExtraCodecs.stringResolverCodec(TextureRegistry::getTextureId, TextureRegistry::getTexture);
     public static final MapCodec<UITexture> CODEC = CodecUtil.chainedMapCodec(CODEC_FROM_NAME.fieldOf("name"), CODEC_FROM_BUILDER);
 
@@ -565,12 +565,9 @@ public class UITexture implements IDrawable {
                     .orElseThrow();
         }
 
-        private UITexture buildForCodec() {
+        private DataResult<UITexture> buildForCodec() {
             // no error throwing and no drawable registration
-            return create()
-                    .resultOrPartial(ModularUI.LOGGER::error)
-                    .map(texture -> this.colorOverride != 0 ? texture.withColorOverride(this.colorOverride) : texture)
-                    .orElseThrow();
+            return create().map(texture -> this.colorOverride != 0 ? texture.withColorOverride(this.colorOverride) : texture);
         }
 
         private DataResult<UITexture> create() {
