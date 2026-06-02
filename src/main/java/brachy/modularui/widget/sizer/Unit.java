@@ -121,7 +121,9 @@ public class Unit {
 
     public static final ExtendedMutableCodec<Unit> CODEC = FULL_CODEC.tryBefore(COVER_CHILDREN_CODEC).tryBefore(SHORT_CODEC);
 
-    static final Unit ZERO = new Unit();
+    static final Unit ZERO_START = new Unit(State.START);
+    static final Unit ZERO_SIZE = new Unit(State.SIZE);
+    static final Unit ZERO_END = new Unit(State.END);
 
     @Getter
     @Setter
@@ -145,6 +147,11 @@ public class Unit {
         reset();
     }
 
+    private Unit(State state) {
+        reset();
+        this.state = state;
+    }
+
     public void reset() {
         this.state = State.UNUSED;
         this.autoAnchor = true;
@@ -161,6 +168,9 @@ public class Unit {
 
     private void copyPropertiesOf(Unit other, boolean copyState) {
         if (copyState) this.state = other.state;
+        if (this.state != State.SIZE && other.measure == Measure.COVER_CHILDREN) {
+            throw new IllegalStateException("Cover children can only be applied to width and height");
+        }
         this.autoAnchor = other.autoAnchor;
         this.value = other.value;
         this.valueSupplier = other.valueSupplier;

@@ -25,9 +25,9 @@ public class DimensionSizer {
 
     public static final MutableObjectCodec<DimensionSizer> CODEC = MutableObjectCodec.builder(DimensionSizer.class)
             .baseCopy(sizer -> new DimensionSizer(sizer.resizer, sizer.axis))
-            .addOpt("start", DimensionSizer::setStart, DimensionSizer::getStart, Unit.CODEC, Unit.ZERO).neverWriteDefault()
-            .addOpt("end", DimensionSizer::setEnd, DimensionSizer::getEnd, Unit.CODEC, Unit.ZERO).neverWriteDefault()
-            .addOpt("size", DimensionSizer::setSize, DimensionSizer::getSize, Unit.CODEC, Unit.ZERO).neverWriteDefault()
+            .addOpt("start", DimensionSizer::setStart, DimensionSizer::getStart, Unit.CODEC, Unit.ZERO_START).neverWriteDefault()
+            .addOpt("end", DimensionSizer::setEnd, DimensionSizer::getEnd, Unit.CODEC, Unit.ZERO_END).neverWriteDefault()
+            .addOpt("size", DimensionSizer::setSize, DimensionSizer::getSize, Unit.CODEC, Unit.ZERO_SIZE).neverWriteDefault()
             .build();
 
     private final ResizeNode resizer;
