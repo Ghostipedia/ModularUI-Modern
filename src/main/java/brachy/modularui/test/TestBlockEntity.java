@@ -316,7 +316,7 @@ public class TestBlockEntity extends AbstractBlockEntity implements IUIHolder<Po
                                         .name("dynamic_sync_page")
                                         .sizeRel(1f)
                                         .child(Flow.col()
-                                                .name("page 4 col, dynamic widgets")
+                                                .name("dynamic widgets")
                                                 .child(Text.str("Dynamic synced widget demo. Items act as keys to a unique storage with different amount of slots.").asWidget().scale(0.7f))
                                                 .child(new ItemSlot()
                                                         .slot(new ModularSlot(this.storageInventory0, 0)

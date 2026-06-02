@@ -9,6 +9,7 @@ import brachy.modularui.api.drawable.Text;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.factory.ClientGUI;
+import brachy.modularui.screen.BuildPanelEvent;
 import brachy.modularui.screen.CustomModularScreen;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
@@ -21,6 +22,8 @@ import brachy.modularui.theme.SelectableTheme;
 import brachy.modularui.theme.ThemeBuilder;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Color;
+import brachy.modularui.widget.WidgetTree;
+import brachy.modularui.widgets.layout.Flow;
 
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.item.Item;
@@ -138,6 +141,15 @@ public class TestHandler {
             if (event.getScreen() instanceof AbstractContainerScreen<?> gui) {
                 event.addOverlay(getContainerOverlayTest(gui));
             }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @SubscribeEvent
+    public static void onBuildPanel(BuildPanelEvent.MainPanel event) {
+        if (event.matches(ModularUI.MOD_ID, "test_tile")) {
+            Flow flow = WidgetTree.findChildAt(event.getOpeningPanel(), Flow.class, "main_col", "paged", "dynamic_sync_page", "dynamic widgets");
+            flow.addChild(Text.str("Added from Event").asWidget(), 0);
         }
     }
 

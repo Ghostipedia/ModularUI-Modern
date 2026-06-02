@@ -35,6 +35,7 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
@@ -158,6 +159,7 @@ public class ModularScreen implements Renderable {
         Objects.requireNonNull(mainPanel, "The main panel must not be null!");
         this.name = mainPanel.getName();
         this.panelManager = new PanelManager(this, mainPanel);
+        MinecraftForge.EVENT_BUS.post(new BuildPanelEvent.MainPanel(this));
     }
 
     /**
