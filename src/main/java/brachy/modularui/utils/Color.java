@@ -964,9 +964,9 @@ public class Color {
     ).apply(instance, Color::ofCMYK));
 
     /**
-     * Encodes into hex string and decodes, hex string, arg obj, hsv obj, hsl obj and then cmyk obj.
+     * Encodes into hex string and decodes, hex string, arg obj, hsv obj, hsl obj, cmyk obj and then raw argb integer.
      */
-    public static final Codec<Integer> CODEC = CodecUtil.codecOf(CODEC_STRING, CODEC_STRING, CODEC_ARGB, CODEC_HSV, CODEC_HSL, CODEC_CMYK);
+    public static final Codec<Integer> CODEC = CodecUtil.codecOf(CODEC_STRING, CODEC_STRING, CODEC_ARGB, CODEC_HSV, CODEC_HSL, CODEC_CMYK, Codec.INT);
 
     public static DataResult<Integer> parseString(String colorString) {
         return parseString(colorString, WHITE.main);
