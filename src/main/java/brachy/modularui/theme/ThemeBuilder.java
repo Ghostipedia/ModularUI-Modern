@@ -39,7 +39,7 @@ public class ThemeBuilder<B extends ThemeBuilder<B>> extends JsonBuilder {
     }
 
     public B defaultBackground(String textureId) {
-        add(IThemeApi.BACKGROUND, new JsonBuilder().add("type", "texture").add("id", textureId));
+        add(IThemeApi.BACKGROUND, new JsonBuilder().add("type", "texture").add("name", textureId));
         return getThis();
     }
 
@@ -51,7 +51,7 @@ public class ThemeBuilder<B extends ThemeBuilder<B>> extends JsonBuilder {
 
     public B defaultHoverBackground(String textureId) {
         mergeAdd(IThemeApi.HOVER_SUFFIX, new JsonBuilder().add(IThemeApi.BACKGROUND,
-                new JsonBuilder().add("type", "texture").add("id", textureId)));
+                new JsonBuilder().add("type", "texture").add("name", textureId)));
         return getThis();
     }
 
@@ -112,7 +112,7 @@ public class ThemeBuilder<B extends ThemeBuilder<B>> extends JsonBuilder {
     }
 
     public B background(WidgetThemeKey<?> widgetTheme, String textureId) {
-        return background(widgetTheme, new JsonBuilder().add("type", "texture").add("id", textureId));
+        return background(widgetTheme, new JsonBuilder().add("type", "texture").add("name", textureId));
     }
 
     public B background(WidgetThemeKey<?> widgetTheme, JsonBuilder builder) {
@@ -131,7 +131,7 @@ public class ThemeBuilder<B extends ThemeBuilder<B>> extends JsonBuilder {
     }
 
     public B hoverBackground(WidgetThemeKey<?> widgetTheme, String textureId) {
-        return hoverBackground(widgetTheme, new JsonBuilder().add("type", "texture").add("id", textureId));
+        return hoverBackground(widgetTheme, new JsonBuilder().add("type", "texture").add("name", textureId));
     }
 
     public B hoverBackground(WidgetThemeKey<?> widgetTheme, JsonBuilder builder) {
