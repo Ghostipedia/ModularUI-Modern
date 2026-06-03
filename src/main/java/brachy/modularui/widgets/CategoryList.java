@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public class CategoryList extends AbstractParentWidget<IWidget, CategoryList> implements Interactable, ILayoutWidget {
 
@@ -56,6 +57,11 @@ public class CategoryList extends AbstractParentWidget<IWidget, CategoryList> im
                 this.collapsedOverlay = IDrawable.EMPTY;
             }
         }
+    }
+
+    @Override
+    protected IWidget castToType(IWidget widget) {
+        return widget;
     }
 
     @Override
@@ -133,6 +139,10 @@ public class CategoryList extends AbstractParentWidget<IWidget, CategoryList> im
                 .marginRight(4);
         private IDrawable collapsedOverlay = GuiTextures.MOVE_RIGHT.asIcon().size(8, 16)
                 .alignment(Alignment.CenterRight).marginRight(8);
+
+        public Root() {
+            super(Function.identity());
+        }
 
         @Override
         public void onChildAdd(IWidget child) {

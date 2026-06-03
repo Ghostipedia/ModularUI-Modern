@@ -35,6 +35,11 @@ import java.util.function.IntFunction;
 public class ListWidget<I extends IWidget, W extends ListWidget<I, W>> extends AbstractScrollWidget<I, W>
         implements ILayoutWidget, IParentWidget<I, W> {
 
+    public static ListWidget<IWidget, ?> simple() {
+        return new ListWidget<>(Function.identity());
+    }
+
+    private final Function<IWidget, I> typeCaster;
     @Getter private ScrollData scrollData;
     @Getter private IIcon childSeparator;
     private final IntList separatorPositions = new IntArrayList();
@@ -47,8 +52,9 @@ public class ListWidget<I extends IWidget, W extends ListWidget<I, W>> extends A
      */
     private boolean reverseLayout = false;
 
-    public ListWidget() {
+    public ListWidget(Function<IWidget, I> typeCaster) {
         super(null, null);
+        this.typeCaster = typeCaster;
     }
 
     @Override
@@ -186,6 +192,11 @@ public class ListWidget<I extends IWidget, W extends ListWidget<I, W>> extends A
     @Override
     protected boolean removeAll() {
         return super.removeAll();
+    }
+
+    @Override
+    protected I castToType(IWidget widget) {
+        return this.typeCaster.apply(widget);
     }
 
     @Override

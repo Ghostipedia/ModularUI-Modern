@@ -13,11 +13,13 @@ import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.serialization.codec.CodecUtil;
 import brachy.modularui.widget.Widget;
+import brachy.modularui.widget.WidgetType;
 import brachy.modularui.widget.sizer.Area;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.MapCodec;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -235,6 +237,11 @@ public interface IDrawable {
      */
     class DrawableWidget extends Widget<DrawableWidget> {
 
+        public static final MapCodec<IWidget> CODEC = IDrawable.CODEC.fieldOf("drawable").flatXmap(d -> DataResult.success(d.asWidget()), w -> {
+            if (w instanceof DrawableWidget d) return DataResult.success(d.drawable);
+            return DataResult.error(() -> "Can only convert DrawableWidget back");
+        });
+
         private final IDrawable drawable;
 
         public DrawableWidget(IDrawable drawable) {
@@ -245,6 +252,18 @@ public interface IDrawable {
         @Override
         public void draw(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {
             this.drawable.drawAtZero(context, getArea(), getActiveWidgetTheme(widgetTheme, isHovering()));
+        }
+
+        @Override
+        public WidgetType<?> getType() {
+            return WidgetType.DRAWABLE;
+        }
+
+        @Override
+        public DrawableWidget copyExact() {
+            var copy = new DrawableWidget(drawable);
+            Widget.CODEC.copyFields(this, copy);
+            return copy;
         }
     }
 }

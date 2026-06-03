@@ -22,7 +22,7 @@ public class ParentWidget<W extends ParentWidget<W>> extends AbstractParentWidge
 
     private void setChildren(List<IWidget> children) {
         removeAll();
-        children.forEach(w -> addChild(w, -1));
+        children.forEach(w -> addChildRaw(w, -1, false));
     }
 
     public boolean addChild(IWidget child, int index) {
@@ -45,10 +45,16 @@ public class ParentWidget<W extends ParentWidget<W>> extends AbstractParentWidge
     }
 
     @Override
+    protected IWidget castToType(IWidget widget) {
+        return widget;
+    }
+
+    @Override
     public WidgetType<?> getType() {
         return WidgetType.PARENT;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public W copyExact() {
         return (W) CODEC.copy(this);

@@ -11,6 +11,7 @@ import brachy.modularui.utils.ObjectList;
 import brachy.modularui.utils.Stencil;
 import brachy.modularui.utils.serialization.codec.CodecUtil;
 import brachy.modularui.widget.EmptyWidget;
+import brachy.modularui.widget.WidgetModification;
 import brachy.modularui.widget.WidgetRegistry;
 import brachy.modularui.widget.WidgetType;
 import brachy.modularui.widget.sizer.Area;
@@ -401,4 +402,8 @@ public interface IWidget extends ITreeNode<IWidget> {
     }
 
     IWidget copy();
+
+    default boolean applyModification(WidgetModification modification, IWidget childTarget) {
+        return false;
+    }
 }

@@ -13,17 +13,23 @@ import brachy.modularui.drawable.InteractableIcon;
 import brachy.modularui.drawable.text.KeyIcon;
 import brachy.modularui.drawable.text.TextIcon;
 import brachy.modularui.network.ModularNetwork;
+import brachy.modularui.screen.BuildPanelEvent;
 import brachy.modularui.theme.ThemeManager;
+
+import brachy.modularui.widget.WidgetSerializer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Timer;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
@@ -41,6 +47,7 @@ public class ClientProxy extends CommonProxy {
         modBus.addListener(this::onRegisterClientTooltipComponents);
         modBus.addListener(this::onRegisterAssetReloadListeners);
         IEventBus forgeBus = MinecraftForge.EVENT_BUS;
+        forgeBus.addListener(this::onBuildPanel);
         forgeBus.addListener(this::onUnloadWorld);
         forgeBus.addListener(this::onRegisterAssetReloadListeners);
         if (!ModularUI.isDataGen()) {
@@ -56,6 +63,10 @@ public class ClientProxy extends CommonProxy {
             // enable stencil bits, must call on render thread
             RenderSystem.recordRenderCall(() -> Minecraft.getInstance().getMainRenderTarget().enableStencil());
         }
+    }
+
+    private void onBuildPanel(BuildPanelEvent event) {
+        WidgetSerializer.applyModifications(event.getId(), event.getOpeningPanel());
     }
 
     private void onRegisterClientTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {

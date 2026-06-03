@@ -322,7 +322,14 @@ public abstract class AbstractWidget implements IWidget {
     }
 
     protected void setName(String name) {
+        if (isNameInvalid(name)) {
+            throw new IllegalArgumentException("Widget name must not start with '#' or a digit and must not contain '/'");
+        }
         this.name = name;
+    }
+
+    public static boolean isNameInvalid(String name) {
+        return name != null && (name.startsWith("#") || name.indexOf('/') >= 0 || Character.isDigit(name.charAt(0)));
     }
 
     public boolean isName(String name) {

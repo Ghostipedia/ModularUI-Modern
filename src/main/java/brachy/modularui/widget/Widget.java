@@ -32,6 +32,10 @@ import brachy.modularui.widgets.slot.ItemSlot;
 
 import com.mojang.serialization.Codec;
 
+import com.mojang.serialization.DataResult;
+
+import com.mojang.serialization.MapCodec;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,6 +49,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -60,10 +65,17 @@ import java.util.function.Predicate;
  */
 public class Widget<W extends Widget<W>> extends AbstractWidget implements IPositioned<W>, ITooltip<W>, ISynced<W> {
 
+    protected static final Codec<String> NAME_CODEC = Codec.STRING.comapFlatMap(s -> {
+        if (Widget.isNameInvalid(s)) {
+            return DataResult.error(() -> "Widget name must not start with '#' or a digit and must not contain '/'");
+        }
+        return DataResult.success(s);
+    }, Function.identity());
+
     public static final MutableObjectCodec<Widget<?>> CODEC = MutableObjectCodec.<Widget<?>>builder()
             .instance(Widget::new)
             .equalityTest(Widget::areEqual)
-            .addOpt("name", Widget::name, Widget::getName, Codec.STRING, null)
+            .addOpt("name", Widget::name, Widget::getName, NAME_CODEC, null)
             .addOpt("enabled", Widget::setEnabled, Widget::isEnabled, Codec.BOOL, true)
             .addOpt("syncKey", Widget::setSyncKey, Widget::getSyncKey, Codec.STRING, null)
             .addOpt("disableThemeBackground", Widget::disableThemeBackground, Widget::isDisableThemeBackground, Codec.BOOL, false)
@@ -85,6 +97,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
             .addUnencodable("guiActionListeners", Widget::setGuiActionListeners, Widget::getGuiActionListeners)
             .addUnencodable("onUpdateListener", Widget::setOnUpdateListener, Widget::getOnUpdateListener)
             .build();
+
 
     // other
     @Getter private boolean excludeAreaInRecipeViewer = false;
@@ -930,6 +943,7 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
         return copyExact();
     }
 
+    @SuppressWarnings("unchecked")
     public W copyExact() {
         return (W) CODEC.copy(this);
     }

@@ -136,7 +136,7 @@ public class TestGuis extends CustomModularScreen {
                                     ClientGUI.open(new ModularScreen(ModularUI.MOD_ID, TestGuis.buildJsonUI()));
                                     return true;
                                 }))
-                        .child(new ListWidget<>().widthRel(1f).expanded()
+                        .child(ListWidget.simple().widthRel(1f).expanded()
                                 .children(uiMethods.size(), i -> {
                                     Method m = uiMethods.get(i);
                                     String name = m.getName();
@@ -147,7 +147,7 @@ public class TestGuis extends CustomModularScreen {
                                     return button(name)
                                             .onMousePressed((context1, button) -> {
                                                 try {
-                                                    ModularPanel<?> panel = (ModularPanel) m.invoke(null);
+                                                    ModularPanel<?> panel = (ModularPanel<?>) m.invoke(null);
                                                     if (TestGuis.withCode) {
                                                         // WIP: this is meant to put an image of the code next to ui for showcase purpose
                                                         panel.child(UITexture.builder()
@@ -203,7 +203,7 @@ public class TestGuis extends CustomModularScreen {
                 .height(100)
                 .coverChildrenWidth()
                 .padding(7)
-                .child(new ListWidget<>()
+                .child(ListWidget.simple()
                         .coverChildrenWidth()
                         .heightRel(1f)
                         .children(4, i -> new Grid()
@@ -439,7 +439,7 @@ public class TestGuis extends CustomModularScreen {
         Random rnd = new Random();
         return ModularPanel.defaultPanel("list", 100, 150)
                 .padding(7)
-                .child(new ListWidget<>()
+                .child(ListWidget.simple()
                         .sizeRel(1f)
                         .collapseDisabledChildren()
                         .children(12, i -> new Widget<>()
@@ -464,7 +464,7 @@ public class TestGuis extends CustomModularScreen {
                                 .height(16)
                                 .widthRel(1f)
                                 .autoUpdateOnChange(true))
-                        .child(new ListWidget<>()
+                        .child(ListWidget.simple()
                                 .collapseDisabledChildren()
                                 .expanded()
                                 .widthRel(1f)

@@ -173,8 +173,7 @@ public class CodecUtil {
         if (orElse == null || !orElse.hasNext() || result.result().isPresent()) return result;
         while (orElse.hasNext()) {
             var d = orElse.next().get();
-            var res = d.result();
-            if (res.isPresent()) return d;
+            if (d.result().isPresent()) return d;
             result = result.mapError(s -> s + "; " + d.error().orElseThrow().message());
         }
         return result;
@@ -192,13 +191,13 @@ public class CodecUtil {
 
     @SafeVarargs
     public static <R> DataResult<R> orElse(Supplier<DataResult<R>>... results) {
-        if (results == null || results.length == 0) throw new IllegalArgumentException();
+        if (results == null || results.length == 0) throw new IllegalArgumentException("Results is empty");
         var it = Iterators.forArray(results);
         return orElse(it.next().get(), it);
     }
 
     public static <R> DataResult<R> orElse(Iterator<Supplier<DataResult<R>>> results) {
-        if (results == null || !results.hasNext()) throw new IllegalArgumentException();
+        if (results == null || !results.hasNext()) throw new IllegalArgumentException("Results is empty");
         return orElse(results.next().get(), results);
     }
 

@@ -77,7 +77,10 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
     private static <T> DataResult<ModularPanel<?>> decodeInstance(DynamicOps<T> ops, MapLike<T> input) {
         var name = input.get("name");
         if (name == null) return DataResult.error(() -> "Panel widget needs a name property");
-        return ops.getStringValue(name).map(ModularPanel::new);
+        return ops.getStringValue(name).flatMap(s -> {
+            if (isNameInvalid(s)) return DataResult.error(() -> "Widget name must not start with '#' or a digit and must not contain '/'");
+            return DataResult.success(s);
+        }).map(ModularPanel::new);
     }
 
     public static ModularPanel<?> defaultPanel(@NotNull String name) {
@@ -902,6 +905,7 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
         return WidgetType.PANEL;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public W copyExact() {
         return (W) CODEC.copy(this);

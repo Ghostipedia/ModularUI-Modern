@@ -256,6 +256,11 @@ public class Grid extends AbstractScrollWidget<IWidget, Grid> implements ILayout
         return true;
     }
 
+    @Override
+    protected IWidget castToType(IWidget widget) {
+        return widget;
+    }
+
     public Grid child(@Nullable IWidget widget) {
         if (this.matrix.isEmpty()) this.matrix.add(new ArrayList<>());
         this.matrix.get(this.matrix.size() - 1).add(widget);

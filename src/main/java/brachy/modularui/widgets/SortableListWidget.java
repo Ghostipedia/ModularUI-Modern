@@ -31,10 +31,14 @@ public class SortableListWidget<T> extends ListValueWidget<T, SortableListWidget
     private final ObjectList<Animator> animators = ObjectList.create();
 
     public SortableListWidget() {
-        super(Item::getWidgetValue);
+        super(SortableListWidget::castChild, Item::getWidgetValue);
         heightRel(1f);
         // this is not desired here in favor of animations
         collapseDisabledChildren(false);
+    }
+
+    private static <T> Item<T> castChild(IWidget widget) {
+        return widget instanceof SortableListWidget.Item<?> item ? (Item<T>) item : null;
     }
 
     @Override

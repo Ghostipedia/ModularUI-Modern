@@ -55,4 +55,17 @@ public class SingleChildWidget<W extends SingleChildWidget<W>> extends Widget<W>
     public void visitTransformChildren(UnaryOperator<IWidget> op) {
         child(op.apply(this.child));
     }
+
+    @Override
+    public boolean applyModification(WidgetModification modification, IWidget childTarget) {
+        if (modification.isRemove()) {
+            child(null);
+            return true;
+        }
+        if (modification.isReplace()) {
+            child(modification.widget().copy());
+            return true;
+        }
+        return false;
+    }
 }
