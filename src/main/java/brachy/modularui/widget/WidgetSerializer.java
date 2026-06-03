@@ -37,7 +37,11 @@ public class WidgetSerializer {
 
     @ApiStatus.Internal
     public static void applyModifications(PanelIdentifier id, ModularPanel<?> panel) {
+        if (modifications.isEmpty()) return;
         for (PanelModification mod : modifications.getOrDefault(id, Collections.emptyList())) {
+            mod.apply(id, panel);
+        }
+        for (PanelModification mod : modifications.getOrDefault(id.withMainPanel("*"), Collections.emptyList())) {
             mod.apply(id, panel);
         }
     }

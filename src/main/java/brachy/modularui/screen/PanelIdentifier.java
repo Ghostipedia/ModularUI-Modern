@@ -58,6 +58,18 @@ public record PanelIdentifier(String screen, String mainPanel, String targetPane
         return mainPanel.equals(targetPanel);
     }
 
+    public PanelIdentifier withScreen(String screen) {
+        return new PanelIdentifier(screen, this.mainPanel, this.targetPanel);
+    }
+
+    public PanelIdentifier withMainPanel(String mainPanel) {
+        return new PanelIdentifier(this.screen, mainPanel, this.targetPanel);
+    }
+
+    public PanelIdentifier withTargetPanel(String targetPanel) {
+        return new PanelIdentifier(this.screen, this.mainPanel, targetPanel);
+    }
+
     @Override
     public @NotNull String toString() {
         return this.screen + ":" + this.mainPanel + ":" + this.targetPanel;
