@@ -13,6 +13,7 @@ import brachy.modularui.drawable.InteractableIcon;
 import brachy.modularui.drawable.text.KeyIcon;
 import brachy.modularui.drawable.text.TextIcon;
 import brachy.modularui.network.ModularNetwork;
+import brachy.modularui.test.TestHandler;
 import brachy.modularui.theme.ThemeManager;
 
 import net.minecraft.client.Minecraft;
@@ -25,6 +26,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import lombok.Getter;
@@ -47,6 +49,12 @@ public class ClientProxy extends CommonProxy {
             CursorHandler.init();
             AnimatorManager.init();
         }
+    }
+
+    @Override
+    protected void onPreInit(FMLConstructModEvent event) {
+        super.onPreInit(event);
+        TestHandler.onPreInit();
     }
 
     @Override

@@ -21,12 +21,14 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 public class CommonProxy {
 
     CommonProxy() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        modBus.addListener(this::onPreInit);
         modBus.addListener(this::onInit);
         IEventBus forgeBus = MinecraftForge.EVENT_BUS;
         forgeBus.addListener(this::onRegisterDataReloadListener);
@@ -46,6 +48,8 @@ public class CommonProxy {
             TestRegistration.register(modBus);
         }
     }
+
+    protected void onPreInit(FMLConstructModEvent event) {}
 
     protected void onInit(FMLCommonSetupEvent event) {}
 

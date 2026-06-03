@@ -74,12 +74,12 @@ public class SelectableTheme extends WidgetTheme {
             extends WidgetThemeBuilder<T, B> {
 
         public B selectedColor(int color) {
-            add(IThemeApi.SELECTED_COLOR, color);
+            add(IThemeApi.SELECTED_COLOR, ThemeBuilder.colorJson(color));
             return getThis();
         }
 
         public B selectedTextColor(int color) {
-            add(IThemeApi.SELECTED_TEXT_COLOR, color);
+            add(IThemeApi.SELECTED_TEXT_COLOR, ThemeBuilder.colorJson(color));
             return getThis();
         }
 
@@ -89,12 +89,12 @@ public class SelectableTheme extends WidgetTheme {
         }
 
         public B selectedIconColor(int color) {
-            add(IThemeApi.SELECTED_ICON_COLOR, color);
+            add(IThemeApi.SELECTED_ICON_COLOR, ThemeBuilder.colorJson(color));
             return getThis();
         }
 
         public B selectedBackground(JsonBuilder builder) {
-            if (builder instanceof WidgetThemeBuilder<?,?>) {
+            if (builder instanceof WidgetThemeBuilder<?, ?>) {
                 throw new IllegalArgumentException(".selectedBackground() does not accept widget theme builders");
             }
             add(IThemeApi.SELECTED_BACKGROUND, builder);
@@ -107,7 +107,7 @@ public class SelectableTheme extends WidgetTheme {
         }
 
         public B selectedBackground(String textureId) {
-            return background(new JsonBuilder().add("type", "texture").add("name", textureId));
+            return background(ThemeBuilder.textureJson(textureId));
         }
     }
 }

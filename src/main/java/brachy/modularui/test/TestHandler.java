@@ -124,8 +124,7 @@ public class TestHandler {
     }
 
     @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent
-    public static void onThemeReload(ReloadThemeEvent.Pre event) {
+    public static void onPreInit() {
         if (ModularUI.isDev()) {
             IThemeApi.get().registerTheme(testTheme);
         }
