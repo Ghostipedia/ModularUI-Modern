@@ -107,7 +107,7 @@ public class SelectableTheme extends WidgetTheme {
         }
 
         public B selectedBackground(String textureId) {
-            return background(ThemeBuilder.textureJson(textureId));
+            return selectedBackground(ThemeBuilder.textureJson(textureId));
         }
     }
 }
