@@ -712,8 +712,8 @@ public class ClientScreenHandler {
                         lineY -= 10;
                     }
                     if (r.captureDebugInfo()) {
-                        float depth = sw.getSchemaRenderer().depth();
-                        s = I18n.get("modularui.debug.schema.debug", depth, r.openGLMouseX(), r.openGLMouseY());
+                        var vec = sw.getSchemaRenderer().openGLMousePos();
+                        s = I18n.get("modularui.debug.schema.debug", vec.z, vec.x, vec.y);
                         GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
                         lineY -= shift;
                     }
