@@ -25,6 +25,7 @@ import brachy.modularui.utils.FpsCounter;
 import brachy.modularui.utils.Stencil;
 import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widgets.RichTextWidget;
+import brachy.modularui.widgets.SchemaWidget;
 import brachy.modularui.widgets.slot.ItemSlot;
 import brachy.modularui.widgets.slot.ModularSlot;
 import brachy.modularui.widgets.slot.SlotGroup;
@@ -43,6 +44,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.HitResult;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -588,6 +590,7 @@ public class ClientScreenHandler {
                 muiScreen.getContext().getRecipeViewerSettings().isEnabled(muiScreen)) {
             lineY -= 18;
         }
+
         String s = I18n.get("modularui.debug.mouse_pos", mouseX, mouseY);
         GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
         lineY -= shift;
@@ -701,6 +704,30 @@ public class ClientScreenHandler {
                     }
                     s = I18n.get("modularui.debug.hovered", hoveredElement);
                     GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
+                } else if (hovered instanceof SchemaWidget sw) {
+                    var r = sw.getSchemaRenderer();
+                    var res = r.lastRayTrace();
+                    if (r.captureDebugInfo() || res != null) {
+                        drawSegmentLine(graphics, lineY -= 4, scale, textColor);
+                        lineY -= 10;
+                    }
+                    if (r.captureDebugInfo()) {
+                        float depth = sw.getSchemaRenderer().depth();
+                        s = I18n.get("modularui.debug.schema.debug", depth, r.openGLMouseX(), r.openGLMouseY());
+                        GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
+                        lineY -= shift;
+                    }
+                    if (res != null) {
+                        String block = "Miss";
+                        if (res.getType() == HitResult.Type.BLOCK) {
+                            var bs = r.schema().getLevel().getBlockState(res.getBlockPos());
+                            block = bs.getBlock().getName().getString();
+                        }
+                        s = I18n.get("modularui.debug.schema.raytrace", block,
+                                res.getBlockPos().getX(), res.getBlockPos().getY(), res.getBlockPos().getZ());
+                        GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
+                        lineY -= shift;
+                    }
                 }
             }
         }
