@@ -61,6 +61,6 @@ public class ModularUIJeiPlugin implements IModPlugin {
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
         if (ModularUI.Mods.REI.isLoaded() || ModularUI.Mods.EMI.isLoaded()) return;
 
-        JeiContainerHandler.register(ModularContainerMenu.class, registration);
+        //JeiContainerHandler.register(ModularContainerMenu.class, registration);
     }
 }
