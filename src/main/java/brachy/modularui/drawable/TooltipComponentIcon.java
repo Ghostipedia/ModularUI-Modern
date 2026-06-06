@@ -1,4 +1,4 @@
-package brachy.modularui.client.component;
+package brachy.modularui.drawable;
 
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.IIcon;

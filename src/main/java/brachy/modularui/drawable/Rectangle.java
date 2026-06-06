@@ -1,6 +1,6 @@
 package brachy.modularui.drawable;
 
-import brachy.modularui.GTRenderTypes;
+import brachy.modularui.utils.MUIRenderTypes;
 import brachy.modularui.ModularUI;
 import brachy.modularui.animation.IAnimatable;
 import brachy.modularui.api.drawable.IDrawable;
@@ -129,7 +129,7 @@ public class Rectangle implements IDrawable, IAnimatable<Rectangle> {
 
             Matrix4f pose = context.getGraphics().pose().last().pose();
             VertexConsumer bufferbuilder = context.getGraphics().bufferSource()
-                    .getBuffer(GTRenderTypes.guiTriangleStrip());
+                    .getBuffer(MUIRenderTypes.guiTriangleStrip());
             v(pose, bufferbuilder, x0, y0, this.colorTL);
             v(pose, bufferbuilder, x1 - d, y0 + d, this.colorTR);
             v(pose, bufferbuilder, x1, y0, this.colorTR);

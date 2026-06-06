@@ -1,11 +1,10 @@
-package brachy.modularui.client.schemarenderer;
+package brachy.modularui.drawable.schema;
 
 import brachy.modularui.ModularUI;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.Icon;
 import brachy.modularui.integration.embeddium.SodiumCompat;
-import brachy.modularui.schema.ISchema;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Color;

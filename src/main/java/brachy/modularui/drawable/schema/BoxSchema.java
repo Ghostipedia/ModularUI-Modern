@@ -1,4 +1,4 @@
-package brachy.modularui.schema;
+package brachy.modularui.drawable.schema;
 
 import brachy.modularui.utils.BlockPosUtil;
 

@@ -1,6 +1,6 @@
 package brachy.modularui.test;
 
-import brachy.modularui.GTRenderTypes;
+import brachy.modularui.utils.MUIRenderTypes;
 import brachy.modularui.ModularUI;
 import brachy.modularui.animation.Animator;
 import brachy.modularui.animation.IAnimator;
@@ -11,7 +11,7 @@ import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.widget.IWidget;
-import brachy.modularui.client.schemarenderer.BlockHighlight;
+import brachy.modularui.drawable.schema.BlockHighlight;
 import brachy.modularui.drawable.FluidDrawable;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.GuiTextures;
@@ -23,8 +23,8 @@ import brachy.modularui.drawable.graph.GraphDrawable;
 import brachy.modularui.drawable.progress.CircularProgressDrawable;
 import brachy.modularui.drawable.progress.ProgressDrawable;
 import brachy.modularui.factory.ClientGUI;
-import brachy.modularui.schema.ArraySchema;
-import brachy.modularui.schema.ISchema;
+import brachy.modularui.drawable.schema.ArraySchema;
+import brachy.modularui.drawable.schema.ISchema;
 import brachy.modularui.screen.CustomModularScreen;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
@@ -505,7 +505,7 @@ public class TestGuis extends CustomModularScreen {
         IDrawable correctedGradient = (context1, x, y, width, height, widgetTheme) -> {
             int points = 500;
             Matrix4f pose = context1.graphicsPose().last().pose();
-            VertexConsumer buffer = context1.getGraphics().bufferSource().getBuffer(GTRenderTypes.guiTriangleStrip());
+            VertexConsumer buffer = context1.getGraphics().bufferSource().getBuffer(MUIRenderTypes.guiTriangleStrip());
 
             float x0 = x;
             float w = (float) width / points;

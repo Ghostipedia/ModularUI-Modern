@@ -2,22 +2,26 @@ package brachy.modularui;
 
 import brachy.modularui.animation.AnimatorManager;
 import brachy.modularui.api.drawable.IIcon;
-import brachy.modularui.client.CursorHandler;
-import brachy.modularui.client.component.DrawableTooltipComponent;
-import brachy.modularui.client.component.TooltipComponentIcon;
 import brachy.modularui.drawable.ClientTooltipComponentIcon;
 import brachy.modularui.drawable.DelegateIcon;
+import brachy.modularui.drawable.DrawableTooltipComponent;
+import brachy.modularui.drawable.GuiSpriteManager;
 import brachy.modularui.drawable.HoverableIcon;
 import brachy.modularui.drawable.Icon;
 import brachy.modularui.drawable.InteractableIcon;
+import brachy.modularui.drawable.TooltipComponentIcon;
 import brachy.modularui.drawable.text.KeyIcon;
 import brachy.modularui.drawable.text.TextIcon;
 import brachy.modularui.network.ModularNetwork;
+import brachy.modularui.screen.ContainerScreenWrapper;
+import brachy.modularui.screen.ModularContainerMenu;
 import brachy.modularui.test.TestHandler;
 import brachy.modularui.theme.ThemeManager;
+import brachy.modularui.utils.CursorHandler;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Timer;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
@@ -25,6 +29,7 @@ import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEv
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -40,6 +45,7 @@ public class ClientProxy extends CommonProxy {
 
     ClientProxy() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        modBus.addListener(this::onClientStartup);
         modBus.addListener(this::onRegisterClientTooltipComponents);
         modBus.addListener(this::onRegisterAssetReloadListeners);
         IEventBus forgeBus = MinecraftForge.EVENT_BUS;
@@ -66,6 +72,12 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
+    private void onClientStartup(FMLClientSetupEvent event) {
+        //noinspection deprecation,RedundantCast
+        event.enqueueWork(() -> MenuScreens.register(ModularUIMenuTypes.MODULAR_CONTAINER.get(),
+                (MenuScreens.ScreenConstructor<ModularContainerMenu, ContainerScreenWrapper>) ContainerScreenWrapper::new));
+    }
+
     private void onRegisterClientTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {
         Function<IIcon, ClientTooltipComponent> factory = DrawableTooltipComponent::new;
         event.register(Icon.class, factory);
@@ -80,6 +92,7 @@ public class ClientProxy extends CommonProxy {
 
     private void onRegisterAssetReloadListeners(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new ThemeManager());
+        event.registerReloadListener(new GuiSpriteManager(Minecraft.getInstance().textureManager));
     }
 
     private void onUnloadWorld(LevelEvent.Unload event) {

@@ -1,4 +1,4 @@
-package brachy.modularui.client;
+package brachy.modularui.utils;
 
 import brachy.modularui.ModularUI;
 import brachy.modularui.api.widget.ResizeDragArea;

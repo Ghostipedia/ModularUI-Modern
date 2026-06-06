@@ -1,6 +1,5 @@
-package brachy.modularui.utils.fakelevel;
+package brachy.modularui.drawable.schema;
 
-import brachy.modularui.schema.ISchema;
 import brachy.modularui.utils.BlockPosUtil;
 
 import net.minecraft.core.BlockPos;

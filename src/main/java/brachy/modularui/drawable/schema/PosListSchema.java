@@ -1,4 +1,4 @@
-package brachy.modularui.schema;
+package brachy.modularui.drawable.schema;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;

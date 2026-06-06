@@ -1,4 +1,4 @@
-package brachy.modularui.client.schemarenderer;
+package brachy.modularui.drawable.schema;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.renderer.block.model.BakedQuad;

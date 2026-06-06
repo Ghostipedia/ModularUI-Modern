@@ -1,9 +1,9 @@
 package brachy.modularui.drawable;
 
-import brachy.modularui.client.schemarenderer.BaseSchemaRenderer;
-import brachy.modularui.client.schemarenderer.BlockHighlight;
-import brachy.modularui.client.schemarenderer.Camera;
-import brachy.modularui.schema.ISchema;
+import brachy.modularui.drawable.schema.BaseSchemaRenderer;
+import brachy.modularui.drawable.schema.BlockHighlight;
+import brachy.modularui.drawable.schema.Camera;
+import brachy.modularui.drawable.schema.ISchema;
 
 import net.minecraft.world.phys.BlockHitResult;
 import com.mojang.blaze3d.vertex.PoseStack;

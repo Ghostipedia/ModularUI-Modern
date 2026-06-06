@@ -1,6 +1,4 @@
-package brachy.modularui.client.schemarenderer;
-
-import brachy.modularui.schema.ISchema;
+package brachy.modularui.drawable.schema;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;

@@ -2,8 +2,8 @@ package brachy.modularui.widgets;
 
 import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.widget.Interactable;
-import brachy.modularui.client.schemarenderer.BaseSchemaRenderer;
-import brachy.modularui.schema.ISchema;
+import brachy.modularui.drawable.schema.BaseSchemaRenderer;
+import brachy.modularui.drawable.schema.ISchema;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.math.MathUtils;
