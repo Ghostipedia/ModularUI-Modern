@@ -26,6 +26,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -35,14 +36,15 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @MethodsReturnNonnullByDefault
 public class RenderLevel implements LevelTimeAccess {
 
-    private final ISchema schema;
+    @Getter private final ISchema schema;
     private final Level level;
-
+    private final RenderFilter renderFilter;
     private final Thread thread;
 
-    public RenderLevel(ISchema schema) {
+    public RenderLevel(ISchema schema, RenderFilter renderFilter) {
         this.schema = schema;
         this.level = schema.getLevel();
+        this.renderFilter = renderFilter;
 
         this.thread = Thread.currentThread();
     }
@@ -51,7 +53,7 @@ public class RenderLevel implements LevelTimeAccess {
     @Override
     public BlockEntity getBlockEntity(BlockPos pos) {
         BlockState state = this.level.getBlockState(pos);
-        if (!this.schema.getRenderFilter().test(pos, state)) {
+        if (!this.renderFilter.shouldRender(pos, state)) {
             return null;
         }
         // avoid the level
@@ -70,7 +72,7 @@ public class RenderLevel implements LevelTimeAccess {
     @Override
     public BlockState getBlockState(BlockPos pos) {
         BlockState state = this.level.getBlockState(pos);
-        if (!this.schema.getRenderFilter().test(pos, state)) {
+        if (!this.renderFilter.shouldRender(pos, state)) {
             return Blocks.AIR.defaultBlockState();
         }
         return state;
@@ -79,7 +81,7 @@ public class RenderLevel implements LevelTimeAccess {
     @Override
     public FluidState getFluidState(BlockPos pos) {
         BlockState state = this.level.getBlockState(pos);
-        if (!this.schema.getRenderFilter().test(pos, state)) {
+        if (!this.renderFilter.shouldRender(pos, state)) {
             return Fluids.EMPTY.defaultFluidState();
         }
         return this.level.getFluidState(pos);

@@ -21,17 +21,10 @@ public abstract class PosListSchema implements ISchema {
     @Getter
     private final Level level;
     private final Iterable<? extends BlockPos> posList;
-    @Getter
-    @Setter
-    private BiPredicate<BlockPos, BlockState> renderFilter = (pos, state) -> true;
 
-    public PosListSchema(Level level, Iterable<? extends BlockPos> posList,
-                         BiPredicate<BlockPos, BlockState> renderFilter) {
+    public PosListSchema(Level level, Iterable<? extends BlockPos> posList) {
         this.level = level;
         this.posList = posList;
-        if (renderFilter != null) {
-            this.renderFilter = renderFilter;
-        }
     }
 
     @NotNull
@@ -52,11 +45,7 @@ public abstract class PosListSchema implements ISchema {
                 BlockPos pos = posIt.next();
                 pair.setLeft(pos);
                 BlockState state = PosListSchema.this.level.getBlockState(pos);
-                if (renderFilter == null || renderFilter.test(pos, state)) {
-                    pair.setRight(state);
-                } else {
-                    pair.setRight(Blocks.AIR.defaultBlockState());
-                }
+                pair.setRight(state);
                 return pair;
             }
         };
@@ -66,14 +55,13 @@ public abstract class PosListSchema implements ISchema {
     public boolean equals(Object o) {
         if (!(o instanceof PosListSchema entries)) return false;
 
-        return level.equals(entries.level) && posList.equals(entries.posList) && Objects.equals(renderFilter, entries.renderFilter);
+        return level.equals(entries.level) && posList.equals(entries.posList);
     }
 
     @Override
     public int hashCode() {
         int result = level.hashCode();
         result = 31 * result + posList.hashCode();
-        result = 31 * result + Objects.hashCode(renderFilter);
         return result;
     }
 }

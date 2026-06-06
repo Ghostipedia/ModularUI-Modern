@@ -65,9 +65,14 @@ public class FontRenderHelper {
 
     @OnlyIn(Dist.CLIENT)
     public static void drawComponent(Component comp, GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
+        drawComponent(comp, context, x, y, width, height, widgetTheme, 1f);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void drawComponent(Component comp, GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme, float scale) {
         Text.renderer.setAlignment(Alignment.CENTER, width, height);
         Text.renderer.setColor(widgetTheme.getTextColor());
-        Text.renderer.setScale(1f);
+        Text.renderer.setScale(scale);
         Text.renderer.setPos(x, y);
         Text.renderer.setShadow(widgetTheme.isTextShadow());
         Text.renderer.draw(context.getGraphics(), comp);

@@ -412,15 +412,16 @@ public class TestGuis extends CustomModularScreen {
                 .where('G', "minecraft:diamond_block")
                 .where('B', "minecraft:beacon")
                 .build();
+        var renderer = schema.createRenderer()
+                .rayTracing(true)
+                .highlightRenderer(new BlockHighlight(Color.withAlpha(Color.RED.main, 0.5f))
+                        .allSides(true)
+                        .thickness(0.1f));
 
         var panel = ModularPanel.defaultPanel("main").size(170);
-        panel.child(new SchemaWidget(new SchemaRenderer(schema)
-                        .rayTracing(true)
-                        .highlightRenderer(new BlockHighlight(Color.withAlpha(Color.RED.main, 0.5f))
-                                .allSides(true)
-                                .thickness(0.1f)))
+        panel.child(new SchemaWidget(renderer)
                         .full())
-                .child(new SchemaWidget.LayerButton(schema, 0, 3)
+                .child(new SchemaWidget.LayerButton(renderer, 0, 3)
                         .bottom(1)
                         .left(1)
                         .size(16));

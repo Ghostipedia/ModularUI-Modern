@@ -49,7 +49,6 @@ import net.minecraft.world.ticks.LevelTickAccess;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3fc;
@@ -57,8 +56,6 @@ import org.joml.Vector3fc;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -73,9 +70,7 @@ public class SchemaLevel extends Level implements ISchema {
             Entity.class, new EntityCallbacks());
 
     private final LongSet filledBlocks = new LongOpenHashSet();
-    @Getter
-    @Setter
-    private BiPredicate<BlockPos, BlockState> renderFilter = (pos, state) -> true;
+
     /**
      * Sections for which we prepared lighting.
      */
@@ -318,7 +313,7 @@ public class SchemaLevel extends Level implements ISchema {
     public final boolean equals(Object o) {
         if (!(o instanceof SchemaLevel entries)) return false;
 
-        return filledBlocks.equals(entries.filledBlocks) && Objects.equals(renderFilter, entries.renderFilter) &&
+        return filledBlocks.equals(entries.filledBlocks) &&
                 litSections.equals(entries.litSections) && min.equals(entries.min) && max.equals(entries.max) &&
                 biome.equals(entries.biome) && defaultDataLayer.equals(entries.defaultDataLayer);
     }
@@ -326,7 +321,6 @@ public class SchemaLevel extends Level implements ISchema {
     @Override
     public int hashCode() {
         int result = filledBlocks.hashCode();
-        result = 31 * result + Objects.hashCode(renderFilter);
         result = 31 * result + litSections.hashCode();
         result = 31 * result + min.hashCode();
         result = 31 * result + max.hashCode();
