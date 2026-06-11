@@ -104,6 +104,7 @@ public class BaseSchemaRenderer implements IDrawable {
     private final ChunkBufferBuilderPack chunkBufferBuilders;
     private final AtomicReference<CompileStatus> compileStatus = new AtomicReference<>();
     private final AtomicReference<RenderCompileResults> compiledRenderResult = new AtomicReference<>();
+    private boolean dirty = true;
 
     // projection * model view matrix
     @Getter private final Matrix4f projection = new Matrix4f();
@@ -117,11 +118,10 @@ public class BaseSchemaRenderer implements IDrawable {
         this.schema = schema;
         this.renderLevel = new RenderLevel(schema, (pos, state) -> this.renderFilter.shouldRender(pos, state));
         this.chunkBufferBuilders = new ChunkBufferBuilderPack();
-        notifyRecompile();
     }
 
     public void notifyRecompile() {
-        this.compileStatus.set(CompileStatus.CANCELED);
+        this.dirty = true;
     }
 
     protected void cancelCompilation() {
@@ -131,8 +131,26 @@ public class BaseSchemaRenderer implements IDrawable {
         }
     }
 
+    public boolean isCompiling() {
+        return this.compileStatus.get() == CompileStatus.COMPILING;
+    }
+
+    public boolean isCompleted() {
+        return this.compileStatus.get() == CompileStatus.SUCCESS;
+    }
+
+    public boolean isCanceled() {
+        return this.compileStatus.get() == CompileStatus.CANCELED;
+    }
+
+    private boolean shouldDiscard(CompileStatus status) {
+        return status == CompileStatus.CANCELED || status == CompileStatus.DISABLED;
+    }
+
+    ///  only called from {@link #checkRecompile()} when {@linkplain #compileStatus} is CANCELED
     protected void recompile() {
         cancelCompilation();
+
         this.lastRenderCompileTask = new RenderCompileTask();
         this.compileStatus.set(CompileStatus.COMPILING);
 
@@ -146,10 +164,10 @@ public class BaseSchemaRenderer implements IDrawable {
                         Minecraft.getInstance().delayCrash(CrashReport.forThrowable(error, "Batching chunks"));
                     } else {
                         var status = result.status;
-                        if (status != CompileStatus.CANCELED && status != CompileStatus.DISABLED) {
-                            this.chunkBufferBuilders.clearAll();
-                        } else {
+                        if (shouldDiscard(status)) {
                             this.chunkBufferBuilders.discardAll();
+                        } else {
+                            this.chunkBufferBuilders.clearAll();
                         }
                         if (status == CompileStatus.SUCCESS) {
                             if (this.compiledRenderResult.get() != null) {
@@ -157,10 +175,8 @@ public class BaseSchemaRenderer implements IDrawable {
                             }
                             this.compiledRenderResult.set(result);
                         }
-                        if (this.compiledRenderResult.get() != null && this.compiledRenderResult.get().status == CompileStatus.SUCCESS) {
-                            status = CompileStatus.SUCCESS;
-                        }
                         this.compileStatus.set(status);
+                        onRendered();
                     }
                 });
     }
@@ -255,22 +271,23 @@ public class BaseSchemaRenderer implements IDrawable {
         return ps;
     }
 
+    ///  called each draw tick
     private RenderCompileResults checkRecompile() {
-        var res = this.compiledRenderResult.get();
         var status = this.compileStatus.get();
-        if (status == CompileStatus.DISABLED) return null;
-        if (res == null || res.status != CompileStatus.SUCCESS) {
-            if (res != null) {
-                if (res.status == CompileStatus.DISABLED) return null;
-                res.clearBuffer();
-                this.compiledRenderResult.set(null);
-                res = null;
-            } else if (status != CompileStatus.COMPILING && status != CompileStatus.CANCELED){
-                this.compileStatus.set(CompileStatus.CANCELED);
-            }
+        if (status == CompileStatus.DISABLED) return null; // disabled, no-op
+
+        var res = this.compiledRenderResult.get();
+
+        // otherwise, check if we're dirty
+        // the only possible statuses is CANCELED or SUCCESS
+        if (status != CompileStatus.COMPILING && (status == CompileStatus.CANCELED || this.dirty)) {
+            this.dirty = false;
+            recompile();
         }
-        if (this.compileStatus.get() == CompileStatus.CANCELED) recompile();
+
+        // if we're still compiling, send previous result
         return res;
+
     }
 
     @SuppressWarnings("deprecation")
@@ -680,7 +697,11 @@ public class BaseSchemaRenderer implements IDrawable {
                     RenderType renderType = ItemBlockRenderTypes.getRenderLayer(fluidState);
                     BufferBuilder builder = chunkBufferBuilders.builder(renderType);
                     if (startedBuffers.add(renderType)) {
-                        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+                        if (builder.building()) {
+                            ModularUI.LOGGER.warn("Buffer is already building for RenderType: {}!", renderType);
+                            return CompletableFuture.completedFuture(compileResults.withStatus(CompileStatus.CANCELED));
+                        }
+                        builder.begin(renderType.mode(), renderType.format());
                     }
 
                     SectionPos sectionPos = SectionPos.of(pos);
