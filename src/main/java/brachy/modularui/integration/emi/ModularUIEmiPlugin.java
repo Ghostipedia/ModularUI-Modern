@@ -22,4 +22,5 @@ public class ModularUIEmiPlugin implements EmiPlugin {
             TestMachine.EMI.register(registry);
         }
     }
+
 }

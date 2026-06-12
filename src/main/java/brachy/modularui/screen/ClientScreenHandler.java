@@ -371,7 +371,7 @@ public class ClientScreenHandler {
         }
         if (!hasLevel) return false; // E only closes in world
         if (Minecraft.getInstance().options.keyInventory
-                .isActiveAndMatches(InputConstants.getKey(keyCode, scanCode))) {
+                .isActiveAndMatches(InputConstants.getKey(keyCode, scanCode)) && !RecipeViewerHandler.getCurrent().isSearchFocused()) {
             dropOrClosePanel();
             return true;
         }
