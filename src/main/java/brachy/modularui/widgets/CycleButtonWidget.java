@@ -9,13 +9,10 @@ import brachy.modularui.screen.RichTooltip;
 import java.util.function.Consumer;
 
 /**
- * A button which cycles between multiple states by clicking on it. Background, overlay and tooltip can be supplied per
- * state.
+ * A button which cycles between multiple states by clicking on it. Background, overlay and tooltip can be supplied perstate.
  * <p>
  * Note that you need to set the amount of states before setting any state backgrounds etc. The state count is
- * automatically set, if the passed {@link IIntValue} is a
- * {@link IEnumValue IEnumValue} or a
- * {@link IBoolValue IBoolValue}.
+ * automatically set, if the passed {@link IIntValue} is a {@link IEnumValue IEnumValue} or a {@link IBoolValue IBoolValue}.
  * </p>
  *
  * @see ToggleButton
@@ -28,22 +25,30 @@ public class CycleButtonWidget extends AbstractCycleButtonWidget<CycleButtonWidg
     }
 
     public CycleButtonWidget stateBackground(int state, IDrawable drawable) {
-        this.background = addToArray(this.background, drawable, state);
-        return disableThemeBackground(true);
+        return disableThemeBackground(true).stateBackgroundOverlay(state, drawable);
+    }
+
+    public CycleButtonWidget stateBackgroundOverlay(int state, IDrawable drawable) {
+        getOrCreateState(state).background = drawable;
+        return this;
     }
 
     public CycleButtonWidget stateHoverBackground(int state, IDrawable drawable) {
-        this.hoverBackground = addToArray(this.hoverBackground, drawable, state);
-        return disableHoverThemeBackground(true);
+        return disableHoverThemeBackground(true).stateHoverBackgroundOverlay(state, drawable);
+    }
+
+    public CycleButtonWidget stateHoverBackgroundOverlay(int state, IDrawable drawable) {
+        getOrCreateState(state).hoverBackground = drawable;
+        return this;
     }
 
     public CycleButtonWidget stateOverlay(int state, IDrawable drawable) {
-        this.overlay = addToArray(this.overlay, drawable, state);
+        getOrCreateState(state).overlay = drawable;
         return getThis();
     }
 
     public CycleButtonWidget stateHoverOverlay(int state, IDrawable drawable) {
-        this.hoverOverlay = addToArray(this.hoverOverlay, drawable, state);
+        getOrCreateState(state).hoverOverlay = drawable;
         return getThis();
     }
 
@@ -51,8 +56,16 @@ public class CycleButtonWidget extends AbstractCycleButtonWidget<CycleButtonWidg
         return stateBackground(state ? 1 : 0, drawable);
     }
 
+    public CycleButtonWidget stateBackgroundOverlay(boolean state, IDrawable drawable) {
+        return stateBackgroundOverlay(state ? 1 : 0, drawable);
+    }
+
     public CycleButtonWidget stateHoverBackground(boolean state, IDrawable drawable) {
         return stateHoverBackground(state ? 1 : 0, drawable);
+    }
+
+    public CycleButtonWidget stateHoverBackgroundOverlay(boolean state, IDrawable drawable) {
+        return stateHoverBackgroundOverlay(state ? 1 : 0, drawable);
     }
 
     public CycleButtonWidget stateOverlay(boolean state, IDrawable drawable) {
@@ -67,8 +80,16 @@ public class CycleButtonWidget extends AbstractCycleButtonWidget<CycleButtonWidg
         return stateBackground(state.ordinal(), drawable);
     }
 
+    public <T extends Enum<T>> CycleButtonWidget stateBackgroundOverlay(T state, IDrawable drawable) {
+        return stateBackgroundOverlay(state.ordinal(), drawable);
+    }
+
     public <T extends Enum<T>> CycleButtonWidget stateHoverBackground(T state, IDrawable drawable) {
         return stateHoverBackground(state.ordinal(), drawable);
+    }
+
+    public <T extends Enum<T>> CycleButtonWidget stateHoverBackgroundOverlay(T state, IDrawable drawable) {
+        return stateHoverBackgroundOverlay(state.ordinal(), drawable);
     }
 
     public <T extends Enum<T>> CycleButtonWidget stateOverlay(T state, IDrawable drawable) {
