@@ -1,4 +1,4 @@
-package brachy.modularui.client.schemarenderer;
+package brachy.modularui.drawable.schema;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;

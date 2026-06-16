@@ -1,4 +1,4 @@
-package brachy.modularui.client.schemarenderer;
+package brachy.modularui.drawable.schema;
 
 import brachy.modularui.utils.Color;
 

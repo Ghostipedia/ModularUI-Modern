@@ -1,4 +1,4 @@
-package brachy.modularui.client.schemarenderer;
+package brachy.modularui.drawable.schema;
 
 import net.minecraft.core.Vec3i;
 import net.minecraft.util.Mth;

@@ -1,4 +1,6 @@
-package brachy.modularui.schema;
+package brachy.modularui.drawable.schema;
+
+import brachy.modularui.drawable.SchemaRenderer;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -9,7 +11,6 @@ import org.joml.Vector3fc;
 
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.BiPredicate;
 
 public interface ISchema extends Iterable<Map.Entry<BlockPos, BlockState>> {
 
@@ -19,10 +20,9 @@ public interface ISchema extends Iterable<Map.Entry<BlockPos, BlockState>> {
 
     BlockPos getOrigin();
 
-    void setRenderFilter(@NotNull BiPredicate<BlockPos, BlockState> renderFilter);
-
-    @NotNull
-    BiPredicate<BlockPos, BlockState> getRenderFilter();
+    default SchemaRenderer createRenderer() {
+        return new SchemaRenderer(this);
+    }
 
     default void forEach(@NotNull BiConsumer<BlockPos, BlockState> action) {
         for (var entry : this) {

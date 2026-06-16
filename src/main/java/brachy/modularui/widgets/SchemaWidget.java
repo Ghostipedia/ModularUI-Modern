@@ -2,8 +2,8 @@ package brachy.modularui.widgets;
 
 import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.widget.Interactable;
-import brachy.modularui.client.schemarenderer.BaseSchemaRenderer;
-import brachy.modularui.schema.ISchema;
+import brachy.modularui.drawable.schema.BaseSchemaRenderer;
+import brachy.modularui.drawable.schema.ISchema;
 import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.math.MathUtils;
@@ -139,11 +139,11 @@ public class SchemaWidget extends Widget<SchemaWidget> implements Interactable {
         private final int maxLayer;
         private int currentLayer = Integer.MIN_VALUE;
 
-        public LayerButton(ISchema schema, int minLayer, int maxLayer) {
+        public LayerButton(BaseSchemaRenderer schema, int minLayer, int maxLayer) {
             this.minLayer = minLayer;
             this.maxLayer = maxLayer;
             overlay(Text.dynamic(() -> currentLayer > Integer.MIN_VALUE ?
-                    Component.literal(Integer.toString(currentLayer)) : Component.literal("ALL"))/*.scale(0.5f)*/); // TODO
+                    Component.literal(Integer.toString(currentLayer)) : Component.literal("ALL")).scale(0.5f));
 
             onMousePressed((context, button) -> {
                 if (button == 0 || button == 1) {
@@ -163,12 +163,14 @@ public class SchemaWidget extends Widget<SchemaWidget> implements Interactable {
                     if (currentLayer > maxLayer || currentLayer < minLayer) {
                         currentLayer = Integer.MIN_VALUE;
                     }
+                    schema.notifyRecompile();
                     return true;
                 }
                 return false;
             });
-            schema.setRenderFilter(
-                    (blockPos, blockInfo) -> currentLayer == Integer.MIN_VALUE || currentLayer >= blockPos.getY());
+            schema.updateRenderFilter((blockPos, blockInfo) -> {
+                return currentLayer == Integer.MIN_VALUE || currentLayer >= blockPos.getY();
+            });
         }
 
         public LayerButton startLayer(int start) {

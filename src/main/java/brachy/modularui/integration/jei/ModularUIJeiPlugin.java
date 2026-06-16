@@ -1,10 +1,8 @@
 package brachy.modularui.integration.jei;
 
 import brachy.modularui.ModularUI;
-import brachy.modularui.integration.jei.handler.JeiContainerHandler;
 import brachy.modularui.integration.jei.handler.JeiScreenHandler;
 import brachy.modularui.screen.ContainerScreenWrapper;
-import brachy.modularui.screen.ModularContainerMenu;
 import brachy.modularui.screen.ScreenWrapper;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
@@ -61,6 +59,7 @@ public class ModularUIJeiPlugin implements IModPlugin {
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
         if (ModularUI.Mods.REI.isLoaded() || ModularUI.Mods.EMI.isLoaded()) return;
 
-        JeiContainerHandler.register(ModularContainerMenu.class, registration);
+        //JeiContainerHandler.register(ModularContainerMenu.class, registration);
     }
+
 }

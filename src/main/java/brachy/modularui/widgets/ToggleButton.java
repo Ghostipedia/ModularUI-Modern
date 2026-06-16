@@ -57,42 +57,32 @@ public class ToggleButton extends AbstractCycleButtonWidget<ToggleButton> {
         return value(new BoolValue.Dynamic(() -> intValue.getIntValue() == trueValue, v -> intValue.setIntValue(trueValue)));
     }
 
-    public ToggleButton selectedBackground(IDrawable... selectedBackground) {
-        return background(true, selectedBackground);
+    public ToggleButton background(boolean selected, IDrawable drawable) {
+        return disableThemeBackground(true).backgroundOverlay(selected, drawable);
     }
 
-    public ToggleButton selectedHoverBackground(IDrawable... selectedHoverBackground) {
-        return hoverBackground(true, selectedHoverBackground);
-    }
-
-    @Override
-    public ToggleButton backgroundOverlay(IDrawable... selectedBackground) {
-        return background(false, selectedBackground);
-    }
-
-    @Override
-    public ToggleButton hoverBackgroundOverlay(IDrawable... selectedHoverBackground) {
-        return hoverBackground(false, selectedHoverBackground);
-    }
-
-    public ToggleButton background(boolean selected, IDrawable... background) {
-        this.background = addToArray(this.background, background, selected ? 1 : 0);
-        return disableThemeBackground(true);
-    }
-
-    public ToggleButton overlay(boolean selected, IDrawable... overlay) {
-        this.overlay = addToArray(this.overlay, overlay, selected ? 1 : 0);
+    public ToggleButton backgroundOverlay(boolean selected, IDrawable drawable) {
+        getOrCreateState(selected ? 1 : 0).background = drawable;
         return this;
     }
 
-    public ToggleButton hoverBackground(boolean selected, IDrawable... background) {
-        this.hoverBackground = addToArray(this.hoverBackground, background, selected ? 1 : 0);
-        return disableHoverThemeBackground(true);
+    public ToggleButton hoverBackground(boolean selected, IDrawable drawable) {
+        return disableHoverThemeBackground(true).hoverBackgroundOverlay(selected, drawable);
     }
 
-    public ToggleButton hoverOverlay(boolean selected, IDrawable... overlay) {
-        this.hoverOverlay = addToArray(this.hoverOverlay, overlay, selected ? 1 : 0);
+    public ToggleButton hoverBackgroundOverlay(boolean selected, IDrawable drawable) {
+        getOrCreateState(selected ? 1 : 0).hoverBackground = drawable;
         return this;
+    }
+
+    public ToggleButton overlay(boolean selected, IDrawable drawable) {
+        getOrCreateState(selected ? 1 : 0).overlay = drawable;
+        return getThis();
+    }
+
+    public ToggleButton hoverOverlay(boolean selected, IDrawable drawable) {
+        getOrCreateState(selected ? 1 : 0).hoverOverlay = drawable;
+        return getThis();
     }
 
     public ToggleButton addTooltip(boolean selected, String tooltip) {

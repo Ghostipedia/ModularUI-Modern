@@ -22,7 +22,7 @@ public class WidgetThemeBuilder<T extends WidgetTheme, B extends WidgetThemeBuil
     }
 
     public B color(int color) {
-        add(IThemeApi.COLOR, color);
+        add(IThemeApi.COLOR, ThemeBuilder.colorJson(color));
         return getThis();
     }
 
@@ -32,7 +32,7 @@ public class WidgetThemeBuilder<T extends WidgetTheme, B extends WidgetThemeBuil
     }
 
     public B iconColor(int color) {
-        add(IThemeApi.ICON_COLOR, color);
+        add(IThemeApi.ICON_COLOR, ThemeBuilder.colorJson(color));
         return getThis();
     }
 
@@ -47,6 +47,6 @@ public class WidgetThemeBuilder<T extends WidgetTheme, B extends WidgetThemeBuil
     }
 
     public B background(String textureId) {
-        return background(new JsonBuilder().add("type", "texture").add("name", textureId));
+        return background(ThemeBuilder.textureJson(textureId));
     }
 }

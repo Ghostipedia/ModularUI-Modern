@@ -1,6 +1,5 @@
-package brachy.modularui.utils.fakelevel;
+package brachy.modularui.drawable.schema;
 
-import brachy.modularui.schema.ISchema;
 import brachy.modularui.utils.BlockPosUtil;
 
 import net.minecraft.core.BlockPos;
@@ -12,7 +11,6 @@ import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
@@ -21,31 +19,18 @@ import org.joml.Vector3fc;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 public class MapSchema implements ISchema {
 
     @Getter
-    private final Level level;
+    private final Level level = new SchemaLevel();
     private final Long2ReferenceOpenHashMap<BlockState> blocks = new Long2ReferenceOpenHashMap<>();
     @Getter
-    @Setter
-    private BiPredicate<BlockPos, BlockState> renderFilter = (pos, state) -> true;
-    // this isn't final because of constructor semantics but should be used as if it is
-    @Getter
-    private BlockPos origin;
-    // this isn't final because of constructor semantics but should be used as if it is
-    private Vector3f center;
+    private final BlockPos origin;
+    private final Vector3f center;
 
     public MapSchema(Map<BlockPos, BlockState> blocks) {
-        this(blocks, null);
-    }
-
-    // awful. oh well
-    public MapSchema(Map<BlockPos, BlockState> blocks, BiPredicate<BlockPos, BlockState> renderFilter) {
-        this(renderFilter);
-
         BlockPos.MutableBlockPos min = BlockPosUtil.MAX.mutable();
         BlockPos.MutableBlockPos max = BlockPosUtil.MIN.mutable();
         if (!blocks.isEmpty()) {
@@ -67,12 +52,6 @@ public class MapSchema implements ISchema {
     }
 
     public MapSchema(Long2ReferenceMap<BlockState> blocks) {
-        this(blocks, null);
-    }
-
-    public MapSchema(Long2ReferenceMap<BlockState> blocks, BiPredicate<BlockPos, BlockState> renderFilter) {
-        this(renderFilter);
-
         BlockPos.MutableBlockPos min = BlockPosUtil.MAX.mutable();
         BlockPos.MutableBlockPos max = BlockPosUtil.MIN.mutable();
         if (!blocks.isEmpty()) {
@@ -94,13 +73,6 @@ public class MapSchema implements ISchema {
         this.center = BlockPosUtil.getCenterF(min, max);
     }
 
-    protected MapSchema(BiPredicate<BlockPos, BlockState> renderFilter) {
-        this.level = new SchemaLevel();
-        if (renderFilter != null) {
-            this.renderFilter = renderFilter;
-        }
-    }
-
     @Override
     public Vector3fc getFocus() {
         return center;
@@ -111,22 +83,16 @@ public class MapSchema implements ISchema {
     public Iterator<Map.Entry<BlockPos, BlockState>> iterator() {
         return new AbstractIterator<>() {
 
-            private final ObjectIterator<Long2ReferenceMap.Entry<BlockState>> it = blocks
-                    .long2ReferenceEntrySet().fastIterator();
+            private final ObjectIterator<Long2ReferenceMap.Entry<BlockState>> it = blocks.long2ReferenceEntrySet().fastIterator();
 
             @Override
             protected Map.Entry<BlockPos, BlockState> computeNext() {
-                while (true) {
-                    if (it.hasNext()) {
-                        Long2ReferenceMap.Entry<BlockState> entry = it.next();
-                        BlockPos key = BlockPos.of(entry.getLongKey());
-                        if (renderFilter.test(key, entry.getValue())) {
-                            return Map.entry(key, entry.getValue());
-                        }
-                        continue;
-                    }
-                    return endOfData();
+                if (it.hasNext()) {
+                    Long2ReferenceMap.Entry<BlockState> entry = it.next();
+                    BlockPos key = BlockPos.of(entry.getLongKey());
+                    return Map.entry(key, entry.getValue());
                 }
+                return endOfData();
             }
         };
     }
@@ -136,15 +102,13 @@ public class MapSchema implements ISchema {
         if (!(o instanceof MapSchema entries)) return false;
 
         return Objects.equals(level, entries.level) && blocks.equals(entries.blocks) &&
-                Objects.equals(renderFilter, entries.renderFilter) && Objects.equals(origin, entries.origin) &&
-                Objects.equals(center, entries.center);
+                Objects.equals(origin, entries.origin) && Objects.equals(center, entries.center);
     }
 
     @Override
     public int hashCode() {
         int result = Objects.hashCode(level);
         result = 31 * result + blocks.hashCode();
-        result = 31 * result + Objects.hashCode(renderFilter);
         result = 31 * result + Objects.hashCode(origin);
         result = 31 * result + Objects.hashCode(center);
         return result;
@@ -154,8 +118,6 @@ public class MapSchema implements ISchema {
     public static class Builder {
 
         private final Long2ReferenceMap<BlockState> blocks = new Long2ReferenceOpenHashMap<>();
-        @Setter
-        private BiPredicate<BlockPos, BlockState> renderFilter;
 
         public Builder add(BlockPos pos, BlockState state) {
             if (state.isAir()) return this;
@@ -176,10 +138,7 @@ public class MapSchema implements ISchema {
         }
 
         public MapSchema build() {
-            if (renderFilter == null) {
-                return new MapSchema(this.blocks);
-            }
-            return new MapSchema(this.blocks, renderFilter);
+            return new MapSchema(this.blocks);
         }
     }
 }

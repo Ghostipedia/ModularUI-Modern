@@ -164,6 +164,7 @@ public interface IThemeApi {
 
     /**
      * Registers a theme json object. Themes from resource packs always have greater priority.
+     * Call this during {@link net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent FMLConstructModEvent}.
      *
      * @param themeBuilder theme data
      */

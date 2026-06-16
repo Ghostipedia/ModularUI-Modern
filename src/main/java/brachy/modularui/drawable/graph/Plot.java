@@ -1,6 +1,6 @@
 package brachy.modularui.drawable.graph;
 
-import brachy.modularui.GTRenderTypes;
+import brachy.modularui.utils.MUIRenderTypes;
 import brachy.modularui.api.GuiAxis;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.utils.Color;
@@ -172,7 +172,7 @@ public class Plot {
 
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         var pose = graphics.pose().last().pose();
-        var buffer = graphics.bufferSource().getBuffer(GTRenderTypes.guiTriangleStrip());
+        var buffer = graphics.bufferSource().getBuffer(MUIRenderTypes.guiTriangleStrip());
         for (int i = 0; i < this.vertexBuffer.length; i += 2) {
             buffer.vertex(pose, this.vertexBuffer[i], this.vertexBuffer[i + 1], 0).color(r, g, b, a).endVertex();
         }

@@ -59,6 +59,7 @@ public class ThemeManager extends SimplePreparableReloadListener<Map<String, Lis
         ThemeManager themeManager = new ThemeManager();
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
         ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
+        MinecraftForge.EVENT_BUS.post(new ReloadThemeEvent());
         themeManager.apply(themeManager.prepare(resourceManager, profiler), resourceManager, profiler);
     }
 
@@ -66,7 +67,6 @@ public class ThemeManager extends SimplePreparableReloadListener<Map<String, Lis
     protected @NotNull Map<String, List<ResourceLocation>> prepare(ResourceManager resourceManager,
                                                                    ProfilerFiller profiler) {
         ModularUI.LOGGER.info("Reloading Themes...");
-        MinecraftForge.EVENT_BUS.post(new ReloadThemeEvent.Pre());
         ThemeAPI.INSTANCE.onReload();
 
         Map<String, List<ResourceLocation>> themes = new Object2ObjectOpenHashMap<>();
@@ -173,7 +173,6 @@ public class ThemeManager extends SimplePreparableReloadListener<Map<String, Lis
         jsons = null;
 
         validateJsonScreenThemes();
-        MinecraftForge.EVENT_BUS.post(new ReloadThemeEvent.Post());
     }
 
     private static void validateAncestorTree(Map<String, ThemeJson> themeMap) {

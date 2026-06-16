@@ -1,4 +1,4 @@
-package brachy.modularui;
+package brachy.modularui.utils;
 
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderStateShard;
@@ -12,7 +12,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.function.Function;
 
 @OnlyIn(Dist.CLIENT)
-public class GTRenderTypes extends RenderType {
+public class MUIRenderTypes extends RenderType {
 
     private static final RenderType LIGHT_RING = RenderType.create("light_ring",
             DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLE_STRIP, 256, false, false,
@@ -58,8 +58,8 @@ public class GTRenderTypes extends RenderType {
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .createCompositeState(false));
 
-    private GTRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize,
-                          boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
+    private MUIRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize,
+                           boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
 

@@ -1,6 +1,6 @@
 package brachy.modularui.test;
 
-import brachy.modularui.GTRenderTypes;
+import brachy.modularui.utils.MUIRenderTypes;
 import brachy.modularui.ModularUI;
 import brachy.modularui.animation.Animator;
 import brachy.modularui.animation.IAnimator;
@@ -11,18 +11,20 @@ import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.widget.IWidget;
+import brachy.modularui.drawable.schema.BlockHighlight;
 import brachy.modularui.drawable.FluidDrawable;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.drawable.ItemDrawable;
 import brachy.modularui.drawable.Rectangle;
+import brachy.modularui.drawable.SchemaRenderer;
 import brachy.modularui.drawable.UITexture;
 import brachy.modularui.drawable.graph.GraphDrawable;
 import brachy.modularui.drawable.progress.CircularProgressDrawable;
 import brachy.modularui.drawable.progress.ProgressDrawable;
 import brachy.modularui.factory.ClientGUI;
-import brachy.modularui.schema.ArraySchema;
-import brachy.modularui.schema.ISchema;
+import brachy.modularui.drawable.schema.ArraySchema;
+import brachy.modularui.drawable.schema.ISchema;
 import brachy.modularui.screen.CustomModularScreen;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
@@ -424,11 +426,16 @@ public class TestGuis extends CustomModularScreen {
                 .where('G', "minecraft:diamond_block")
                 .where('B', "minecraft:beacon")
                 .build();
+        var renderer = schema.createRenderer()
+                .rayTracing(true)
+                .highlightRenderer(new BlockHighlight(Color.withAlpha(Color.RED.main, 0.5f))
+                        .allSides(true)
+                        .thickness(0.1f));
 
         var panel = ModularPanel.defaultPanel("main").size(170);
-        panel.child(new SchemaWidget(schema)
+        panel.child(new SchemaWidget(renderer)
                         .full())
-                .child(new SchemaWidget.LayerButton(schema, 0, 3)
+                .child(new SchemaWidget.LayerButton(renderer, 0, 3)
                         .bottom(1)
                         .left(1)
                         .size(16));
@@ -513,7 +520,7 @@ public class TestGuis extends CustomModularScreen {
         IDrawable correctedGradient = (context1, x, y, width, height, widgetTheme) -> {
             int points = 500;
             Matrix4f pose = context1.graphicsPose().last().pose();
-            VertexConsumer buffer = context1.getGraphics().bufferSource().getBuffer(GTRenderTypes.guiTriangleStrip());
+            VertexConsumer buffer = context1.getGraphics().bufferSource().getBuffer(MUIRenderTypes.guiTriangleStrip());
 
             float x0 = x;
             float w = (float) width / points;

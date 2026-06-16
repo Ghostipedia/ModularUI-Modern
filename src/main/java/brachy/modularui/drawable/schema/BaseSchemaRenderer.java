@@ -1,21 +1,22 @@
-package brachy.modularui.client.schemarenderer;
+package brachy.modularui.drawable.schema;
 
 import brachy.modularui.ModularUI;
 import brachy.modularui.api.drawable.IDrawable;
+import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.Icon;
 import brachy.modularui.integration.embeddium.SodiumCompat;
-import brachy.modularui.schema.ISchema;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.FluidTextureType;
-import brachy.modularui.utils.GTMatrixUtils;
+import brachy.modularui.utils.MatrixUtils;
 import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widgets.SchemaWidget;
 
 import net.minecraft.CrashReport;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.ChunkBufferBuilderPack;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -62,19 +63,19 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceArraySet;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -92,79 +93,102 @@ public class BaseSchemaRenderer implements IDrawable {
 
     private static final DummyLightTexture lightTexture = new DummyLightTexture();
 
-    @Getter
-    private final ISchema schema;
+    @Getter private final ISchema schema;
     private final RenderLevel renderLevel;
-    private @Nullable RenderCompileTask lastRenderCompileTask = null;
-    @Getter
-    private final Camera camera = new Camera();
-    private final int[] viewport = {0, 0, 0, 0};
-    @Getter
-    private @Nullable BlockHitResult lastRayTrace = null;
+    private final Viewport viewport = new Viewport();
+    @Getter private final Camera camera = new Camera();
+    @Getter private BlockHitResult lastRayTrace = null;
+    @Getter private RenderFilter renderFilter = RenderFilter.ALL;
 
+    private RenderCompileTask lastRenderCompileTask = null;
     private final ChunkBufferBuilderPack chunkBufferBuilders;
+    private final AtomicReference<CompileStatus> compileStatus = new AtomicReference<>();
+    private final AtomicReference<RenderCompileResults> compiledRenderResult = new AtomicReference<>();
+    private boolean dirty = true;
 
-    private final AtomicReference<RenderCompileResults> compileResults = new AtomicReference<>();
-    private final AtomicReference<CompileStatus> compileStatus = new AtomicReference<>(CompileStatus.CANCELED);
-    private @Nullable Map<RenderType, VertexBuffer> chunkBuffers = getOrCreateChunkBuffers();
+    // projection * model view matrix
+    @Getter private final Matrix4f projection = new Matrix4f();
+    @Getter
+    @Setter
+    private boolean captureDebugInfo;
+    @Getter private final Vector3f openGLMousePos = new Vector3f();
+    private final List<Vector3f> pos = new ArrayList<>();
 
     public BaseSchemaRenderer(ISchema schema) {
         this.schema = schema;
-        this.renderLevel = new RenderLevel(schema);
+        this.renderLevel = new RenderLevel(schema, (pos, state) -> this.renderFilter.shouldRender(pos, state));
         this.chunkBufferBuilders = new ChunkBufferBuilderPack();
     }
 
-    protected @NotNull Map<RenderType, VertexBuffer> getOrCreateChunkBuffers() {
-        if (this.chunkBuffers == null || this.chunkBuffers.isEmpty()) {
-            List<RenderType> chunkRenderTypes = RenderType.chunkBufferLayers();
-            this.chunkBuffers = new Reference2ObjectLinkedOpenHashMap<>();
-            for (RenderType type : chunkRenderTypes) {
-                this.chunkBuffers.put(type, new VertexBuffer(VertexBuffer.Usage.STATIC));
-            }
-        }
-
-        return this.chunkBuffers;
+    public void notifyRecompile() {
+        this.dirty = true;
     }
 
-    public void clearChunkBuffers() {
+    protected void cancelCompilation() {
         if (this.lastRenderCompileTask != null) {
             this.lastRenderCompileTask.cancel();
             this.lastRenderCompileTask = null;
         }
-        if (this.chunkBuffers != null && !this.chunkBuffers.isEmpty()) {
-            this.chunkBuffers.values().forEach(VertexBuffer::close);
-            this.chunkBuffers.clear();
-        }
     }
 
-    public void recompile() {
-        clearChunkBuffers();
-        this.compileStatus.set(CompileStatus.COMPILING);
-        this.lastRenderCompileTask = new RenderCompileTask();
+    public boolean isCompiling() {
+        return this.compileStatus.get() == CompileStatus.COMPILING;
+    }
 
+    public boolean isCompleted() {
+        return this.compileStatus.get() == CompileStatus.SUCCESS;
+    }
+
+    public boolean isCanceled() {
+        return this.compileStatus.get() == CompileStatus.CANCELED;
+    }
+
+    private boolean shouldDiscard(CompileStatus status) {
+        return status == CompileStatus.CANCELED || status == CompileStatus.DISABLED;
+    }
+
+    ///  only called from {@link #checkRecompile()} when {@linkplain #compileStatus} is CANCELED
+    protected void recompile() {
+        cancelCompilation();
+
+        this.lastRenderCompileTask = new RenderCompileTask();
+        this.compileStatus.set(CompileStatus.COMPILING);
+
+        RenderCompileResults compileResults = new RenderCompileResults();
         CompletableFuture.supplyAsync(
-                        Util.wrapThreadWithTaskName("scm_chk_rebuild", this.lastRenderCompileTask::compileBlockBuffers),
+                        Util.wrapThreadWithTaskName("scm_chk_rebuild", () -> this.lastRenderCompileTask.compileBlockBuffers(compileResults)),
                         Util.backgroundExecutor())
                 .thenCompose(Function.identity())
                 .whenComplete((result, error) -> {
                     if (error != null) {
                         Minecraft.getInstance().delayCrash(CrashReport.forThrowable(error, "Batching chunks"));
                     } else {
-                        if (result != CompileStatus.CANCELED && result != CompileStatus.DISABLED) {
-                            this.chunkBufferBuilders.clearAll();
-                        } else {
+                        var status = result.status;
+                        if (shouldDiscard(status)) {
                             this.chunkBufferBuilders.discardAll();
+                        } else {
+                            this.chunkBufferBuilders.clearAll();
                         }
-                        this.compileStatus.set(result);
+                        if (status == CompileStatus.SUCCESS) {
+                            if (this.compiledRenderResult.get() != null) {
+                                this.compiledRenderResult.get().clearBuffer();
+                            }
+                            this.compiledRenderResult.set(result);
+                        }
+                        this.compileStatus.set(status);
+                        onRendered();
                     }
                 });
     }
 
     public void dispose() {
-        clearChunkBuffers();
-
-        this.chunkBufferBuilders.discardAll();
+        cancelCompilation();
+        if (this.compiledRenderResult.get() != null) {
+            this.compiledRenderResult.get().clearBuffer();
+            this.compiledRenderResult.set(null);
+        }
         this.compileStatus.set(CompileStatus.DISABLED);
+        this.chunkBufferBuilders.discardAll();
     }
 
     @Override
@@ -184,22 +208,15 @@ public class BaseSchemaRenderer implements IDrawable {
 
         context.getGraphics().flush();
         context.graphicsPose().pushPose();
-        // context.getStencil().push(x, y, width, height);
 
-        Window window = Minecraft.getInstance().getWindow();
-        double guiScale = window.getGuiScale();
-        this.viewport[0] = Mth.ceil(context.transformX(x, y) * guiScale);
-        this.viewport[1] = window.getHeight() - Mth.ceil((context.transformY(x, y) + height) * guiScale);
-        this.viewport[2] = Mth.ceil(width * guiScale);
-        this.viewport[3] = Mth.ceil(height * guiScale);
-
-        RenderSystem.viewport(this.viewport[0], this.viewport[1], this.viewport[2], this.viewport[3]);
+        this.viewport.calculateOpenGLViewportFromRectangle(context.transformX(x, y), context.transformY(x, y), width, height);
+        this.viewport.applyViewport();
 
         onSetupCamera();
         setupCamera(width, height);
         renderWorld(context.getGraphics().bufferSource(), context.getRenderPartialTicks());
 
-        if (doRayTrace()) {
+        if (doRayTrace() || captureDebugInfo()) {
             BlockHitResult result = null;
             if (Area.isInside(x, y, width, height, mouseX, mouseY)) {
                 result = rayTrace(mouseX, mouseY, width, height);
@@ -209,25 +226,74 @@ public class BaseSchemaRenderer implements IDrawable {
                     onRayTraceFailed();
                 }
             } else {
-                onSuccessfulRayTrace(context.graphicsPose(), result);
+                onSuccessfulRayTrace(createWorldRenderPose(), result);
             }
             this.lastRayTrace = result;
         }
 
         resetCamera();
         context.graphicsPose().popPose();
-        // context.getStencil().pop();
+
+        if (this.captureDebugInfo) {
+            drawProjectedBlockPos(context.getGraphics(), width, height);
+        }
+    }
+
+    public void drawProjectedBlockPos(GuiGraphics graphics, int width, int height) {
+        for (Vector3f s : this.pos) {
+            float x0 = this.viewport.unscaleXFromViewport(s.x, width);
+            float y0 = this.viewport.unscaleYFromViewport(s.y, height);
+            GuiDraw.drawRect(graphics, x0 - 1, y0 - 1, 2, 2, Color.withAlpha(Color.BLUE.main, 1f));
+        }
+    }
+
+    public void drawBlockOutlines(MultiBufferSource.BufferSource bufferSource) {
+        VertexConsumer vc = bufferSource.getBuffer(RenderType.lines());
+        var ps = createWorldRenderPose();
+        for (var e : this.schema) {
+            if (!e.getValue().isAir()) {
+                var p = e.getKey();
+                LevelRenderer.renderLineBox(
+                        ps,
+                        vc,
+                        p.getX(), p.getY(), p.getZ(),
+                        p.getX() + 1, p.getY() + 1, p.getZ() + 1,
+                        1f, 0f, 0f, 1f
+                );
+            }
+        }
+        bufferSource.endBatch(RenderType.lines());
+    }
+
+    public PoseStack createWorldRenderPose() {
+        var ps = new PoseStack();
+        ps.translate(-camera.pos().x, -camera.pos().y, -camera.pos().z);
+        return ps;
+    }
+
+    ///  called each draw tick
+    private RenderCompileResults checkRecompile() {
+        var status = this.compileStatus.get();
+        if (status == CompileStatus.DISABLED) return null; // disabled, no-op
+
+        var res = this.compiledRenderResult.get();
+
+        // otherwise, check if we're dirty
+        // the only possible statuses is CANCELED or SUCCESS
+        if (status != CompileStatus.COMPILING && (status == CompileStatus.CANCELED || this.dirty)) {
+            this.dirty = false;
+            recompile();
+        }
+
+        // if we're still compiling, send previous result
+        return res;
+
     }
 
     @SuppressWarnings("deprecation")
     public void renderWorld(MultiBufferSource.BufferSource bufferSource, float partialTick) {
-        CompileStatus status = this.compileStatus.get();
-        if (status == CompileStatus.DISABLED || status == CompileStatus.COMPILING) {
-            return;
-        } else if (status == CompileStatus.CANCELED) {
-            recompile();
-            return;
-        }
+        var renderResult = checkRecompile();
+        if (renderResult == null) return;
 
         // Essentially disable level fog
         RenderSystem.setShaderFogColor(1, 1, 1, 0);
@@ -248,13 +314,13 @@ public class BaseSchemaRenderer implements IDrawable {
         RenderSystem.runAsFancy(() -> {
             // The order comes from LevelRenderer#renderLevel
 
-            renderBlocks(RenderType.solid());
+            renderBlocks(renderResult, RenderType.solid());
             // FORGE: fix flickering leaves when mods mess up the blurMipmap settings
             Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS)
                     .setBlurMipmap(false, Minecraft.getInstance().options.mipmapLevels().get() > 0);
-            renderBlocks(RenderType.cutoutMipped());
+            renderBlocks(renderResult, RenderType.cutoutMipped());
             Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS).restoreLastBlurMipmap();
-            renderBlocks(RenderType.cutout());
+            renderBlocks(renderResult, RenderType.cutout());
 
             bufferSource.endBatch(RenderType.entitySolid(TextureAtlas.LOCATION_BLOCKS));
             bufferSource.endBatch(RenderType.entityCutout(TextureAtlas.LOCATION_BLOCKS));
@@ -262,7 +328,7 @@ public class BaseSchemaRenderer implements IDrawable {
             bufferSource.endBatch(RenderType.entitySmoothCutout(TextureAtlas.LOCATION_BLOCKS));
 
             if (isBEREnabled()) {
-                renderBlockEntities(bufferSource, partialTick);
+                renderBlockEntities(renderResult, bufferSource, partialTick);
             }
 
             bufferSource.endBatch(RenderType.solid());
@@ -277,13 +343,17 @@ public class BaseSchemaRenderer implements IDrawable {
             bufferSource.endBatch(Sheets.chestSheet());
             bufferSource.endLastBatch();
 
-            renderBlocks(RenderType.translucent());
-            renderBlocks(RenderType.tripwire());
+            renderBlocks(renderResult, RenderType.translucent());
+            renderBlocks(renderResult, RenderType.tripwire());
+
+            if (this.captureDebugInfo) {
+                drawBlockOutlines(bufferSource);
+            }
         });
         RenderSystem.enableDepthTest();
     }
 
-    protected void renderBlocks(RenderType renderType) {
+    protected void renderBlocks(RenderCompileResults renderResult, RenderType renderType) {
         renderType.setupRenderState();
         ModelBlockRenderer.enableCaching();
 
@@ -353,13 +423,12 @@ public class BaseSchemaRenderer implements IDrawable {
         shader.apply();
 
         // actually draw the chunk
-        RenderCompileResults compileResults = this.compileResults.get();
-        if (compileResults != null && !compileResults.isEmpty(renderType)) {
+        if (!renderResult.isEmpty(renderType)) {
             if (ModularUI.Mods.isSodiumLikeLoaded()) {
-                SodiumCompat.markSpritesAsActive(compileResults.activeFluidSprites);
+                SodiumCompat.markSpritesAsActive(renderResult.activeFluidSprites);
             }
 
-            VertexBuffer vertexBuffer = getOrCreateChunkBuffers().get(renderType);
+            VertexBuffer vertexBuffer = renderResult.getOrCreateChunkBuffers().get(renderType);
             // check if the buffer is invalid in case someone breaks it
             // noinspection ConstantValue
             if (vertexBuffer.isInvalid() || vertexBuffer.getFormat() == null) return;
@@ -373,14 +442,10 @@ public class BaseSchemaRenderer implements IDrawable {
         renderType.clearRenderState();
     }
 
-    protected void renderBlockEntities(MultiBufferSource bufferSource, float partialTick) {
+    protected void renderBlockEntities(RenderCompileResults renderResult, MultiBufferSource bufferSource, float partialTick) {
         PoseStack poseStack = new PoseStack();
 
-        RenderCompileResults compileResults = this.compileResults.get();
-        if (compileResults == null) {
-            return;
-        }
-        for (BlockEntity blockEntity : compileResults.blockEntities) {
+        for (BlockEntity blockEntity : renderResult.blockEntities) {
             if (blockEntity != null) {
                 this.handleBlockEntity(poseStack, bufferSource, partialTick, blockEntity);
             }
@@ -407,8 +472,7 @@ public class BaseSchemaRenderer implements IDrawable {
     protected void setupCamera(int width, int height) {
         // setup viewport and clear GL buffers
         int clearColor = getClearColor();
-        RenderSystem.clearColor(Color.getRedF(clearColor), Color.getGreenF(clearColor), Color.getBlueF(clearColor),
-                Color.getAlphaF(clearColor));
+        RenderSystem.clearColor(Color.getRedF(clearColor), Color.getGreenF(clearColor), Color.getBlueF(clearColor), Color.getAlphaF(clearColor));
         RenderSystem.backupProjectionMatrix();
 
         float near = 0.05f;
@@ -432,14 +496,16 @@ public class BaseSchemaRenderer implements IDrawable {
         PoseStack modelViewStack = RenderSystem.getModelViewStack();
         modelViewStack.pushPose();
         modelViewStack.setIdentity();
+
         if (isIsometric()) {
             // see GameRenderer:935
             // Vanilla uses a -2000 z translation for isometric rendering
             modelViewStack.translate(0.0f, 0.0f, -2000.0f);
         }
-        GTMatrixUtils.lookAt(modelViewStack, this.camera.pos(), this.camera.lookAt());
-
+        MatrixUtils.lookAt(modelViewStack, this.camera.pos(), this.camera.lookAt());
         RenderSystem.applyModelViewMatrix();
+
+        rebuildProjection(); // rebuild projection matrix
     }
 
     protected void resetCamera() {
@@ -465,26 +531,68 @@ public class BaseSchemaRenderer implements IDrawable {
      * @return raytrace result
      */
     protected BlockHitResult rayTrace(int mouseX, int mouseY, int width, int height) {
-        // transform mouse pos into relative mouse pos from 0 - 1
-        Vector3f worldPos = screenToWorldPos((float) mouseX / width, (float) mouseY / height);
-        Vector3f target = this.camera.getLookVec().mul(20).add(worldPos);
-        ClipContext context = new ClipContext(new Vec3(worldPos), new Vec3(target), ClipContext.Block.OUTLINE,
+        var m = projection();
+        if (this.captureDebugInfo) {
+            int i = 0;
+            for (var e : this.schema) {
+                if (!e.getValue().isAir()) {
+                    var p = e.getKey();
+                    boolean reuseVec = this.pos.size() > i;
+                    var vec = reuseVec ? this.pos.get(i) : new Vector3f();
+                    vec = m.project(p.getX() + 0.5f, p.getY() + 0.5f, p.getZ() + 0.5f, this.viewport.getViewport(), vec);
+                    if (reuseVec) this.pos.set(i, vec);
+                    else this.pos.add(vec);
+                    i++;
+                }
+            }
+            while (i < this.pos.size()) this.pos.remove(i);
+        }
+        screenToOpenGLPos(mouseX, mouseY, width, height, 1, this.captureDebugInfo, this.openGLMousePos);
+        float d = openGLMousePos.z;
+
+        this.openGLMousePos.z = 0;
+        Vector3f worldPos = screenToWorldPos(m, this.openGLMousePos);
+        this.openGLMousePos.z = 1;
+        Vector3f target = screenToWorldPos(m, this.openGLMousePos);
+        this.openGLMousePos.z = d;
+
+        ClipContext context = new ClipContext(new Vec3(worldPos), new Vec3(target),
+                ClipContext.Block.OUTLINE,
                 ClipContext.Fluid.ANY, null);
         return this.renderLevel.clip(context);
     }
 
-    /**
-     * Converts a relative screen space position to a world space position in the preview.
-     *
-     * @param x X pos from 0 to 1
-     * @param y Y pos from 0 to 1
-     * @return world pos
-     */
-    protected Vector3f screenToWorldPos(float x, float y) {
-        // convert relative pos to framebuffer pos
-        int wx = (int) (x * this.viewport[2]);
-        int wy = (int) (y * this.viewport[3]);
-        return GTMatrixUtils.projectScreenToWorld(wx, wy, this.viewport, true);
+    public Vector3f screenToOpenGLPos(int x, int y, int width, int height, Vector3f dest) {
+        return screenToOpenGLPos(x, y, width, height, 0, true, dest);
+    }
+
+    public Vector3f screenToOpenGLPos(int x, int y, int width, int height, float depth, Vector3f dest) {
+        return screenToOpenGLPos(x, y, width, height, depth, false, dest);
+    }
+
+    private Vector3f screenToOpenGLPos(int x, int y, int width, int height, float depth, boolean readDepth, Vector3f dest) {
+        this.viewport.rescaleToViewport(x, y, width, height, dest);
+        if (readDepth) depth = MatrixUtils.readDepth((int) dest.x, (int) dest.y);
+        dest.z = depth;
+        return dest;
+    }
+
+    public Vector3f screenToWorldPos(int x, int y, int screenWidth, int screenHeight) {
+        return screenToWorldPos(projection(), screenToOpenGLPos(x, y, screenWidth, screenHeight, new Vector3f()), new Vector3f());
+    }
+
+    private Vector3f screenToWorldPos(Matrix4f projection, Vector3f openGLPos) {
+        return screenToWorldPos(projection, openGLPos, new Vector3f());
+    }
+
+    private Vector3f screenToWorldPos(Matrix4f projection, Vector3f openGLPos, Vector3f dest) {
+        return projection.unproject(openGLPos, this.viewport.getViewport(), dest);
+    }
+
+    private void rebuildProjection() {
+        this.projection.set(RenderSystem.getModelViewMatrix());
+        this.projection.translate(-this.camera.pos().x, -this.camera.pos().y, -this.camera.pos().z);
+        RenderSystem.getProjectionMatrix().mul(this.projection, this.projection);
     }
 
     @ApiStatus.OverrideOnly
@@ -515,20 +623,30 @@ public class BaseSchemaRenderer implements IDrawable {
         return true;
     }
 
+    /**
+     * Sets a render filter for the block to be rendered. This also causes the world to rerender.
+     * This method or {@link #notifyRecompile()} needs to be called everytime the render filter changes.
+     */
+    public void updateRenderFilter(RenderFilter renderFilter) {
+        notifyRecompile();
+        this.renderFilter = renderFilter != null ? renderFilter : RenderFilter.ALL;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof BaseSchemaRenderer that)) return false;
 
-        return schema.equals(that.schema) && renderLevel.equals(that.renderLevel) && camera.equals(that.camera) &&
-                Arrays.equals(viewport, that.viewport);
+        return this.schema.equals(that.schema) && this.renderLevel.equals(that.renderLevel) && this.camera.equals(that.camera) &&
+                Objects.equals(this.viewport, that.viewport) && Objects.equals(this.renderFilter, that.renderFilter);
     }
 
     @Override
     public int hashCode() {
-        int result = schema.hashCode();
-        result = 31 * result + renderLevel.hashCode();
-        result = 31 * result + camera.hashCode();
-        result = 31 * result + Arrays.hashCode(viewport);
+        int result = this.schema.hashCode();
+        result = 31 * result + this.renderLevel.hashCode();
+        result = 31 * result + this.camera.hashCode();
+        result = 31 * result + this.viewport.hashCode();
+        result = 31 * result + Objects.hashCode(this.renderFilter);
         return result;
     }
 
@@ -547,21 +665,23 @@ public class BaseSchemaRenderer implements IDrawable {
             this.isCanceled.set(true);
         }
 
-        protected CompletableFuture<CompileStatus> compileBlockBuffers() {
+        protected CompletableFuture<RenderCompileResults> compileBlockBuffers(RenderCompileResults compileResults) {
             if (this.isCanceled.get()) {
-                return CompletableFuture.completedFuture(CompileStatus.CANCELED);
+                return CompletableFuture.completedFuture(compileResults.withStatus(CompileStatus.CANCELED));
             }
 
             var blockRenderDispatcher = Minecraft.getInstance().getBlockRenderer();
             ChunkBufferBuilderPack chunkBufferBuilders = BaseSchemaRenderer.this.chunkBufferBuilders;
 
-            RenderCompileResults compileResults = new RenderCompileResults();
             RandomSource randomSource = RandomSource.create();
             PoseStack poseStack = new PoseStack();
             Set<RenderType> startedBuffers = new ReferenceArraySet<>(RenderType.chunkBufferLayers().size());
 
             ModelBlockRenderer.enableCaching();
             for (var blockEntry : BaseSchemaRenderer.this.schema) {
+                if (!BaseSchemaRenderer.this.renderFilter.shouldRender(blockEntry.getKey(), blockEntry.getValue())) {
+                    continue;
+                }
                 BlockPos pos = blockEntry.getKey();
                 BlockState blockState = blockEntry.getValue();
                 FluidState fluidState = blockState.getFluidState();
@@ -577,7 +697,11 @@ public class BaseSchemaRenderer implements IDrawable {
                     RenderType renderType = ItemBlockRenderTypes.getRenderLayer(fluidState);
                     BufferBuilder builder = chunkBufferBuilders.builder(renderType);
                     if (startedBuffers.add(renderType)) {
-                        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+                        if (builder.building()) {
+                            ModularUI.LOGGER.warn("Buffer is already building for RenderType: {}!", renderType);
+                            return CompletableFuture.completedFuture(compileResults.withStatus(CompileStatus.CANCELED));
+                        }
+                        builder.begin(renderType.mode(), renderType.format());
                     }
 
                     SectionPos sectionPos = SectionPos.of(pos);
@@ -633,12 +757,12 @@ public class BaseSchemaRenderer implements IDrawable {
 
             if (this.isCanceled.get()) {
                 compileResults.renderedLayers.values().forEach(BufferBuilder.RenderedBuffer::release);
-                return CompletableFuture.completedFuture(CompileStatus.CANCELED);
+                return CompletableFuture.completedFuture(compileResults.withStatus(CompileStatus.CANCELED));
             }
 
             List<CompletableFuture<Void>> uploads = Lists.newArrayList();
             compileResults.renderedLayers.forEach((renderType, buffer) -> {
-                uploads.add(uploadChunkLayer(buffer, renderType));
+                uploads.add(uploadChunkLayer(compileResults, buffer, renderType));
                 compileResults.hasBlocks.add(renderType);
             });
             return Util.sequenceFailFast(uploads).handle((result, error) -> {
@@ -646,20 +770,18 @@ public class BaseSchemaRenderer implements IDrawable {
                         !(error instanceof InterruptedException)) {
                     Minecraft.getInstance().delayCrash(CrashReport.forThrowable(error, "Rendering chunk"));
                 }
-
                 if (this.isCanceled.get()) {
-                    return CompileStatus.CANCELED;
+                    return compileResults.withStatus(CompileStatus.CANCELED);
                 } else {
-                    BaseSchemaRenderer.this.compileResults.set(compileResults);
-                    return CompileStatus.SUCCESS;
+                    return compileResults.withStatus(CompileStatus.SUCCESS);
                 }
             });
         }
 
-        protected CompletableFuture<Void> uploadChunkLayer(BufferBuilder.RenderedBuffer builder,
+        protected CompletableFuture<Void> uploadChunkLayer(RenderCompileResults results, BufferBuilder.RenderedBuffer builder,
                                                            RenderType renderType) {
             return CompletableFuture.runAsync(() -> {
-                VertexBuffer buffer = getOrCreateChunkBuffers().get(renderType);
+                VertexBuffer buffer = results.getOrCreateChunkBuffers().get(renderType);
                 if (!buffer.isInvalid()) {
                     buffer.bind();
                     buffer.upload(builder);
@@ -679,14 +801,38 @@ public class BaseSchemaRenderer implements IDrawable {
 
     protected static class RenderCompileResults {
 
+        protected CompileStatus status = CompileStatus.COMPILING;
         protected final List<BlockEntity> blockEntities = new ArrayList<>();
         protected final Map<RenderType, BufferBuilder.RenderedBuffer> renderedLayers = new Reference2ObjectArrayMap<>();
         protected final Set<TextureAtlasSprite> activeFluidSprites = new HashSet<>();
-
         protected final Set<RenderType> hasBlocks = new ObjectArraySet<>(RenderType.chunkBufferLayers().size());
+        private Map<RenderType, VertexBuffer> chunkBuffers = getOrCreateChunkBuffers();
+
+        protected @NotNull Map<RenderType, VertexBuffer> getOrCreateChunkBuffers() {
+            if (this.chunkBuffers == null || this.chunkBuffers.isEmpty()) {
+                List<RenderType> chunkRenderTypes = RenderType.chunkBufferLayers();
+                this.chunkBuffers = new Reference2ObjectLinkedOpenHashMap<>();
+                for (RenderType type : chunkRenderTypes) {
+                    this.chunkBuffers.put(type, new VertexBuffer(VertexBuffer.Usage.STATIC));
+                }
+            }
+            return this.chunkBuffers;
+        }
+
+        protected void clearBuffer() {
+            if (this.chunkBuffers != null && !this.chunkBuffers.isEmpty()) {
+                this.chunkBuffers.values().forEach(VertexBuffer::close);
+                this.chunkBuffers.clear();
+            }
+        }
 
         public boolean isEmpty(RenderType renderType) {
             return !this.hasBlocks.contains(renderType);
+        }
+
+        public RenderCompileResults withStatus(CompileStatus status) {
+            this.status = status;
+            return this;
         }
     }
 }

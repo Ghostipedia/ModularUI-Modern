@@ -257,8 +257,9 @@ public class Widget<W extends Widget<W>> extends AbstractWidget implements IPosi
     @Override
     public void drawBackground(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {
         WidgetTheme theme = getActiveWidgetTheme(widgetTheme, isHovering());
-        if (this.shadow != null) {
-            this.shadow.drawAtZero(context, getArea(), theme);
+        IDrawable shadow = getShadow();
+        if (shadow != null) {
+            shadow.drawAtZero(context, getArea(), theme);
         }
         if (!this.disableThemeBackground || !this.disableHoverThemeBackground) {
             IDrawable bg = getThemeBackground(widgetTheme, theme);

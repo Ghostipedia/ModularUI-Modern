@@ -37,12 +37,12 @@ public class TextFieldTheme extends WidgetTheme {
             extends WidgetThemeBuilder<T, B> {
 
         public B markedColor(int markedColor) {
-            add(IThemeApi.MARKED_COLOR, markedColor);
+            add(IThemeApi.MARKED_COLOR, ThemeBuilder.colorJson(markedColor));
             return getThis();
         }
 
         public B hintColor(int hintColor) {
-            add(IThemeApi.HINT_COLOR, hintColor);
+            add(IThemeApi.HINT_COLOR, ThemeBuilder.colorJson(hintColor));
             return getThis();
         }
     }

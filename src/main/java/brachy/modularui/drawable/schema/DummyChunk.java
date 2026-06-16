@@ -1,4 +1,4 @@
-package brachy.modularui.utils.fakelevel;
+package brachy.modularui.drawable.schema;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.FullChunkStatus;

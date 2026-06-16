@@ -1,8 +1,7 @@
-package brachy.modularui.schema;
+package brachy.modularui.drawable.schema;
 
 import brachy.modularui.ModularUI;
 import brachy.modularui.utils.BlockPosUtil;
-import brachy.modularui.utils.fakelevel.SchemaLevel;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
@@ -21,7 +20,6 @@ import it.unimi.dsi.fastutil.chars.Char2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.chars.CharArraySet;
 import it.unimi.dsi.fastutil.chars.CharSet;
 import lombok.Getter;
-import lombok.Setter;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
@@ -32,8 +30,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.BiPredicate;
 
 public class ArraySchema implements ISchema {
 
@@ -81,9 +77,6 @@ public class ArraySchema implements ISchema {
     @Getter
     private final Level level;
     private final BlockState[][][] blocks;
-    @Getter
-    @Setter
-    private BiPredicate<BlockPos, BlockState> renderFilter = (pos, block) -> true;
     private final Vector3f center;
 
     public ArraySchema(BlockState[][][] blocks) {
@@ -139,7 +132,7 @@ public class ArraySchema implements ISchema {
                     }
                     pos.set(x, y, z);
                     state = blocks[x][y][z];
-                    if (state != null && renderFilter.test(pos, state)) {
+                    if (state != null) {
                         pair.setRight(state);
                         return pair;
                     }
@@ -153,14 +146,13 @@ public class ArraySchema implements ISchema {
         if (!(o instanceof ArraySchema entries)) return false;
 
         return level.equals(entries.level) && Arrays.deepEquals(blocks, entries.blocks) &&
-                Objects.equals(renderFilter, entries.renderFilter) && center.equals(entries.center);
+                center.equals(entries.center);
     }
 
     @Override
     public int hashCode() {
         int result = level.hashCode();
         result = 31 * result + Arrays.deepHashCode(blocks);
-        result = 31 * result + Objects.hashCode(renderFilter);
         result = 31 * result + center.hashCode();
         return result;
     }

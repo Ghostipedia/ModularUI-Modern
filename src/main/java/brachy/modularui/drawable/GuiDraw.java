@@ -1,8 +1,7 @@
 package brachy.modularui.drawable;
 
-import brachy.modularui.GTRenderTypes;
+import brachy.modularui.utils.MUIRenderTypes;
 import brachy.modularui.api.drawable.IRichTextBuilder;
-import brachy.modularui.client.GuiSpriteManager;
 import brachy.modularui.drawable.text.TextRenderer;
 import brachy.modularui.screen.event.RichTooltipEvent;
 import brachy.modularui.screen.viewport.GuiContext;
@@ -133,7 +132,7 @@ public class GuiDraw {
     public static void drawEllipse(GuiGraphics graphics, float x0, float y0, float w, float h,
                                    int centerColor, int outerColor, int segments) {
         Matrix4f pose = graphics.pose().last().pose();
-        VertexConsumer bufferbuilder = graphics.bufferSource().getBuffer(GTRenderTypes.guiOverlayTriangleFan());
+        VertexConsumer bufferbuilder = graphics.bufferSource().getBuffer(MUIRenderTypes.guiOverlayTriangleFan());
 
         float x_2 = x0 + w / 2f, y_2 = y0 + h / 2f;
         // start at center
@@ -173,7 +172,7 @@ public class GuiDraw {
                                        int colorTL, int colorTR, int colorBL, int colorBR,
                                        int cornerRadius, int segments) {
         Matrix4f pose = graphics.pose().last().pose();
-        VertexConsumer bufferbuilder = graphics.bufferSource().getBuffer(GTRenderTypes.guiOverlayTriangleFan());
+        VertexConsumer bufferbuilder = graphics.bufferSource().getBuffer(MUIRenderTypes.guiOverlayTriangleFan());
 
         float x1 = x0 + w, y1 = y0 + h;
         int color = Color.average(colorBL, colorBR, colorTR, colorTL);
@@ -794,7 +793,7 @@ public class GuiDraw {
         }
         float x0 = left, y0 = top, x1 = right, y1 = bottom, d = border;
 
-        var buffer = graphics.bufferSource().getBuffer(GTRenderTypes.guiTriangleStrip());
+        var buffer = graphics.bufferSource().getBuffer(MUIRenderTypes.guiTriangleStrip());
         var pose = graphics.pose().last().pose();
         pc(buffer, pose, x0, y0, color);
         pc(buffer, pose, x1 - d, y0 + d, color);
@@ -941,7 +940,7 @@ public class GuiDraw {
         float g2 = Color.getGreenF(shadow);
         float b2 = Color.getBlueF(shadow);
 
-        VertexConsumer buffer = graphics.bufferSource().getBuffer(GTRenderTypes.guiOverlayTriangleFan());
+        VertexConsumer buffer = graphics.bufferSource().getBuffer(MUIRenderTypes.guiOverlayTriangleFan());
         buffer.vertex(pose, x, y, 0).color(r1, g1, b1, a1).endVertex();
 
         Vector3d pos = new Vector3d();
@@ -969,7 +968,7 @@ public class GuiDraw {
         float g2 = Color.getGreenF(shadow);
         float b2 = Color.getBlueF(shadow);
 
-        VertexConsumer buffer = graphics.bufferSource().getBuffer(GTRenderTypes.guiOverlayTriangleFan());
+        VertexConsumer buffer = graphics.bufferSource().getBuffer(MUIRenderTypes.guiOverlayTriangleFan());
         /* Draw opaque base */
         buffer.vertex(pose, x, y, 0).color(r1, g1, b1, a1).endVertex();
 

@@ -1,4 +1,4 @@
-package brachy.modularui.client;
+package brachy.modularui.drawable;
 
 import brachy.modularui.ModularUI;
 
@@ -22,7 +22,7 @@ public class GuiSpriteManager extends TextureAtlasHolder {
     private static final ResourceLocation atlasInfoLocation = ModularUI.id("gui");
     private static GuiSpriteManager instance = null;
 
-    GuiSpriteManager(TextureManager textureManager) {
+    public GuiSpriteManager(TextureManager textureManager) {
         super(textureManager, LOCATION_GUI, atlasInfoLocation);
 
         if (instance != null) {
