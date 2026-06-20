@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 @Mixin(GuiGraphics.class)
 public abstract class GuiGraphicsMixin {
-
+/*
     @Shadow(remap = false)
     private ItemStack tooltipStack;
 
@@ -111,4 +111,5 @@ public abstract class GuiGraphicsMixin {
         // Cancel vanilla tooltip rendering
         ci.cancel();
     }
+*/
 }

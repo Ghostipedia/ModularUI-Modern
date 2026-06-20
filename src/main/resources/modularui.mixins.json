@@ -9,7 +9,6 @@
         "client.AbstractContainerScreenAccessor",
         "client.AbstractContainerScreenMixin",
         "client.AbstractWidgetMixin",
-        "client.GuiGraphicsMixin",
         "client.MinecraftMixin",
         "client.ScreenAccessor",
         "client.SlotAccessor",
