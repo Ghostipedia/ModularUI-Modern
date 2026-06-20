@@ -24,6 +24,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.util.ExtraCodecs;
 import com.mojang.serialization.Codec;
 
+import com.sun.jna.platform.bsd.ExtAttr;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,7 +39,7 @@ import java.util.function.UnaryOperator;
 public class ModularComponent extends MutableComponent implements Text {
 
     public static final MutableObjectCodec<ModularComponent> CODEC = MutableObjectCodec.drawableBuilder(ModularComponent.class, "Text")
-            .wrapped(ComponentSerialization.CODEC.xmap(ModularComponent::of, mc -> mc))
+            .wrapped(ExtraComponentCodecs.NEVER_FLAT_COMPONENT_CODEC.xmap(ModularComponent::of, mc -> mc))
             .addOpt("alignment", ModularComponent::alignment, ModularComponent::getAlignment, Alignment.CODEC, Alignment.Center)
             .addOpt("scale", ModularComponent::scale, ModularComponent::getScale, Codec.FLOAT, 1f)
             .addOpt("shadow", ModularComponent::shadow, ModularComponent::getShadow, Codec.BOOL, null)
