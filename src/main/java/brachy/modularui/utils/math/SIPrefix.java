@@ -28,7 +28,7 @@ public enum SIPrefix {
     Yocto('y', -24),
     Ronto('r', -27),
     Quecto('q', -30),
-    Infinitesimal('∞', Double.MIN_NORMAL, true);
+    Infinitesimal('∞', Double.MIN_VALUE, true);
 
     public final char symbol;
     public final String stringSymbol;
