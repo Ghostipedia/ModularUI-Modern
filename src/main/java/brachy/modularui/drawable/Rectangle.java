@@ -1,35 +1,55 @@
 package brachy.modularui.drawable;
 
+import brachy.modularui.utils.MUIRenderTypes;
 import brachy.modularui.ModularUI;
 import brachy.modularui.animation.IAnimatable;
-import brachy.modularui.api.IJsonSerializable;
 import brachy.modularui.api.drawable.IDrawable;
-import brachy.modularui.client.ModularUIRenderTypes;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.Interpolations;
-import brachy.modularui.utils.serialization.json.JsonHelper;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.serialization.Codec;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.Accessors;
 import org.joml.Matrix4f;
 
-import java.util.function.IntConsumer;
-
+@ToString
 @Accessors(fluent = true, chain = true)
-public class Rectangle implements IDrawable, IJsonSerializable<Rectangle>, IAnimatable<Rectangle> {
+public class Rectangle implements IDrawable, IAnimatable<Rectangle> {
 
-    private int cornerRadius, colorTL, colorTR, colorBL, colorBR;
+    public static final MutableObjectCodec<Rectangle> CODEC = MutableObjectCodec.drawableBuilder(Rectangle::new)
+            .addOpt("colorTopLeft", Rectangle::colorTL, Rectangle::colorTL, Color.CODEC, Color.WHITE.main)
+            .alias("colorTL", "colorLeft", "colorTop", "color")
+            .addOpt("colorTopRight", Rectangle::colorTR, Rectangle::colorTR, Color.CODEC, Color.WHITE.main)
+            .alias("colorTR", "colorRight", "colorTop", "color")
+            .addOpt("colorBottomLeft", Rectangle::colorBL, Rectangle::colorBL, Color.CODEC, Color.WHITE.main)
+            .alias("colorBL", "colorLeft", "colorBottom", "color")
+            .addOpt("colorBottomRight", Rectangle::colorBR, Rectangle::colorBR, Color.CODEC, Color.WHITE.main)
+            .alias("colorBR", "colorRight", "colorBottom", "color")
+            .addOpt("cornerRadius", Rectangle::cornerRadius, Rectangle::cornerRadius, Codec.INT, 0)
+            .addOpt("cornerSegments", Rectangle::cornerSegments, Rectangle::cornerSegments, Codec.INT, 8)
+            .addOpt("borderThickness", Rectangle::borderThickness, Rectangle::borderThickness, Codec.FLOAT, 0f)
+            .addOpt("canApplyTheme", Rectangle::canApplyTheme, Rectangle::canApplyTheme, Codec.BOOL, false)
+            .build();
+
+    @Getter
+    @Setter
+    private int colorTL, colorTR, colorBL, colorBR;
+    @Getter
+    private int cornerRadius;
+    @Getter
     @Setter
     private int cornerSegments;
+    @Getter
+    @Setter
     private float borderThickness;
     @Getter
     @Setter
@@ -109,7 +129,7 @@ public class Rectangle implements IDrawable, IJsonSerializable<Rectangle>, IAnim
 
             Matrix4f pose = context.getGraphics().pose().last().pose();
             VertexConsumer bufferbuilder = context.getGraphics().bufferSource()
-                    .getBuffer(ModularUIRenderTypes.guiTriangleStrip());
+                    .getBuffer(MUIRenderTypes.guiTriangleStrip());
             v(pose, bufferbuilder, x0, y0, this.colorTL);
             v(pose, bufferbuilder, x1 - d, y0 + d, this.colorTR);
             v(pose, bufferbuilder, x1, y0, this.colorTR);
@@ -125,65 +145,6 @@ public class Rectangle implements IDrawable, IJsonSerializable<Rectangle>, IAnim
 
     private static void v(Matrix4f pose, VertexConsumer buffer, float x, float y, int c) {
         buffer.addVertex(pose, x, y, 0).setColor(c);
-    }
-
-    @Override
-    public void loadFromJson(JsonObject json) {
-        if (json.has("color")) {
-            color(Color.ofJson(json.get("color")));
-        }
-        if (json.has("colorTop")) {
-            int c = Color.ofJson(json.get("colorTop"));
-            this.colorTL = c;
-            this.colorTR = c;
-        }
-        if (json.has("colorBottom")) {
-            int c = Color.ofJson(json.get("colorBottom"));
-            this.colorBL = c;
-            this.colorBR = c;
-        }
-        if (json.has("colorLeft")) {
-            int c = Color.ofJson(json.get("colorLeft"));
-            this.colorTL = c;
-            this.colorBL = c;
-        }
-        if (json.has("colorRight")) {
-            int c = Color.ofJson(json.get("colorRight"));
-            this.colorTR = c;
-            this.colorBR = c;
-        }
-        setColor(json, val -> this.colorTL = val, "colorTopLeft", "colorTL");
-        setColor(json, val -> this.colorTR = val, "colorTopRight", "colorTR");
-        setColor(json, val -> this.colorBL = val, "colorBottomLeft", "colorBL");
-        setColor(json, val -> this.colorBR = val, "colorBottomRight", "colorBR");
-        this.cornerRadius = JsonHelper.getInt(json, 0, "cornerRadius");
-        this.cornerSegments = JsonHelper.getInt(json, 10, "cornerSegments");
-        if (JsonHelper.getBoolean(json, false, "solid")) {
-            this.borderThickness = 0;
-        } else if (JsonHelper.getBoolean(json, false, "hollow")) {
-            this.borderThickness = 1;
-        } else {
-            this.borderThickness = JsonHelper.getFloat(json, 0, "borderThickness");
-        }
-    }
-
-    @Override
-    public boolean saveToJson(JsonObject json) {
-        json.addProperty("colorTL", this.colorTL);
-        json.addProperty("colorTR", this.colorTR);
-        json.addProperty("colorBL", this.colorBL);
-        json.addProperty("colorBR", this.colorBR);
-        json.addProperty("cornerRadius", this.cornerRadius);
-        json.addProperty("cornerSegments", this.cornerSegments);
-        json.addProperty("borderThickness", this.borderThickness);
-        return true;
-    }
-
-    private void setColor(JsonObject json, IntConsumer color, String... keys) {
-        JsonElement element = JsonHelper.getJsonElement(json, keys);
-        if (element != null) {
-            color.accept(Color.ofJson(element));
-        }
     }
 
     @Override
@@ -204,5 +165,32 @@ public class Rectangle implements IDrawable, IJsonSerializable<Rectangle>, IAnim
                 .cornerRadius(this.cornerRadius)
                 .cornerSegments(this.cornerSegments)
                 .canApplyTheme(this.canApplyTheme);
+    }
+
+    @Override
+    public String getTypeName() {
+        return "rectangle";
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof Rectangle rectangle)) return false;
+
+        return cornerRadius == rectangle.cornerRadius && colorTL == rectangle.colorTL && colorTR == rectangle.colorTR &&
+                colorBL == rectangle.colorBL && colorBR == rectangle.colorBR && cornerSegments == rectangle.cornerSegments &&
+                Float.compare(borderThickness, rectangle.borderThickness) == 0 && canApplyTheme == rectangle.canApplyTheme;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = cornerRadius;
+        result = 31 * result + colorTL;
+        result = 31 * result + colorTR;
+        result = 31 * result + colorBL;
+        result = 31 * result + colorBR;
+        result = 31 * result + cornerSegments;
+        result = 31 * result + Float.hashCode(borderThickness);
+        result = 31 * result + Boolean.hashCode(canApplyTheme);
+        return result;
     }
 }

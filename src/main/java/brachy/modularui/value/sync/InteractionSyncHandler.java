@@ -8,7 +8,7 @@ import brachy.modularui.utils.MouseData;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 
-public class InteractionSyncHandler extends SyncHandler {
+public class InteractionSyncHandler extends SyncHandler<InteractionSyncHandler> {
 
     private static final int MOUSE_PRESSED = 1;
     private static final int MOUSE_RELEASED = 2;
@@ -27,6 +27,10 @@ public class InteractionSyncHandler extends SyncHandler {
     private IServerKeyboardAction keyPressed;
     private IServerKeyboardAction keyReleased;
     private IServerKeyboardAction keyTapped;
+
+    public InteractionSyncHandler() {
+        allowC2S();
+    }
 
     @Override
     public void readOnClient(int id, RegistryFriendlyByteBuf buf) {}

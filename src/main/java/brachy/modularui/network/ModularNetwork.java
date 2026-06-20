@@ -121,7 +121,7 @@ public abstract class ModularNetwork {
         }
 
         @Override
-        public void sendSyncHandlerPacket(String panel, SyncHandler syncHandler, IPacketWriter<? super RegistryFriendlyByteBuf> writer, Player player) {
+        public void sendSyncHandlerPacket(String panel, SyncHandler<?> syncHandler, IPacketWriter<? super RegistryFriendlyByteBuf> writer, Player player) {
             get(player).sendSyncHandlerPacket(panel, syncHandler, writer, player);
         }
 
@@ -146,6 +146,7 @@ public abstract class ModularNetwork {
         }
     }
 
+    @ApiStatus.NonExtendable
     public static class Server extends ModularNetworkSide {
 
         private int nextId = -1;

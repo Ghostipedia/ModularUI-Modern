@@ -23,4 +23,5 @@ public class ModularUIREIPlugin implements REIClientPlugin {
         REIScreenHandler.register(ScreenWrapper.class, registry);
         REIScreenHandler.register(ContainerScreenWrapper.class, registry);
     }
+
 }

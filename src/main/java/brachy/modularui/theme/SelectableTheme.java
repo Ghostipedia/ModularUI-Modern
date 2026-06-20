@@ -2,12 +2,9 @@ package brachy.modularui.theme;
 
 import brachy.modularui.api.IThemeApi;
 import brachy.modularui.api.drawable.IDrawable;
-import brachy.modularui.drawable.DrawableSerialization;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.serialization.json.JsonBuilder;
-import brachy.modularui.utils.serialization.json.JsonHelper;
 
-import com.google.gson.JsonObject;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,25 +31,16 @@ public class SelectableTheme extends WidgetTheme {
                            int color, int textColor, boolean textShadow, int iconColor,
                            @Nullable IDrawable selectedBackground, int selectedColor,
                            int selectedTextColor, boolean selectedTextShadow, int selectedIconColor) {
-        super(defaultWidth, defaultHeight, background, color, textColor, textShadow, iconColor);
-        this.selected = new WidgetTheme(defaultWidth, defaultHeight, selectedBackground, selectedColor,
-                selectedTextColor, selectedTextShadow, selectedIconColor);
+        this(defaultWidth, defaultHeight, background, color, textColor, textShadow, iconColor,
+                new WidgetTheme(defaultWidth, defaultHeight, selectedBackground, selectedColor,
+                        selectedTextColor, selectedTextShadow, selectedIconColor));
     }
 
-    public SelectableTheme(SelectableTheme parent, JsonObject json, JsonObject fallback) {
-        super(parent, json, fallback);
-        IDrawable selectedBackground = JsonHelper.deserializeWithFallback(json, fallback, IDrawable.class,
-                parent.getSelected().getBackground(), IThemeApi.SELECTED_BACKGROUND);
-        int selectedColor = JsonHelper.getColorWithFallback(json, fallback,
-                parent.getSelected().getColor(), IThemeApi.SELECTED_COLOR);
-        int selectedTextColor = JsonHelper.getColorWithFallback(json, fallback,
-                parent.getSelected().getTextColor(), IThemeApi.SELECTED_TEXT_COLOR);
-        boolean selectedTextShadow = JsonHelper.getBoolWithFallback(json, fallback,
-                parent.getSelected().isTextShadow(), IThemeApi.SELECTED_TEXT_SHADOW);
-        int selectedIconColor = JsonHelper.getColorWithFallback(json, fallback,
-                parent.getSelected().getIconColor(), IThemeApi.SELECTED_ICON_COLOR);
-        this.selected = new WidgetTheme(getDefaultWidth(), getDefaultHeight(), selectedBackground, selectedColor,
-                selectedTextColor, selectedTextShadow, selectedIconColor);
+    public SelectableTheme(int defaultWidth, int defaultHeight, @Nullable IDrawable background,
+                           int color, int textColor, boolean textShadow, int iconColor,
+                           WidgetTheme selected) {
+        super(defaultWidth, defaultHeight, background, color, textColor, textShadow, iconColor);
+        this.selected = selected;
     }
 
     @Override
@@ -62,16 +50,36 @@ public class SelectableTheme extends WidgetTheme {
                 this.selected.isTextShadow(), this.selected.getIconColor());
     }
 
+    public @Nullable IDrawable getSelectedBackground() {
+        return this.selected.getBackground();
+    }
+
+    public int getSelectedColor() {
+        return this.selected.getColor();
+    }
+
+    public int getSelectedTextColor() {
+        return this.selected.getTextColor();
+    }
+
+    public boolean isSelectedTextShadow() {
+        return this.selected.isTextShadow();
+    }
+
+    public int getSelectedIconColor() {
+        return this.selected.getIconColor();
+    }
+
     public static class Builder<T extends SelectableTheme, B extends SelectableTheme.Builder<T, B>>
             extends WidgetThemeBuilder<T, B> {
 
         public B selectedColor(int color) {
-            add(IThemeApi.SELECTED_COLOR, color);
+            add(IThemeApi.SELECTED_COLOR, ThemeBuilder.colorJson(color));
             return getThis();
         }
 
         public B selectedTextColor(int color) {
-            add(IThemeApi.SELECTED_TEXT_COLOR, color);
+            add(IThemeApi.SELECTED_TEXT_COLOR, ThemeBuilder.colorJson(color));
             return getThis();
         }
 
@@ -81,22 +89,25 @@ public class SelectableTheme extends WidgetTheme {
         }
 
         public B selectedIconColor(int color) {
-            add(IThemeApi.SELECTED_ICON_COLOR, color);
+            add(IThemeApi.SELECTED_ICON_COLOR, ThemeBuilder.colorJson(color));
             return getThis();
         }
 
         public B selectedBackground(JsonBuilder builder) {
+            if (builder instanceof WidgetThemeBuilder<?, ?>) {
+                throw new IllegalArgumentException(".selectedBackground() does not accept widget theme builders");
+            }
             add(IThemeApi.SELECTED_BACKGROUND, builder);
             return getThis();
         }
 
         public B selectedBackground(IDrawable drawable) {
-            add(IThemeApi.SELECTED_BACKGROUND, DrawableSerialization.serialize(drawable));
+            add(IThemeApi.SELECTED_BACKGROUND, IDrawable.toJsonOrThrow(drawable));
             return getThis();
         }
 
         public B selectedBackground(String textureId) {
-            return background(new JsonBuilder().add("type", "texture").add("id", textureId));
+            return selectedBackground(ThemeBuilder.textureJson(textureId));
         }
     }
 }

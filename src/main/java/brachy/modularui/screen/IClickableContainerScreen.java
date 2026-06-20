@@ -4,7 +4,7 @@ import net.minecraft.world.inventory.Slot;
 
 public interface IClickableContainerScreen {
 
-    void mui$setClickedSlot(Slot slot);
+    void modularui$setClickedSlot(Slot slot);
 
-    Slot mui$getClickedSlot();
+    Slot modularui$getClickedSlot();
 }

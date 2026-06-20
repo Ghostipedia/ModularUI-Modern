@@ -71,7 +71,7 @@ public interface ISynced<W extends IWidget> {
      * @throws IllegalStateException if this widget has no valid sync handler
      */
     @NotNull
-    SyncHandler getSyncHandler();
+    SyncHandler<?> getSyncHandler();
 
     /**
      * Sets the sync handler key. The sync handler will be obtained in

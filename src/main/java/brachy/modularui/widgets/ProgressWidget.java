@@ -1,53 +1,28 @@
 package brachy.modularui.widgets;
 
-import brachy.modularui.ModularUIConfig;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.value.IDoubleValue;
 import brachy.modularui.api.value.ISyncOrValue;
-import brachy.modularui.api.value.IValue;
-import brachy.modularui.drawable.UITexture;
-import brachy.modularui.screen.viewport.GuiContext;
+import brachy.modularui.drawable.progress.BaseProgressDrawable;
+import brachy.modularui.drawable.progress.ProgressDrawable;
 import brachy.modularui.screen.viewport.ModularGuiContext;
-import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
-import brachy.modularui.utils.Color;
 import brachy.modularui.value.DoubleValue;
 import brachy.modularui.widget.Widget;
 
-import lombok.Getter;
-
-import net.minecraft.util.Mth;
-
-import lombok.Setter;
-import lombok.experimental.Accessors;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.function.DoubleSupplier;
 
-@Accessors(fluent = true, chain = true)
 public class ProgressWidget extends Widget<ProgressWidget> {
 
-    private final UITexture[] fullTexture = new UITexture[4];
-    private UITexture emptyTexture;
-    @Getter private Direction direction = Direction.RIGHT;
-    private int imageSize = -1;
+    private BaseProgressDrawable<?> progress;
+    private IDoubleValue<?> value;
 
-    @Getter private IDoubleValue<?> doubleValue;
+    public ProgressWidget() {}
 
-    @Override
-    public void onInit() {
-        if (this.doubleValue == null) {
-            this.doubleValue = new DoubleValue(0.5);
-        }
-        if (this.direction == Direction.CIRCULAR_CW && this.fullTexture[0] != null) {
-            UITexture base = this.fullTexture[0];
-            this.fullTexture[0] = base.getSubArea(0f, 0.5f, 0.5f, 1f);
-            this.fullTexture[1] = base.getSubArea(0f, 0f, 0.5f, 0.5f);
-            this.fullTexture[2] = base.getSubArea(0.5f, 0f, 1f, 0.5f);
-            this.fullTexture[3] = base.getSubArea(0.5f, 0.5f, 1f, 1f);
-        }
+    public ProgressWidget(BaseProgressDrawable<?> progress) {
+        this.progress = progress;
     }
 
     @Override
@@ -58,125 +33,38 @@ public class ProgressWidget extends Widget<ProgressWidget> {
     @Override
     protected void setSyncOrValue(@NotNull ISyncOrValue syncOrValue) {
         super.setSyncOrValue(syncOrValue);
-        this.doubleValue = syncOrValue.castNullable(IDoubleValue.class);
+        this.value = syncOrValue.castNullable(IDoubleValue.class);
+        if (this.value != null && this.progress != null) {
+            this.progress.progress(this.value::getDoubleValue);
+        }
     }
 
     @Override
-    public void onResized() {
-        super.onResized();
-        if (this.imageSize < 0) {
-            this.imageSize = getArea().width;
+    public void draw(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {
+        super.draw(context, widgetTheme);
+        if (this.progress != null) {
+            this.progress.drawAtZeroPadded(context, getArea(), getActiveWidgetTheme(widgetTheme, isHovering()));
         }
     }
 
-    public float getCurrentProgress() {
-        return (float) this.doubleValue.getDoubleValue();
-    }
-
-    @Override
-    public void draw(ModularGuiContext context, WidgetThemeEntry<?> entry) {
-        WidgetTheme widgetTheme = getActiveWidgetTheme(entry, isHovering());
-        if (this.emptyTexture != null) {
-            this.emptyTexture.draw(context, 0, 0, getArea().w(), getArea().h(), widgetTheme);
-            Color.setGlColorOpaque(Color.WHITE.main);
+    public ProgressWidget progress(BaseProgressDrawable<?> progress) {
+        if (this.progress != null) {
+            this.progress.progress(null); // remove potential reference to the IDoubleValue
         }
-        float progress = getCurrentProgress();
-        if (this.fullTexture[0] != null && progress > 0) {
-            if (this.direction == Direction.CIRCULAR_CW) {
-                drawCircular(context, progress, widgetTheme);
-                return;
-            }
-            progress = getProgressUV(progress);
-            float u0 = 0, v0 = 0, u1 = 1, v1 = 1;
-            float x = 0, y = 0, width = getArea().width, height = getArea().height;
-            float labelXOffset = 0, labelYOffset = 0;
-            switch (this.direction) {
-                case RIGHT:
-                    u1 = progress;
-                    width *= progress;
-                    break;
-                case LEFT:
-                    u0 = 1 - progress;
-                    width *= progress;
-                    x = getArea().width - width;
-                    break;
-                case DOWN:
-                    v1 = progress;
-                    height *= progress;
-                    labelXOffset = width / 2 + 2;
-                    break;
-                case UP:
-                    v0 = 1 - progress;
-                    height *= progress;
-                    y = getArea().height - height;
-                    labelXOffset = width / 2 + 2;
-                    break;
-            }
-            this.fullTexture[0].drawSubArea(context, x, y, width, height, u0, v0, u1, v1, widgetTheme);
+        this.progress = progress;
+        if (this.value != null && this.progress != null) {
+            this.progress.progress(this.value::getDoubleValue);
         }
-    }
-
-    public float getProgressUV(float uv) {
-        if (ModularUIConfig.smoothProgressBars()) {
-            return uv;
-        }
-        return (float) (Math.floor(uv * this.imageSize) / this.imageSize);
-    }
-
-    private void drawCircular(GuiContext context, float progress, WidgetTheme widgetTheme) {
-        float[] subAreas = {
-                getProgressUV(Mth.clamp(progress / 0.25f, 0, 1)),
-                getProgressUV(Mth.clamp((progress - 0.25f) / 0.25f, 0, 1)),
-                getProgressUV(Mth.clamp((progress - 0.5f) / 0.25f, 0, 1)),
-                getProgressUV(Mth.clamp((progress - 0.75f) / 0.25f, 0, 1))
-        };
-        float halfWidth = getArea().width / 2f;
-        float halfHeight = getArea().height / 2f;
-
-        float progressScaled = subAreas[0] * halfHeight;
-        this.fullTexture[0].drawSubArea(context,
-                0, getArea().height - progressScaled,
-                halfWidth, progressScaled,
-                0.0f, 1.0f - progressScaled / halfHeight,
-                1.0f, 1.0f, widgetTheme); // BL, draw UP
-
-        progressScaled = subAreas[1] * halfWidth;
-        this.fullTexture[1].drawSubArea(context,
-                0, 0,
-                progressScaled, halfHeight,
-                0.0f, 0.0f,
-                progressScaled / (halfWidth), 1.0f,
-                widgetTheme); // TL, draw RIGHT
-
-        progressScaled = subAreas[2] * halfHeight;
-        this.fullTexture[2].drawSubArea(context,
-                halfWidth, 0,
-                halfWidth, progressScaled,
-                0.0f, 0.0f,
-                1.0f, progressScaled / halfHeight,
-                widgetTheme); // TR, draw DOWN
-
-        progressScaled = subAreas[3] * halfWidth;
-        this.fullTexture[3].drawSubArea(context,
-                getArea().width - progressScaled, halfHeight,
-                progressScaled, halfHeight,
-                1.0f - progressScaled / halfWidth, 0.0f,
-                1.0f, 1.0f, widgetTheme); // BR, draw LEFT
-    }
-
-
-    @Override
-    public @Nullable IDoubleValue<?> getValue() {
-        return doubleValue;
-    }
-
-    public ProgressWidget value(IDoubleValue<?> value) {
-        setSyncOrValue(ISyncOrValue.orEmpty(value));
         return this;
     }
 
-    public ProgressWidget progress(double progress) {
-        return value(new DoubleValue(progress));
+    public ProgressWidget value(IDoubleValue<?> doubleValue) {
+        setSyncOrValue(ISyncOrValue.orEmpty(doubleValue));
+        return this;
+    }
+
+    public ProgressWidget clientValue(DoubleSupplier doubleValue) {
+        return value(new DoubleValue.Dynamic(doubleValue, null));
     }
 
     /**
@@ -184,32 +72,18 @@ public class ProgressWidget extends Widget<ProgressWidget> {
      *
      * @param emptyTexture empty bar, always rendered
      * @param fullTexture  full bar, partly rendered, based on progress
-     * @param imageSize    image size in direction of progress. used for non-smooth rendering
      */
-    public ProgressWidget texture(UITexture emptyTexture, UITexture fullTexture, int imageSize) {
-        this.emptyTexture = emptyTexture;
-        this.fullTexture[0] = fullTexture;
-        this.imageSize = imageSize;
-        return this;
+    public ProgressWidget texture(IDrawable emptyTexture, IDrawable fullTexture, ProgressDrawable.Direction direction) {
+        return progress(new ProgressDrawable()
+                .emptyTexture(emptyTexture)
+                .filledTexture(fullTexture)
+                .direction(direction));
     }
 
     /**
      * @param texture a texture where the empty and full bar are stacked on top of each other
      */
-    public ProgressWidget texture(UITexture texture, int imageSize) {
-        return texture(texture.getSubArea(0, 0, 1, 0.5f), texture.getSubArea(0, 0.5f, 1, 1), imageSize);
-    }
-
-    public ProgressWidget direction(Direction direction) {
-        this.direction = direction;
-        return this;
-    }
-
-    public enum Direction {
-        LEFT,
-        RIGHT,
-        UP,
-        DOWN,
-        CIRCULAR_CW
+    public ProgressWidget texture(IDrawable texture, ProgressDrawable.Direction direction) {
+        return texture(texture.getSubArea(0, 0, 1, 0.5f), texture.getSubArea(0, 0.5f, 1, 1), direction);
     }
 }

@@ -57,7 +57,7 @@ public class GraphAxis {
                 this.min = DAM.min(plots.getFirst().getData(this.axis));
                 this.max = DAM.max(plots.getFirst().getData(this.axis));
             } else {
-                double min = Double.MAX_VALUE, max = Double.MIN_VALUE;
+                double min = Double.MAX_VALUE, max = -Double.MAX_VALUE;
                 for (Plot plot : plots) {
                     double m = DAM.min(plot.getData(this.axis));
                     if (m < min) min = m;
@@ -72,9 +72,6 @@ public class GraphAxis {
                 this.max += padding;
                 this.min -= padding;
             }
-        }
-        if (this.majorTickFinder instanceof AutoMajorTickFinder tickFinder && tickFinder.isAutoAdjust()) {
-            tickFinder.calculateAutoTickMultiple(this.min, this.max);
         }
         this.majorTicks = this.majorTickFinder.find(this.min, this.max, this.majorTicks);
         this.minorTicks = this.minorTickFinder.find(this.min, this.max, this.majorTicks, this.minorTicks);

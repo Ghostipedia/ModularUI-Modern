@@ -5,6 +5,7 @@ import brachy.modularui.utils.Interpolation;
 
 import lombok.Getter;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoublePredicate;
 
@@ -147,6 +148,18 @@ public class Animator extends BaseAnimator<Animator> implements IAnimator {
     public Animator duration(int duration) {
         this.duration = duration;
         return this;
+    }
+
+    /**
+     * The duration of this animation. Note this is not 100% accurate.
+     * Usually it's plus minus 2ms, but can rarely be more.
+     *
+     * @param duration duration
+     * @param unit     time unit of previous duration argument
+     * @return this
+     */
+    public Animator duration(long duration, TimeUnit unit) {
+        return duration((int) unit.toMillis(duration));
     }
 
     /**

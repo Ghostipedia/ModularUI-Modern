@@ -11,17 +11,22 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class MCHelper {
 
+    @SuppressWarnings("DataFlowIssue")
+    @Nullable
     public static Minecraft getMc() {
         return Minecraft.getInstance();
     }
 
+    @Nullable
     public static Player getPlayer() {
-        return getMc().player;
+        return getMc() == null ? null : getMc().player;
     }
 
     public static void closeScreen() {
@@ -55,11 +60,11 @@ public class MCHelper {
     }
 
     public static Screen getCurrentScreen() {
-        return getMc().screen;
+        return getMc() == null ? null : getMc().screen;
     }
 
     public static Font getFont() {
-        return getMc().font;
+        return getMc() == null ? null : getMc().font;
     }
 
     public static List<Component> getItemToolTip(ItemStack item) {

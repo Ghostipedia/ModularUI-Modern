@@ -46,7 +46,7 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the value to sync
  */
-public class GenericSyncValue<B extends ByteBuf, T> extends AbstractGenericSyncValue<B, T> {
+public class GenericSyncValue<B extends ByteBuf, T> extends AbstractGenericSyncValue<B, T, GenericSyncValue<B, T>> {
 
     public static GenericSyncValue<RegistryFriendlyByteBuf, ItemStack> forItem(@NotNull Supplier<ItemStack> getter,
                                                                                @Nullable Consumer<ItemStack> setter) {
@@ -176,6 +176,7 @@ public class GenericSyncValue<B extends ByteBuf, T> extends AbstractGenericSyncV
         private EqualityTest<T> equals;
         private ICopy<T> copy;
         private boolean nullable;
+        private boolean allowC2S;
 
         private Builder(Class<T> type) {
             this.type = type;
@@ -314,7 +315,7 @@ public class GenericSyncValue<B extends ByteBuf, T> extends AbstractGenericSyncV
 
         /**
          * Sets the value to be nullable. This wraps all the used functions into null safe variants. This only for convenience.
-         * Manually having to consider nullability inside all the function is cumbersome. This setter is a shortcut.
+         * Manually having to consider nullability inside all the functions is cumbersome. This setter is a shortcut.
          * It is opt-in since, it creates a very minor overhead in the serializer and deserializer.
          * <p><b>This setter is optional!</b></p>
          *
@@ -322,6 +323,11 @@ public class GenericSyncValue<B extends ByteBuf, T> extends AbstractGenericSyncV
          */
         public Builder<B, T> nullable() {
             this.nullable = true;
+            return this;
+        }
+
+        public Builder<B, T> allowC2S() {
+            this.allowC2S = true;
             return this;
         }
 
@@ -333,7 +339,7 @@ public class GenericSyncValue<B extends ByteBuf, T> extends AbstractGenericSyncV
          * @throws IllegalArgumentException if the value type is null and the getter returns null
          */
         public GenericSyncValue<B, T> build() {
-            return new GenericSyncValue<>(type, getter, setter, deserializer, serializer, equals, copy, nullable);
+            return new GenericSyncValue<>(type, getter, setter, deserializer, serializer, equals, copy, nullable).allowC2S(this.allowC2S);
         }
     }
 }

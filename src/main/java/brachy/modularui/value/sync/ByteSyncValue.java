@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public class ByteSyncValue extends ValueSyncHandler<ByteBuf, Byte> implements IByteSyncValue<ByteBuf, Byte> {
+public class ByteSyncValue extends ValueSyncHandler<ByteBuf, Byte, ByteSyncValue> implements IByteSyncValue<ByteBuf, Byte> {
 
     private byte cache;
     private final ByteValue.Supplier getter;

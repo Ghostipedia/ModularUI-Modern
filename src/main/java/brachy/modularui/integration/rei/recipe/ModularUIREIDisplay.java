@@ -2,7 +2,6 @@ package brachy.modularui.integration.rei.recipe;
 
 import brachy.modularui.api.widget.ITooltip;
 import brachy.modularui.api.widget.IWidget;
-import brachy.modularui.client.component.FormattedTextContents;
 import brachy.modularui.drawable.text.RichText;
 import brachy.modularui.integration.recipeviewer.RecipeSlotRole;
 import brachy.modularui.integration.recipeviewer.RecipeViewerScreenWrapper;
@@ -19,13 +18,10 @@ import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widgets.slot.FluidSlot;
 import brachy.modularui.widgets.slot.ItemSlot;
 
-import com.mojang.datafixers.util.Either;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.tooltip.TooltipComponent;
 
 import lombok.Getter;
 import me.shedaniel.math.Rectangle;
@@ -36,6 +32,7 @@ import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.display.Display;
 import me.shedaniel.rei.api.common.entry.EntryIngredient;
 import me.shedaniel.rei.impl.client.gui.widget.EntryWidget;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
@@ -45,6 +42,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+@ApiStatus.Experimental
 public class ModularUIREIDisplay implements Display {
 
     private final ResourceLocation recipeId;
@@ -137,11 +135,7 @@ public class ModularUIREIDisplay implements Display {
                 if (tooltip.tooltip().getRichText() instanceof RichText richText) {
                     var textList = richText.getAsText();
                     entryWidget.tooltipProcessor(text -> {
-                        for (Either<FormattedText, TooltipComponent> line : textList) {
-                            // TODO this is stupid
-                            line.ifLeft(ft -> text.add(MutableComponent.create(new FormattedTextContents(ft))));
-                            line.ifRight(text::add);
-                        }
+                        textList.forEach(line -> line.map(t -> text.add((Component) t), text::add));
                         return text;
                     });
                 }
@@ -190,22 +184,22 @@ public class ModularUIREIDisplay implements Display {
 
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            return screen.get().mousePressed(mouseX, mouseY, button);
+            return screen.get().mousePressed(button);
         }
 
         @Override
         public boolean mouseReleased(double mouseX, double mouseY, int button) {
-            return screen.get().mouseReleased(mouseX, mouseY, button);
+            return screen.get().mouseReleased(button);
         }
 
         @Override
         public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-            return screen.get().mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            return screen.get().mouseDragged(button, dragX, dragY);
         }
 
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-            return screen.get().mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+            return screen.get().mouseScrolled(deltaX, deltaY);
         }
 
         @Override

@@ -7,4 +7,6 @@ public interface EntryList<T> {
     List<T> getStacks();
 
     boolean isEmpty();
+
+    Class<T> getType();
 }

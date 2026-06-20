@@ -13,6 +13,8 @@ import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.utils.Color;
 import brachy.modularui.utils.Rectangle;
 import brachy.modularui.utils.TooltipLines;
+import brachy.modularui.utils.serialization.codec.CodecUtil;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 import brachy.modularui.widget.sizer.Area;
 
 import net.minecraft.client.gui.screens.Screen;
@@ -20,13 +22,13 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.Mth;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.datafixers.util.Either;
+import com.mojang.serialization.Codec;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.event.RenderTooltipEvent;
@@ -36,8 +38,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.experimental.Tolerate;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -46,10 +51,18 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
 
     private static final Area HOLDER = new Area();
 
+    public static final MutableObjectCodec<RichTooltip> CODEC = MutableObjectCodec.builder(RichTooltip::new)
+            .addOpt("posType", RichTooltip::pos, RichTooltip::pos, CodecUtil.wrapNullsafe(Pos.CODEC), null)
+            .addOpt("showUpTimer", RichTooltip::showUpTimer, RichTooltip::showUpTimer, Codec.INT, 0)
+            .addOpt("titleMargin", RichTooltip::titleMargin, RichTooltip::titleMargin, Codec.INT, 0)
+            .addFieldsOf(RichText.CODEC, tooltip -> tooltip.text)
+            .build();
+
     private final RichText text = new RichText();
     @Setter
     private Consumer<Area> parent;
     @Setter
+    @Getter
     private Pos pos = null;
     private Consumer<RichTooltip> tooltipBuilder;
     @Getter
@@ -58,11 +71,11 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
     @Getter
     @Setter
     private boolean autoUpdate = false;
-    private int titleMargin = 0;
+    @Getter private int titleMargin = 0;
     private boolean appliedMargin = true;
 
     private int x = 0, y = 0;
-    private int maxWidth = Integer.MAX_VALUE;
+    @Getter private int maxWidth = Integer.MAX_VALUE;
 
     private boolean dirty;
 
@@ -134,7 +147,9 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         }
         Area screen = context.getScreenArea();
         this.maxWidth = Math.min(this.maxWidth, screen.width);
-        int mouseX = context.getAbsMouseX(), mouseY = context.getAbsMouseY();
+        // Correct the mouse pos with the calculated screen offset.
+        // See GuiContext#updateState(int,int,float).
+        int mouseX = context.getAbsMouseX() + screen.x, mouseY = context.getAbsMouseY() + screen.y;
         TextRenderer renderer = TextRenderer.SHARED;
 
         RichText copy = this.text.copy();
@@ -182,7 +197,8 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         RenderSystem.disableBlend();
 
         context.getGraphics().pose().pushPose();
-        context.getGraphics().pose().translate(0, 0, 400);
+        // Since we applied an offset to the mouse pos earlier, we need to correct it back, but only visually.
+        context.getGraphics().pose().translate(-screen.x, -screen.y, 400);
         GuiDraw.drawTooltipBackground(context, stack, components, area.x, area.y, area.width, area.height, copy);
 
         // NeoForge.EVENT_BUS.post(new RenderTooltipEvent.PostBackground(stack, textLines, area.x, area.y,
@@ -373,18 +389,14 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
 
     public RichTooltip addFromItem(ItemStack item) {
         List<Component> lines = MCHelper.getItemToolTip(item);
-        add((FormattedText) lines.getFirst());
+        add(lines.getFirst());
         if (lines.size() > 1) {
             spaceLine();
             for (int i = 1, n = lines.size(); i < n; i++) {
-                add((FormattedText) lines.get(i)).newLine();
+                add(lines.get(i)).newLine();
             }
         }
         return this;
-    }
-
-    public RichTooltip titleMargin() {
-        return titleMargin(0);
     }
 
     public RichTooltip titleMargin(int margin) {
@@ -426,7 +438,51 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         area.set(Area.ZERO);
     }
 
-    public enum Pos {
+    public RichTooltip copy() {
+        RichTooltip tooltip = new RichTooltip();
+        tooltip.text.copyPropertiesOf(this.text);
+        tooltip.parent = this.parent;
+        tooltip.pos = this.pos;
+        tooltip.tooltipBuilder = this.tooltipBuilder;
+        tooltip.showUpTimer = this.showUpTimer;
+        tooltip.autoUpdate = this.autoUpdate;
+        tooltip.titleMargin = this.titleMargin;
+        tooltip.appliedMargin = this.appliedMargin;
+        tooltip.x = this.x;
+        tooltip.y = this.y;
+        tooltip.maxWidth = this.maxWidth;
+        tooltip.dirty = this.dirty;
+        return tooltip;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof RichTooltip that)) return false;
+
+        return showUpTimer == that.showUpTimer && autoUpdate == that.autoUpdate &&
+                titleMargin == that.titleMargin && appliedMargin == that.appliedMargin
+                && x == that.x && y == that.y && maxWidth == that.maxWidth &&
+                text.equals(that.text) && Objects.equals(parent, that.parent) && pos == that.pos &&
+                Objects.equals(tooltipBuilder, that.tooltipBuilder);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = text.hashCode();
+        result = 31 * result + Objects.hashCode(parent);
+        result = 31 * result + pos.hashCode();
+        result = 31 * result + Objects.hashCode(tooltipBuilder);
+        result = 31 * result + showUpTimer;
+        result = 31 * result + Boolean.hashCode(autoUpdate);
+        result = 31 * result + titleMargin;
+        result = 31 * result + Boolean.hashCode(appliedMargin);
+        result = 31 * result + x;
+        result = 31 * result + y;
+        result = 31 * result + maxWidth;
+        return result;
+    }
+
+    public enum Pos implements StringRepresentable {
 
         ABOVE(GuiAxis.Y),
         BELOW(GuiAxis.Y),
@@ -437,10 +493,19 @@ public class RichTooltip implements IRichTextBuilder<RichTooltip> {
         NEXT_TO_MOUSE(null),
         FIXED(null);
 
+        public static final Codec<Pos> CODEC = StringRepresentable.fromEnum(Pos::values);
+
         public final GuiAxis axis;
+        public final String name;
 
         Pos(GuiAxis axis) {
             this.axis = axis;
+            this.name = name().toLowerCase(Locale.ENGLISH);
+        }
+
+        @Override
+        public @NotNull String getSerializedName() {
+            return this.name;
         }
     }
 }

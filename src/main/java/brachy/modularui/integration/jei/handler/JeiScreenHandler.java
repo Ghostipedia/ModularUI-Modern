@@ -104,8 +104,16 @@ public class JeiScreenHandler<T extends Screen & IMuiScreen> extends RecipeViewe
     public void setSearchFocused(boolean focused) {
         // only set the search field state if it's JEI's actual search field and not JEMI/TMRV
         if (ModularUIJeiPlugin.getRuntime().getIngredientListOverlay() instanceof IngredientListOverlayAccessor accessor) {
-            accessor.mui$getSearchField().setFocused(focused);
+            accessor.getSearchField().setFocused(focused);
         }
+    }
+
+    @Override
+    public boolean isSearchFocused(){
+        if (ModularUIJeiPlugin.getRuntime().getIngredientListOverlay() instanceof IngredientListOverlayAccessor accessor){
+            return accessor.getSearchField().isFocused();
+        }
+        return false;
     }
 
     @Override

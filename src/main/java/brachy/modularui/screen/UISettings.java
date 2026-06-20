@@ -15,6 +15,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.IntFunction;
@@ -29,10 +31,12 @@ public class UISettings {
     @OnlyIn(Dist.CLIENT)
     private GuiCreator guiSupplier;
     private Predicate<Player> canInteractWith;
+    @Getter private String theme;
+    @Getter private final RecipeViewerSettings recipeViewerSettings;
     @Getter
-    private String theme;
-    @Getter
-    private final RecipeViewerSettings recipeViewerSettings;
+    @Setter
+    @Accessors(fluent = true)
+    private boolean drawTooltipExternally;
 
     public UISettings() {
         this(new RecipeViewerSettingsImpl());

@@ -28,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Accessors(fluent = true, chain = true)
-public class FluidSlotSyncHandler extends ValueSyncHandler<RegistryFriendlyByteBuf, FluidStack> {
+public class FluidSlotSyncHandler extends ValueSyncHandler<RegistryFriendlyByteBuf, FluidStack, FluidSlotSyncHandler> {
 
     public static final int SYNC_CLICK = 1;
     public static final int SYNC_SCROLL = 2;
@@ -49,6 +49,7 @@ public class FluidSlotSyncHandler extends ValueSyncHandler<RegistryFriendlyByteB
     public FluidSlotSyncHandler(IFluidTank fluidTank) {
         this.fluidTank = fluidTank;
         this.fluidHandler = FluidTankHandler.getTankFluidHandler(fluidTank);
+        allowC2S();
     }
 
     public FluidSlotSyncHandler(IMultiFluidTankHandler fluidTank, int index) {

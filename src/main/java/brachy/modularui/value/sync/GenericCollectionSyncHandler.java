@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public abstract class GenericCollectionSyncHandler<B extends ByteBuf, T, C extends Collection<T>> extends ValueSyncHandler<B, C> {
+public abstract class GenericCollectionSyncHandler<B extends ByteBuf, T, C extends Collection<T>, S extends GenericCollectionSyncHandler<B, T, C, S>> extends ValueSyncHandler<B, C, S> {
 
     private final Supplier<C> getter;
     private final Consumer<C> setter;

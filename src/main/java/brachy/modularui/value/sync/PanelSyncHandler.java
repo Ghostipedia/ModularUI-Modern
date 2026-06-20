@@ -2,11 +2,13 @@ package brachy.modularui.value.sync;
 
 import brachy.modularui.api.IPanelHandler;
 import brachy.modularui.api.widget.ISynced;
+import brachy.modularui.screen.BuildPanelEvent;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
 import brachy.modularui.widget.WidgetTree;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.neoforged.neoforge.common.NeoForge;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +20,7 @@ import java.util.Objects;
  * Register it in any {@link PanelSyncManager} (preferably the main one).
  * Then you can call {@link #openPanel()} and {@link #closePanel()} from any side.
  */
-public final class PanelSyncHandler extends SyncHandler implements IPanelHandler {
+public final class PanelSyncHandler extends SyncHandler<PanelSyncHandler> implements IPanelHandler {
 
     public static final int SYNC_NOTIFY_OPEN = 0;
     public static final int SYNC_OPEN = 1;
@@ -40,10 +42,19 @@ public final class PanelSyncHandler extends SyncHandler implements IPanelHandler
     PanelSyncHandler(IPanelBuilder panelBuilder, boolean subPanel) {
         this.panelBuilder = panelBuilder;
         this.subPanel = subPanel;
+        allowC2S();
     }
 
-    public ModularPanel<?> createUI(PanelSyncManager syncManager) {
-        return this.panelBuilder.buildUI(syncManager, this);
+    public ModularPanel<?> createUI(PanelSyncManager syncManager, boolean client) {
+        var panel = this.panelBuilder.buildUI(syncManager, this);
+        if (!client) return panel;
+        ModularScreen screen = syncManager.getContainer().getScreen();
+        BuildPanelEvent.SubPanel event = new BuildPanelEvent.SubPanel(screen, panel);
+        NeoForge.EVENT_BUS.post(event);
+        if (event.getOpeningPanel() != null) {
+            panel = event.getOpeningPanel();
+        }
+        return panel;
     }
 
     @Override
@@ -63,7 +74,7 @@ public final class PanelSyncHandler extends SyncHandler implements IPanelHandler
             throw new IllegalStateException("Can't reopen synced panel in another screen!");
         } else if (this.syncManager == null) {
             this.syncManager = new PanelSyncManager(getSyncManager().getModularSyncManager(), false);
-            this.openedPanel = Objects.requireNonNull(createUI(this.syncManager));
+            this.openedPanel = Objects.requireNonNull(createUI(this.syncManager, client));
             this.panelName = this.openedPanel.getName();
             this.openedPanel.setPanelSyncHandler(this);
             WidgetTree.collectSyncValues(this.syncManager, this.openedPanel, false);

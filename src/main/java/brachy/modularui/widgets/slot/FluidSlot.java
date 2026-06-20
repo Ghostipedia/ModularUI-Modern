@@ -17,8 +17,6 @@ import brachy.modularui.utils.MouseData;
 import brachy.modularui.value.sync.FluidSlotSyncHandler;
 import brachy.modularui.widgets.AbstractFluidDisplayWidget;
 
-import lombok.Getter;
-
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
@@ -29,6 +27,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
+import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -53,6 +52,7 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
     private FluidSlotSyncHandler syncHandler;
 
     @Getter private boolean alwaysShowFull = true;
+
     public FluidSlot() {
         tooltip().autoUpdate(true);
         tooltipBuilder(this::addTooltip);
@@ -73,7 +73,7 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
             } else {
                 tooltip.addLine(Text.lang("modularui.fluid.empty"));
                 tooltip.addLine(
-                        Text.lang("modularui.fluid_pipe.capacity", formatFluidTooltipAmount(fluidTank.getCapacity()),
+                        Text.lang("modularui.fluid.capacity", formatFluidTooltipAmount(fluidTank.getCapacity()),
                                 getUnit()));
             }
             if (this.syncHandler.controlsAmount()) {
@@ -98,7 +98,7 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
                         tooltip.addLine(Text.lang("modularui.fluid.click_to_empty"));
                     }
                 } else {
-                    tooltip.addLine(Text.lang("modularui.tooltip.hold_shift"));
+                    tooltip.addLine(Text.lang("modularui.tooltip.shift"));
                 }
             }
         }
@@ -207,7 +207,7 @@ public class FluidSlot extends AbstractFluidDisplayWidget<FluidSlot>
     }
 
     @Override
-    protected int getCapacity() {
+    public int getCapacity() {
         return this.alwaysShowFull ? 0 : getFluidTank().getCapacity();
     }
 

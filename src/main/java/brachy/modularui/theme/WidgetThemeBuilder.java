@@ -2,7 +2,6 @@ package brachy.modularui.theme;
 
 import brachy.modularui.api.IThemeApi;
 import brachy.modularui.api.drawable.IDrawable;
-import brachy.modularui.drawable.DrawableSerialization;
 import brachy.modularui.utils.serialization.json.JsonBuilder;
 
 public class WidgetThemeBuilder<T extends WidgetTheme, B extends WidgetThemeBuilder<T, B>> extends JsonBuilder {
@@ -23,7 +22,7 @@ public class WidgetThemeBuilder<T extends WidgetTheme, B extends WidgetThemeBuil
     }
 
     public B color(int color) {
-        add(IThemeApi.COLOR, color);
+        add(IThemeApi.COLOR, ThemeBuilder.colorJson(color));
         return getThis();
     }
 
@@ -33,7 +32,7 @@ public class WidgetThemeBuilder<T extends WidgetTheme, B extends WidgetThemeBuil
     }
 
     public B iconColor(int color) {
-        add(IThemeApi.ICON_COLOR, color);
+        add(IThemeApi.ICON_COLOR, ThemeBuilder.colorJson(color));
         return getThis();
     }
 
@@ -43,11 +42,11 @@ public class WidgetThemeBuilder<T extends WidgetTheme, B extends WidgetThemeBuil
     }
 
     public B background(IDrawable background) {
-        add(IThemeApi.BACKGROUND, DrawableSerialization.serialize(background));
+        add(IThemeApi.BACKGROUND, IDrawable.toJsonOrThrow(background));
         return getThis();
     }
 
     public B background(String textureId) {
-        return background(new JsonBuilder().add("type", "texture").add("id", textureId));
+        return background(ThemeBuilder.textureJson(textureId));
     }
 }

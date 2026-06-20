@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public abstract class AbstractGenericSyncValue<B extends ByteBuf, T> extends ValueSyncHandler<B, T> {
+public abstract class AbstractGenericSyncValue<B extends ByteBuf, T, S extends AbstractGenericSyncValue<B, T, S>> extends ValueSyncHandler<B, T, S> {
 
     private final Class<T> type;
     private final Supplier<T> getter;
@@ -123,8 +123,8 @@ public abstract class AbstractGenericSyncValue<B extends ByteBuf, T> extends Val
     }
 
     @SuppressWarnings("unchecked")
-    public <V> AbstractGenericSyncValue<B, V> cast() {
-        return (AbstractGenericSyncValue<B, V>) this;
+    public <V> AbstractGenericSyncValue<B, V, ?> cast() {
+        return (AbstractGenericSyncValue<B, V, ?>) this;
     }
 
     /**

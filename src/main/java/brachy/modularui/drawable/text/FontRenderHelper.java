@@ -1,9 +1,9 @@
 package brachy.modularui.drawable.text;
 
+import brachy.modularui.ModularUI;
 import brachy.modularui.api.MCHelper;
 import brachy.modularui.api.drawable.Text;
 import brachy.modularui.core.mixins.client.StringSplitterAccessor;
-
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Alignment;
@@ -61,15 +61,21 @@ public class FontRenderHelper {
     }
 
     public static int getDefaultTextHeight() {
+        if (!ModularUI.isClientThread()) return 9;
         Font fr = MCHelper.getFont();
         return fr != null ? fr.lineHeight : 9;
     }
 
     @OnlyIn(Dist.CLIENT)
     public static void drawComponent(Component comp, GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
+        drawComponent(comp, context, x, y, width, height, widgetTheme, 1f);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void drawComponent(Component comp, GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme, float scale) {
         Text.renderer.setAlignment(Alignment.CENTER, width, height);
         Text.renderer.setColor(widgetTheme.getTextColor());
-        Text.renderer.setScale(1f);
+        Text.renderer.setScale(scale);
         Text.renderer.setPos(x, y);
         Text.renderer.setShadow(widgetTheme.isTextShadow());
         Text.renderer.draw(context.getGraphics(), comp);

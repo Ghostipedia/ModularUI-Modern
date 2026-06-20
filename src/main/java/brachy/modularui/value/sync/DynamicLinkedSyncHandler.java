@@ -2,7 +2,8 @@ package brachy.modularui.value.sync;
 
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.widget.WidgetTree;
-import brachy.modularui.widgets.DynamicSyncedWidget;
+
+import brachy.modularui.widgets.dynamic.IDynamicHandler;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 
@@ -13,8 +14,14 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class DynamicLinkedSyncHandler<B extends ByteBuf, S extends ValueSyncHandler<B, ?>> extends SyncHandler
-        implements IDynamicSyncNotifiable {
+/**
+ * This is a variation of {@link DynamicSyncHandler} with the difference that this is linked to a {@link ValueSyncHandler}.
+ * This sync handler is automatically notified, when the linked value is updated. The widget provider here has the linked sync handler as an
+ * argument instead of a packet.
+ * To use it simply pass in a registered value sync handler into the constructor and link it to a
+ * {@link brachy.modularui.widgets.dynamic.DynamicWidget DynamicWidget}.
+ */
+public class DynamicLinkedSyncHandler<B extends ByteBuf, S extends ValueSyncHandler<B, ?, ?>> extends SyncHandler<DynamicLinkedSyncHandler<B, S>> implements IDynamicHandler {
 
     private IWidgetProvider<B, S> widgetProvider;
     private Consumer<IWidget> onWidgetUpdate;
@@ -26,6 +33,7 @@ public class DynamicLinkedSyncHandler<B extends ByteBuf, S extends ValueSyncHand
     public DynamicLinkedSyncHandler(S linkedValue) {
         this.linkedValue = linkedValue;
         linkedValue.setChangeListener(() -> notifyUpdate(false));
+        allowC2S();
     }
 
     @Override
@@ -96,8 +104,7 @@ public class DynamicLinkedSyncHandler<B extends ByteBuf, S extends ValueSyncHand
      * Sets a widget creator which is called on client and server. {@link SyncHandler}s can be created here using
      * {@link PanelSyncManager#getOrCreateSyncHandler(String, int, Class, Supplier)}. Returning null in the function
      * will not update the widget.
-     * On client side the result is handed over to a linked
-     * {@link DynamicSyncedWidget}.
+     * On client side the result is handed over to a linked {@link brachy.modularui.widgets.dynamic.DynamicWidget DynamicWidget}.
      *
      * @param widgetProvider the widget creator function
      * @return this
@@ -109,7 +116,7 @@ public class DynamicLinkedSyncHandler<B extends ByteBuf, S extends ValueSyncHand
     }
 
     /**
-     * An internal function which is used to link the {@link DynamicSyncedWidget}.
+     * An internal function which is used to link the {@link brachy.modularui.widgets.dynamic.DynamicWidget DynamicWidget}.
      */
     @ApiStatus.Internal
     @Override
@@ -121,7 +128,7 @@ public class DynamicLinkedSyncHandler<B extends ByteBuf, S extends ValueSyncHand
         }
     }
 
-    public interface IWidgetProvider<B extends ByteBuf, S extends ValueSyncHandler<B, ?>> {
+    public interface IWidgetProvider<B extends ByteBuf, S extends ValueSyncHandler<B, ?, ?>> {
 
         /**
          * This is the function which creates a widget on client and server.

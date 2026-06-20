@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class GenericSetSyncHandler<B extends ByteBuf, T> extends GenericCollectionSyncHandler<B, T, Set<T>> {
+public class GenericSetSyncHandler<B extends ByteBuf, T> extends GenericCollectionSyncHandler<B, T, Set<T>, GenericSetSyncHandler<B, T>> {
 
     private final Set<T> cache = new ObjectOpenHashSet<T>();
 

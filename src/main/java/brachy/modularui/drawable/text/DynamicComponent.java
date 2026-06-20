@@ -5,6 +5,10 @@ import brachy.modularui.screen.ClientScreenHandler;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 
+import brachy.modularui.widgets.TextWidget;
+
+import lombok.Getter;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
@@ -15,6 +19,7 @@ import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class DynamicComponent implements Component, IDrawable {
@@ -22,6 +27,7 @@ public class DynamicComponent implements Component, IDrawable {
     private long time = -1;
     private final Supplier<Component> supplier;
     private Style style = Style.EMPTY;
+    @Getter private float scale = 1f;
     private Component lastComp;
 
     public DynamicComponent(Supplier<Component> supplier) {
@@ -63,19 +69,32 @@ public class DynamicComponent implements Component, IDrawable {
     }
 
     @Override
+    public TextWidget<?> asWidget() {
+        return new TextWidget<>(this::getComp);
+    }
+
+    public DynamicComponent scale(float scale) {
+        this.scale = scale;
+        return this;
+    }
+
+    @Override
     public void draw(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
         Component comp = getComp();
         if (comp instanceof MutableComponent mutableComponent) {
             Style currentStyle = mutableComponent.getStyle();
             mutableComponent.setStyle(currentStyle.applyTo(this.style));
             if (mutableComponent instanceof ModularComponent modularComponent) {
+                float s = modularComponent.getScale();
+                modularComponent.scale(s * this.scale);
                 modularComponent.draw(context, x, y, width, height, widgetTheme);
+                modularComponent.scale(s);
             } else {
-                FontRenderHelper.drawComponent(comp, context, x, y, width, height, widgetTheme);
+                FontRenderHelper.drawComponent(comp, context, x, y, width, height, widgetTheme, this.scale);
             }
             mutableComponent.setStyle(currentStyle);
         } else {
-            FontRenderHelper.drawComponent(comp, context, x, y, width, height, widgetTheme);
+            FontRenderHelper.drawComponent(comp, context, x, y, width, height, widgetTheme, this.scale);
         }
     }
 
@@ -94,5 +113,19 @@ public class DynamicComponent implements Component, IDrawable {
 
     public Style getFallbackStyle() {
         return this.style;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof DynamicComponent that)) return false;
+
+        return Objects.equals(supplier, that.supplier) && style.equals(that.style);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(supplier);
+        result = 31 * result + style.hashCode();
+        return result;
     }
 }

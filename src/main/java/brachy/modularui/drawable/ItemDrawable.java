@@ -1,85 +1,91 @@
 package brachy.modularui.drawable;
 
-import brachy.modularui.api.IJsonSerializable;
 import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
-import brachy.modularui.utils.RegistryAccessContainer;
-import brachy.modularui.widget.Widget;
+import brachy.modularui.utils.serialization.codec.CodecUtil;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 
+import net.minecraft.Util;
 import net.minecraft.core.component.DataComponentPatch;
-import net.minecraft.util.ExtraCodecs;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.ItemLike;
+
+import com.google.gson.JsonObject;
+
+import com.google.gson.JsonParseException;
+
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.Accessors;
-import lombok.experimental.Tolerate;
-import org.jetbrains.annotations.NotNull;
+import org.apache.commons.lang3.ArrayUtils;
 
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
-@Accessors(chain = true)
-public class ItemDrawable implements IDrawable, IJsonSerializable<ItemDrawable> {
+@ToString
+@Accessors(fluent = true, chain = true)
+public class ItemDrawable implements IDrawable {
 
-    private static final Codec<ItemStack> OPTIONAL_SINGLE_ITEM_CODEC = ExtraCodecs.optionalEmptyMap(ItemStack.SINGLE_ITEM_CODEC)
-            .xmap(stack -> stack.orElse(ItemStack.EMPTY), stack -> stack.isEmpty() ? Optional.empty() : Optional.of(stack));
+    public static final MutableObjectCodec<ItemDrawable> CODEC = MutableObjectCodec.drawableBuilder(ItemDrawable::new)
+            .add("items", ItemDrawable::items, ItemDrawable::getItemList, CodecUtil.listLike(ItemStack.CODEC)).alias("item")
+            .addOpt("cycleTime", ItemDrawable::cycleTime, ItemDrawable::cycleTime, Codec.INT, 1000)
+            .build();
 
-    public static final Codec<ItemDrawable> CODEC = OPTIONAL_SINGLE_ITEM_CODEC.xmap(ItemDrawable::new, ItemDrawable::getItem);
-
+    private ItemStack[] items = new ItemStack[0];
     @Getter
     @Setter
-    private @NotNull ItemStack item = ItemStack.EMPTY;
+    private int cycleTime = 1000;
 
-    public ItemDrawable() {}
-
-    public ItemDrawable(@NotNull ItemStack item) {
-        setItem(item);
+    private ItemDrawable() {
+        this(new ItemStack[0]);
     }
 
-    public ItemDrawable(@NotNull Item item) {
-        setItem(item);
+    public ItemDrawable(Ingredient ingredient) {
+        this(ingredient.getItems());
     }
 
-    public ItemDrawable(@NotNull Item item, int amount) {
-        setItem(item, amount);
+    public ItemDrawable(ItemStack... items) {
+        items(items);
     }
 
-    public ItemDrawable(@NotNull Item item, int amount, @NotNull DataComponentPatch componentPatch) {
-        setItem(item, amount, componentPatch);
+    public ItemDrawable(ItemStack item) {
+        item(item);
     }
 
-    public ItemDrawable(@NotNull Block item) {
-        setItem(item);
+    public ItemDrawable(ItemLike item) {
+        item(item);
     }
 
-    public ItemDrawable(@NotNull Block item, int amount) {
-        setItem(new ItemStack(item, amount));
+    public ItemDrawable(ItemLike item, int amount) {
+        item(item, amount);
+    }
+
+    public ItemDrawable(ItemLike item, int amount, DataComponentPatch componentPatch) {
+        item(item, amount, componentPatch);
     }
 
     public static ItemDrawable ofJson(JsonObject json) {
-        return CODEC.parse(JsonOps.INSTANCE, json).getOrThrow(JsonParseException::new);
+        return CODEC.codec().parse(JsonOps.INSTANCE, json).getOrThrow(JsonParseException::new);
     }
 
     @OnlyIn(Dist.CLIENT)
     @Override
     public void draw(GuiContext context, int x, int y, int width, int height, WidgetTheme widgetTheme) {
-        applyColor(widgetTheme.getColor());
-        GuiDraw.drawItem(context.getGraphics(), this.item, x, y, width, height, context.getCurrentDrawingZ());
-    }
-
-    @Override
-    public int getDefaultWidth() {
-        return 16;
+        if (this.items.length == 0) return;
+        ItemStack item = this.items.length == 1 ? this.items[0] :
+                this.items[(int) (Util.getMillis() % (this.cycleTime * this.items.length)) / this.cycleTime];
+        if (item != null) {
+            GuiDraw.drawItem(context.getGraphics(), item, x, y, width, height, context.getCurrentDrawingZ());
+        }
     }
 
     @Override
@@ -88,60 +94,94 @@ public class ItemDrawable implements IDrawable, IJsonSerializable<ItemDrawable> 
     }
 
     @Override
-    public Widget<?> asWidget() {
-        return IDrawable.super.asWidget().size(16);
+    public int getDefaultWidth() {
+        return 16;
     }
 
-    @Tolerate
-    public ItemDrawable setItem(@NotNull Item item) {
-        return setItem(item, 1, DataComponentPatch.EMPTY);
+    public ItemStack[] getItems() {
+        return this.items;
     }
 
-    @Tolerate
-    public ItemDrawable setItem(@NotNull Item item, int amount) {
-        return setItem(item, amount, DataComponentPatch.EMPTY);
+    public void ingredient(Ingredient ingredient) {
+        items(ingredient.getItems());
     }
 
-    @Tolerate
-    public ItemDrawable setItem(@NotNull Item item, int amount, @NotNull DataComponentPatch componentPatch) {
-        ItemStack stack = new ItemStack(item, amount);
-        stack.applyComponents(componentPatch);
-        return setItem(stack);
+    public ItemDrawable items(Collection<ItemStack> items) {
+        return items(items.toArray(ItemStack[]::new));
     }
 
-    @Tolerate
-    public ItemDrawable setItem(@NotNull Block item) {
-        return setItem(item, 1);
+    public ItemDrawable items(ItemStack... items) {
+        this.items = items;
+        return this;
     }
 
-    @Tolerate
-    public ItemDrawable setItem(@NotNull Block item, int amount) {
-        return setItem(new ItemStack(item, amount));
-    }
-
-    @Override
-    public Codec<ItemDrawable> getCodec() {
-        return CODEC;
-    }
-
-    @Override
-    public void loadFromJson(JsonObject json) {
-        var jsonOps = RegistryAccessContainer.current().createSerializationContext(JsonOps.INSTANCE);
-
-        setItem(OPTIONAL_SINGLE_ITEM_CODEC.parse(jsonOps, json).getOrThrow(JsonParseException::new));
-    }
-
-    @Override
-    public boolean saveToJson(JsonObject json) {
-        if (this.item.isEmpty()) {
-            return true;
+    public ItemDrawable item(ItemStack item) {
+        if (this.items.length != 1) {
+            this.items = new ItemStack[1];
         }
+        this.items[0] = item;
+        return this;
+    }
 
-        var jsonOps = RegistryAccessContainer.current().createSerializationContext(JsonOps.INSTANCE);
-        JsonElement saved = OPTIONAL_SINGLE_ITEM_CODEC.encode(this.item, jsonOps, json).getOrThrow(JsonParseException::new);
-        if (saved.isJsonObject()) {
-            json.asMap().putAll(saved.getAsJsonObject().asMap());
+    public ItemDrawable item(ItemLike item) {
+        return item(item.asItem(), 1, DataComponentPatch.EMPTY);
+    }
+
+    public ItemDrawable item(ItemLike item, int amount) {
+        return item(item, amount, DataComponentPatch.EMPTY);
+    }
+
+    public ItemDrawable item(ItemLike item, int amount, DataComponentPatch componentPatch) {
+        ItemStack itemStack = new ItemStack(item, amount);
+        itemStack.applyComponents(componentPatch);
+        return item(itemStack);
+    }
+
+    public ItemDrawable addItem(ItemStack item) {
+        this.items = ArrayUtils.add(this.items, item);
+        return this;
+    }
+
+    public ItemDrawable addItem(ItemLike item) {
+        return addItem(item.asItem(), 1, DataComponentPatch.EMPTY);
+    }
+
+    public ItemDrawable addItem(ItemLike item, int amount) {
+        return addItem(item, amount, DataComponentPatch.EMPTY);
+    }
+
+    public ItemDrawable addItem(ItemLike item, int amount, DataComponentPatch componentPatch) {
+        ItemStack itemStack = new ItemStack(item, amount);
+        itemStack.applyComponents(componentPatch);
+        return addItem(itemStack);
+    }
+
+    public List<ItemStack> getItemList() {
+        return Arrays.asList(this.items);
+    }
+
+    @Override
+    public String getTypeName() {
+        return "item";
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof ItemDrawable that)) return false;
+        if (this.cycleTime != that.cycleTime || this.items.length != that.items.length) return false;
+        for (int i = 0; i < this.items.length; i++) {
+            var i1 = this.items[i];
+            var i2 = that.items[i];
+            if ((i1 == null || i2 == null) && i1 != i2) return false;
+            if (!ItemStack.isSameItemSameComponents(i1, i2)) return false;
         }
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.hashCode(this.items);
+        result = 31 * result + this.cycleTime;
+        return result;
     }
 }

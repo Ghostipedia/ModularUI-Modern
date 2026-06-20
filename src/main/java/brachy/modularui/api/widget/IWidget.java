@@ -9,21 +9,30 @@ import brachy.modularui.screen.viewport.ModularGuiContext;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.FormattingUtil;
 import brachy.modularui.utils.Stencil;
+import brachy.modularui.utils.serialization.codec.CodecRegistry;
 import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widget.sizer.StandardResizer;
 
+import com.mojang.serialization.Codec;
+
 import com.google.common.base.CharMatcher;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 /**
  * A widget in a GUI.
  */
 public interface IWidget extends ITreeNode<IWidget> {
+
+    CodecRegistry<IWidget> CODECS = new CodecRegistry<>();
+    Codec<IWidget> CODEC = Codec.STRING.dispatch("widget", IWidget::getTypeName, CODECS::getNullable);
 
     String WIDGET_TRANSLATION_KEY_FORMAT = "widget.%s.name";
     /**
@@ -304,6 +313,19 @@ public interface IWidget extends ITreeNode<IWidget> {
         return !getChildren().isEmpty();
     }
 
+    default void visitTransformChildren(UnaryOperator<IWidget> op) {}
+
+    default void visitTransformAllChildren(UnaryOperator<IWidget> op) {
+        ObjectList<IWidget> parents = new ObjectArrayList<>();
+        parents.add(this);
+        while (!parents.isEmpty()) {
+            parents.removeFirst().visitTransformChildren(child -> {
+                if (child.hasChildren()) parents.addLast(child);
+                return op.apply(child);
+            });
+        }
+    }
+
     void scheduleResize();
 
     boolean requiresResize();
@@ -361,6 +383,15 @@ public interface IWidget extends ITreeNode<IWidget> {
 
     @Nullable
     String getName();
+
+    /**
+     * The type name of this widget. This is used for codecs.
+     *
+     * @return the simple class name or other fitting name
+     */
+    default String getTypeName() {
+        return getClass().getSimpleName();
+    }
 
     default boolean isName(String name) {
         return name.equals(getName());

@@ -30,7 +30,6 @@ import java.util.function.Supplier;
 public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
 
     public static final String AUTO_SYNC_PREFIX = "auto_sync:";
-    private static final String CURSOR_KEY = ISyncRegistrar.makeSyncKey("cursor_slot", 255255);
 
     private final Map<String, PanelSyncManager> panelSyncManagerMap = new Object2ObjectOpenHashMap<>();
     // A set of all panels which have been opened during the ui. May also contain closed panels.
@@ -40,7 +39,6 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
     private PanelSyncManager mainPSM;
     @Getter
     private ModularContainerMenu menu;
-    private final CursorSlotSyncHandler cursorSlotSyncHandler = new CursorSlotSyncHandler();
     @Getter
     private final boolean client;
     private State state = State.INIT;
@@ -59,7 +57,6 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
         if (this.mainPSM.getSlotGroup(PlayerSlotGroup.NAME) == null) {
             this.mainPSM.bindPlayerInventory(getPlayer());
         }
-        this.mainPSM.syncValue(CURSOR_KEY, this.cursorSlotSyncHandler);
         open(mainPanelName, this.mainPSM);
     }
 
@@ -83,8 +80,7 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
         if (isOpen()) return;
         if (isDisposed()) throw new IllegalStateException("Can't open sync manager after it has been disposed!");
         if (this.menu == null) {
-            throw new IllegalStateException(
-                    "Sync Manager can't be opened when its not yet constructed. ModularContainer is null.");
+            throw new IllegalStateException("Sync Manager can't be opened when its not yet constructed. ModularContainer is null.");
         }
         setState(State.OPEN);
         this.panelSyncManagerMap.values().forEach(PanelSyncManager::onOpen);
@@ -108,8 +104,7 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
         throw new NullPointerException("No PanelSyncManager found for name '" + panelName + "'!");
     }
 
-    @Nullable
-    public SyncHandler getSyncHandler(String panelName, String syncKey) {
+    public @Nullable SyncHandler<?> getSyncHandler(String panelName, String syncKey) {
         return getPanelSyncManager(panelName).getSyncHandlerFromMapKey(syncKey);
     }
 
@@ -123,7 +118,6 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
 
     public void setCursorItem(ItemStack item) {
         getPlayer().containerMenu.setCarried(item);
-        this.cursorSlotSyncHandler.sync();
     }
 
     @ApiStatus.Internal
@@ -149,8 +143,7 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
         if (psm != null) {
             psm.receiveWidgetUpdate(mapKey, action, id, buf);
         } else if (!this.panelHistory.contains(panelName)) {
-            ModularUI.LOGGER.throwing(new IllegalStateException(
-                    "A packet was send to panel '\" + panelName + \"' which was not opened yet!"));
+            ModularUI.LOGGER.throwing(new IllegalStateException("A packet was send to panel '" + panelName + "' which was not opened yet!."));
         }
         // else the panel was open at some point
         // we simply discard the packet silently and assume the packet was correctly send, but the panel closed earlier
@@ -175,12 +168,12 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
     }
 
     @Override
-    public boolean hasSyncHandler(SyncHandler syncHandler) {
+    public boolean hasSyncHandler(SyncHandler<?> syncHandler) {
         return this.mainPSM.hasSyncHandler(syncHandler);
     }
 
     @Override
-    public ModularSyncManager syncValue(String name, int id, SyncHandler syncHandler) {
+    public ModularSyncManager syncValue(String name, int id, SyncHandler<?> syncHandler) {
         this.mainPSM.syncValue(name, id, syncHandler);
         return this;
     }
@@ -202,19 +195,18 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
     }
 
     @Override
-    public ModularSyncManager registerSyncedAction(String mapKey, boolean executeClient, boolean executeServer,
-                                                   ISyncedAction action) {
+    public ModularSyncManager registerSyncedAction(String mapKey, boolean executeClient, boolean executeServer, ISyncedAction action) {
         this.mainPSM.registerSyncedAction(mapKey, executeClient, executeServer, action);
         return this;
     }
 
     @Override
-    public <T extends SyncHandler> T getOrCreateSyncHandler(String name, int id, Class<T> clazz, Supplier<T> supplier) {
+    public <T extends SyncHandler<?>> T getOrCreateSyncHandler(String name, int id, Class<T> clazz, Supplier<T> supplier) {
         return this.mainPSM.getOrCreateSyncHandler(name, id, clazz, supplier);
     }
 
     @Override
-    public @Nullable SyncHandler findSyncHandlerNullable(String name, int id) {
+    public @Nullable SyncHandler<?> findSyncHandlerNullable(String name, int id) {
         return this.mainPSM.findSyncHandlerNullable(name, id);
     }
 
@@ -240,9 +232,6 @@ public class ModularSyncManager implements ISyncRegistrar<ModularSyncManager> {
     }
 
     enum State {
-        INIT,
-        OPEN,
-        CLOSED,
-        DISPOSED
+        INIT, OPEN, CLOSED, DISPOSED
     }
 }

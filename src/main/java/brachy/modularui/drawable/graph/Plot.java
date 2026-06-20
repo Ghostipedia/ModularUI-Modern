@@ -1,11 +1,11 @@
 package brachy.modularui.drawable.graph;
 
+import brachy.modularui.utils.MUIRenderTypes;
 import brachy.modularui.api.GuiAxis;
-import brachy.modularui.client.ModularUIRenderTypes;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.utils.Color;
-import brachy.modularui.utils.math.DAM;
 import brachy.modularui.utils.Interpolations;
+import brachy.modularui.utils.math.DAM;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
@@ -172,7 +172,7 @@ public class Plot {
 
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         var pose = graphics.pose().last().pose();
-        var buffer = graphics.bufferSource().getBuffer(ModularUIRenderTypes.guiTriangleStrip());
+        var buffer = graphics.bufferSource().getBuffer(MUIRenderTypes.guiTriangleStrip());
         for (int i = 0; i < this.vertexBuffer.length; i += 2) {
             buffer.addVertex(pose, this.vertexBuffer[i], this.vertexBuffer[i + 1], 0).setColor(r, g, b, a);
         }

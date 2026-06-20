@@ -1,11 +1,8 @@
 package brachy.modularui.drawable;
 
-import brachy.modularui.ModularUI;
+import brachy.modularui.utils.MUIRenderTypes;
 import brachy.modularui.api.drawable.IRichTextBuilder;
-import brachy.modularui.client.GuiSpriteManager;
-import brachy.modularui.client.ModularUIRenderTypes;
 import brachy.modularui.drawable.text.TextRenderer;
-import brachy.modularui.screen.RichTooltip;
 import brachy.modularui.screen.event.RichTooltipEvent;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.screen.viewport.ModularGuiContext;
@@ -85,16 +82,16 @@ public class GuiDraw {
     public static void drawRect(GuiGraphics graphics, float x0, float y0, float w, float h,
                                 int colorTL, int colorTR, int colorBL, int colorBR) {
         Matrix4f pose = graphics.pose().last().pose();
-        VertexConsumer bufferbuilder = graphics.bufferSource().getBuffer(RenderType.guiOverlay());
+        VertexConsumer buffer = graphics.bufferSource().getBuffer(RenderType.guiOverlay());
 
         float x1 = x0 + w, y1 = y0 + h;
-        bufferbuilder.addVertex(pose, x0, y0, 0.0f)
+        buffer.addVertex(pose, x0, y0, 0.0f)
                 .setColor(Color.getRed(colorTL), Color.getGreen(colorTL), Color.getBlue(colorTL), Color.getAlpha(colorTL));
-        bufferbuilder.addVertex(pose, x0, y1, 0.0f)
+        buffer.addVertex(pose, x0, y1, 0.0f)
                 .setColor(Color.getRed(colorBL), Color.getGreen(colorBL), Color.getBlue(colorBL), Color.getAlpha(colorBL));
-        bufferbuilder.addVertex(pose, x1, y1, 0.0f)
+        buffer.addVertex(pose, x1, y1, 0.0f)
                 .setColor(Color.getRed(colorBR), Color.getGreen(colorBR), Color.getBlue(colorBR), Color.getAlpha(colorBR));
-        bufferbuilder.addVertex(pose, x1, y0, 0.0f)
+        buffer.addVertex(pose, x1, y0, 0.0f)
                 .setColor(Color.getRed(colorTR), Color.getGreen(colorTR), Color.getBlue(colorTR), Color.getAlpha(colorTR));
     }
 
@@ -132,11 +129,11 @@ public class GuiDraw {
     public static void drawEllipse(GuiGraphics graphics, float x0, float y0, float w, float h,
                                    int centerColor, int outerColor, int segments) {
         Matrix4f pose = graphics.pose().last().pose();
-        VertexConsumer bufferbuilder = graphics.bufferSource().getBuffer(ModularUIRenderTypes.guiOverlayTriangleFan());
+        VertexConsumer buffer = graphics.bufferSource().getBuffer(MUIRenderTypes.guiOverlayTriangleFan());
 
         float x_2 = x0 + w / 2f, y_2 = y0 + h / 2f;
         // start at center
-        bufferbuilder.addVertex(pose, x_2, y_2, 0.0f)
+        buffer.addVertex(pose, x_2, y_2, 0.0f)
                 .setColor(Color.getRed(centerColor), Color.getGreen(centerColor), Color.getBlue(centerColor),
                         Color.getAlpha(centerColor));
         int a = Color.getAlpha(outerColor), r = Color.getRed(outerColor), g = Color.getGreen(outerColor),
@@ -146,7 +143,7 @@ public class GuiDraw {
             float angle = incr * i;
             float x = Mth.sin(angle) * (w / 2) + x_2;
             float y = Mth.cos(angle) * (h / 2) + y_2;
-            bufferbuilder.addVertex(x, y, 0.0f).setColor(r, g, b, a);
+            buffer.addVertex(x, y, 0.0f).setColor(r, g, b, a);
         }
         RenderSystem.disableBlend();
     }
@@ -170,7 +167,7 @@ public class GuiDraw {
                                        int colorTL, int colorTR, int colorBL, int colorBR,
                                        int cornerRadius, int segments) {
         Matrix4f pose = graphics.pose().last().pose();
-        VertexConsumer buffer = graphics.bufferSource().getBuffer(ModularUIRenderTypes.guiOverlayTriangleFan());
+        VertexConsumer buffer = graphics.bufferSource().getBuffer(MUIRenderTypes.guiOverlayTriangleFan());
 
         float x1 = x0 + w, y1 = y0 + h;
         int color = Color.average(colorBL, colorBR, colorTR, colorTL);
@@ -563,8 +560,10 @@ public class GuiDraw {
             oldYHeadRotO = livingEntity.yHeadRotO;
             oldYHeadRot = livingEntity.yHeadRot;
 
-            livingEntity.yBodyRotO = livingEntity.yBodyRot = 180.0f + xAngle * 20.0f;
-            livingEntity.yHeadRotO = livingEntity.yHeadRot = entity.getYRot();
+            livingEntity.yBodyRot = 180.0f + xAngle * 20.0f;
+            livingEntity.yHeadRot = entity.getYRot();
+            livingEntity.yBodyRotO = livingEntity.yBodyRot;
+            livingEntity.yHeadRotO = livingEntity.yHeadRot;
         }
 
         // skip rotating the render by 180° on the Z axis here, because we always do that in setupDrawEntity
@@ -753,7 +752,7 @@ public class GuiDraw {
         }
         float x0 = left, y0 = top, x1 = right, y1 = bottom, d = border;
 
-        var buffer = graphics.bufferSource().getBuffer(ModularUIRenderTypes.guiTriangleStrip());
+        var buffer = graphics.bufferSource().getBuffer(MUIRenderTypes.guiTriangleStrip());
         var pose = graphics.pose().last().pose();
         pc(buffer, pose, x0, y0, color);
         pc(buffer, pose, x1 - d, y0 + d, color);
@@ -897,7 +896,7 @@ public class GuiDraw {
         float g2 = Color.getGreenF(shadow);
         float b2 = Color.getBlueF(shadow);
 
-        VertexConsumer buffer = graphics.bufferSource().getBuffer(ModularUIRenderTypes.guiOverlayTriangleFan());
+        VertexConsumer buffer = graphics.bufferSource().getBuffer(MUIRenderTypes.guiOverlayTriangleFan());
         buffer.addVertex(pose, x, y, 0).setColor(r1, g1, b1, a1);
 
         Vector3f pos = new Vector3f();
@@ -924,7 +923,7 @@ public class GuiDraw {
         float g2 = Color.getGreenF(shadow);
         float b2 = Color.getBlueF(shadow);
 
-        VertexConsumer buffer = graphics.bufferSource().getBuffer(ModularUIRenderTypes.guiOverlayTriangleFan());
+        VertexConsumer buffer = graphics.bufferSource().getBuffer(MUIRenderTypes.guiOverlayTriangleFan());
         /* Draw opaque base */
         buffer.addVertex(pose, x, y, 0).setColor(r1, g1, b1, a1);
 

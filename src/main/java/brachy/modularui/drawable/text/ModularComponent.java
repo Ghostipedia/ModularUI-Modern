@@ -4,12 +4,13 @@ import brachy.modularui.api.drawable.Text;
 import brachy.modularui.screen.viewport.GuiContext;
 import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.utils.Alignment;
-import brachy.modularui.utils.serialization.json.JsonHelper;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 import brachy.modularui.widgets.TextWidget;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
@@ -20,19 +21,29 @@ import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.chat.contents.ScoreContents;
 import net.minecraft.network.chat.contents.SelectorContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.util.ExtraCodecs;
+import com.mojang.serialization.Codec;
 
-import com.google.gson.JsonObject;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.IntSupplier;
 import java.util.function.UnaryOperator;
 
 public class ModularComponent extends MutableComponent implements Text {
+
+    public static final MutableObjectCodec<ModularComponent> CODEC = MutableObjectCodec.drawableBuilder(ModularComponent.class, "Text")
+            .wrapped(ComponentSerialization.CODEC.xmap(ModularComponent::of, mc -> mc))
+            .addOpt("alignment", ModularComponent::alignment, ModularComponent::getAlignment, Alignment.CODEC, Alignment.Center)
+            .addOpt("scale", ModularComponent::scale, ModularComponent::getScale, Codec.FLOAT, 1f)
+            .addOpt("shadow", ModularComponent::shadow, ModularComponent::getShadow, Codec.BOOL, null)
+            .addUnencodable("dynamicColor", ModularComponent::color, ModularComponent::getDynamicColor)
+            .build();
 
     public static ModularComponent literal(String text) {
         return ModularComponent.create(PlainTextContents.create(text));
@@ -79,6 +90,7 @@ public class ModularComponent extends MutableComponent implements Text {
     }
 
     public static ModularComponent of(Component component) {
+        if (component instanceof ModularComponent mc) return mc;
         return new ModularComponent(component.getContents(), component.getSiblings(), component.getStyle());
     }
 
@@ -163,6 +175,10 @@ public class ModularComponent extends MutableComponent implements Text {
         return this;
     }
 
+    public ModularComponent color(Integer color) {
+        return color != null ? color((int) color) : color((IntSupplier) null);
+    }
+
     @Override
     public ModularComponent color(@Nullable IntSupplier color) {
         this.dynamicColor = color;
@@ -211,22 +227,20 @@ public class ModularComponent extends MutableComponent implements Text {
     }
 
     @Override
-    public boolean saveToJson(JsonObject json) {
-        json.add("alignment", JsonHelper.serialize(this.alignment));
-        json.addProperty("scale", this.scale);
-        if (this.shadow != null) json.addProperty("shadow", this.shadow);
-        if (this.dynamicColor != null) json.addProperty("color", this.dynamicColor.getAsInt());
-        return true;
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof ModularComponent other)) return false;
+        return super.equals(other) && this.alignment.equals(other.alignment) && Float.compare(this.scale, other.scale) == 0 &&
+                Objects.equals(this.shadow, other.shadow) && Objects.equals(this.dynamicColor, other.dynamicColor);
     }
 
     @Override
-    public void loadFromJson(JsonObject json) {
-        this.alignment = JsonHelper.deserialize(json, Alignment.class, Alignment.CENTER, "alignment");
-        this.scale = JsonHelper.getFloat(json, 1f, "scale");
-        this.shadow = JsonHelper.getBoxedBool(json, null, "shadow");
-        final Integer color = JsonHelper.getBoxedInt(json, null, "color");
-        if (color != null) {
-            this.dynamicColor = () -> color;
-        }
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(this.alignment);
+        result = 31 * result + Float.hashCode(this.scale);
+        result = 31 * result + Objects.hashCode(this.shadow);
+        result = 31 * result + Objects.hashCode(getDynamicColor());
+        return result;
     }
 }

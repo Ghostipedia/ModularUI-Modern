@@ -5,8 +5,6 @@ import brachy.modularui.utils.Alignment;
 import brachy.modularui.utils.LangUtil;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FormattedText;
-import net.minecraft.world.inventory.tooltip.TooltipComponent;
 
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
@@ -33,7 +31,7 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
      * @param c component to add
      * @return this
      */
-    default T add(FormattedText c) {
+    default T add(Component c) {
         getRichText().add(c);
         return getThis();
     }
@@ -63,23 +61,7 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
         return getThis();
     }
 
-    /**
-     * Adds a vanilla {@link TooltipComponent} to the current line.
-     * The tooltip component will always be converted into a {@link IIcon} regardless of what it is and drawn inline
-     * with the other components.
-     * It's recommended to use {@link #addLine(TooltipComponent)} instead if you want to preserve how vanilla handles
-     * this.
-     *
-     * @param tooltipComponent tooltip component to add.
-     * @return this
-     * @see #addLine(TooltipComponent)
-     */
-    default T add(TooltipComponent tooltipComponent) {
-        getRichText().add(tooltipComponent);
-        return getThis();
-    }
-
-    default T addLine(FormattedText formattedText) {
+    default T addLine(Component formattedText) {
         getRichText().add(formattedText).newLine();
         return getThis();
     }
@@ -91,11 +73,6 @@ public interface IRichTextBuilder<T extends IRichTextBuilder<T>> {
 
     default T addLine(ITextLine line) {
         getRichText().addLine(line);
-        return getThis();
-    }
-
-    default T addLine(TooltipComponent tooltipComponent) {
-        getRichText().add(tooltipComponent).newLine();
         return getThis();
     }
 

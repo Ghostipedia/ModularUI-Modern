@@ -10,8 +10,12 @@ import brachy.modularui.api.widget.IVanillaSlot;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.core.mixins.client.SlotAccessor;
 import brachy.modularui.utils.TreeUtil;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 import brachy.modularui.widgets.layout.IExpander;
 
+import com.mojang.serialization.Codec;
+
+import lombok.AccessLevel;
 import lombok.Getter;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -24,17 +28,36 @@ import java.util.function.DoubleSupplier;
  */
 public class StandardResizer extends WidgetResizeNode implements IPositioned<StandardResizer> {
 
-    private final DimensionSizer x;
-    private final DimensionSizer y;
-    @Getter
-    private boolean expanded = false;
+    public static final MutableObjectCodec<StandardResizer> CODEC = MutableObjectCodec.builder(StandardResizer.class)
+            .baseCopy(resizer -> new StandardResizer(resizer.getWidget()))
+            .addOpt("expanded", StandardResizer::expanded, StandardResizer::isExpanded, Codec.BOOL, false)
+            .addOpt("decoration", StandardResizer::decoration, StandardResizer::isDecoration, Codec.BOOL, false)
+            .add("x", StandardResizer::setX, StandardResizer::getX, DimensionSizer.CODEC)
+            .add("y", StandardResizer::setY, StandardResizer::getY, DimensionSizer.CODEC)
+            .build();
+
+    public static final MutableObjectCodec<StandardResizer> COMPACT_CODEC = MutableObjectCodec.builder(StandardResizer.class)
+            .baseCopy(resizer -> new StandardResizer(resizer.getWidget()))
+            .addOpt("expanded", StandardResizer::expanded, StandardResizer::isExpanded, Codec.BOOL, false)
+            .addOpt("decoration", StandardResizer::decoration, StandardResizer::isDecoration, Codec.BOOL, false)
+            .addFieldOf(DimensionSizer.CODEC, StandardResizer::getX, "coverChildrenMinSize", "coverChildrenMinSizeX")
+            .addFieldOf(DimensionSizer.CODEC, StandardResizer::getY, "coverChildrenMinSize", "coverChildrenMinSizeY")
+            .addFieldOf(DimensionSizer.CODEC, StandardResizer::getX, "start", "left")
+            .addFieldOf(DimensionSizer.CODEC, StandardResizer::getX, "end", "right")
+            .addFieldOf(DimensionSizer.CODEC, StandardResizer::getX, "size", "width")
+            .addFieldOf(DimensionSizer.CODEC, StandardResizer::getY, "start", "top")
+            .addFieldOf(DimensionSizer.CODEC, StandardResizer::getY, "end", "bottom")
+            .addFieldOf(DimensionSizer.CODEC, StandardResizer::getY, "size", "height")
+            .build();
+
+    @Getter(AccessLevel.PRIVATE) private final DimensionSizer x;
+    @Getter(AccessLevel.PRIVATE) private final DimensionSizer y;
+    @Getter private boolean expanded = false;
+    @Getter private boolean decoration = false;
 
     private boolean childrenResized = false;
     private boolean layoutResized = false;
     private boolean relativeToScreen = false;
-
-    @Getter
-    private boolean decoration = false;
 
     public StandardResizer(IWidget widget) {
         super(widget);
@@ -44,6 +67,14 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
 
     protected DimensionSizer createDimensionSizer(GuiAxis axis) {
         return new DimensionSizer(this, axis);
+    }
+
+    private void setX(DimensionSizer ds) {
+        if (ds != this.x) this.x.copyPropertiesOf(ds);
+    }
+
+    private void setY(DimensionSizer ds) {
+        if (ds != this.y) this.y.copyPropertiesOf(ds);
     }
 
     @Override
@@ -75,6 +106,24 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
     public void resetPosition() {
         this.x.resetPosition();
         this.y.resetPosition();
+    }
+
+    @Override
+    public StandardResizer copy() {
+        return copy(getWidget());
+    }
+
+    public StandardResizer copy(IWidget widget) {
+        StandardResizer r = new StandardResizer(widget);
+        r.copyPropertiesOf(this);
+        return r;
+    }
+
+    public void copyPropertiesOf(StandardResizer resizer) {
+        this.expanded = resizer.expanded;
+        this.decoration = resizer.decoration;
+        this.x.copyPropertiesOf(resizer.x);
+        this.y.copyPropertiesOf(resizer.y);
     }
 
     public void detectConflictingConfiguration() {
@@ -743,5 +792,17 @@ public class StandardResizer extends WidgetResizeNode implements IPositioned<Sta
 
     private Unit getHeight() {
         return this.y.getSize(getWidget());
+    }
+
+    public boolean isEqual(StandardResizer o) {
+        return o != null &&
+                this.x.isEqual(o.x) &&
+                this.y.isEqual(o.y) &&
+                this.expanded == o.expanded &&
+                this.decoration == o.decoration;
+    }
+
+    public static boolean areEqual(StandardResizer a, StandardResizer b) {
+        return a == null ? b == null : a.isEqual(b);
     }
 }

@@ -152,7 +152,7 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
      * If animating is enabled and an animation is already playing this method will do nothing.
      */
     public void closeIfOpen() {
-        if (!isOpen()) return;
+        if (!isOpen() || !getContext().getUItype().isScreen) return;
         closeSubPanels();
         if (isMainPanel()) {
             // close screen and let NEA handle animation // TODO: since nea is not yet ported, it will just close the
@@ -173,7 +173,13 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
                     }
                 }
             }
-            getAnimator().onFinish(() -> this.screen.getPanelManager().closePanel(this));
+            getAnimator().onFinish(() -> {
+                if (this.screen != null) {
+                    // can happen when multiple panels close at once and animation is enabled, but NEA is currently not ported so screen
+                    // before sub panels can finish animating
+                    this.screen.getPanelManager().closePanel(this);
+                }
+            });
             getAnimator().reset(true);
             getAnimator().animate(true);
         }
@@ -270,8 +276,8 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
     }
 
     @Override
-    public boolean isRecipeViewerExclusionArea() {
-        return super.isRecipeViewerExclusionArea() || (!getScreen().isOverlay() && !this.invisible && !resizer().isFullSize());
+    public boolean isExcludeAreaInRecipeViewer() {
+        return super.isExcludeAreaInRecipeViewer() || (!getScreen().isOverlay() && !this.invisible && !resizer().isFullSize());
     }
 
     @MustBeInvokedByOverriders
@@ -323,7 +329,7 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
         return Objects.requireNonNull(doSafe(runnable::getAsInt));
     }
 
-    public boolean onMousePressed(double mouseX, double mouseY, int button) {
+    public boolean onMousePressed(int button) {
         return doSafeBool(() -> {
             LocatedWidget pressed = LocatedWidget.EMPTY;
             boolean result = false;
@@ -395,12 +401,8 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
         });
     }
 
-    public boolean onMouseReleased(double mouseX, double mouseY, int button) {
-        return isEnabled() && doSafeBool(() -> {
-            if (!this.mouse.doRelease) {
-                this.mouse.reset();
-                return false;
-            }
+    public boolean onMouseReleased(int button) {
+        return doSafeBool(() -> {
             if (this.currentResizing != null) {
                 this.mouse.reset();
                 this.currentResizing = null;
@@ -417,7 +419,7 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
                 if (widget.getElement() == null || !widget.getElement().isValid()) continue;
                 if (this.mouse.isWidget(widget)) {
                     if (widget.getElement() instanceof Interactable interactable &&
-                            onMouseReleased(mouseX, mouseY, button, tryTap, widget, interactable)) {
+                            onMouseReleased(button, tryTap, widget, interactable)) {
                         return true;
                     }
                     lastPressedIsHovered = true;
@@ -428,7 +430,7 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
             for (LocatedWidget widget : this.hovering) {
                 if (widget.getElement() == null || !widget.getElement().isValid()) continue;
                 if (!this.mouse.isWidget(widget) && widget.getElement() instanceof Interactable interactable &&
-                        onMouseReleased(mouseX, mouseY, button, tryTap, widget, interactable)) {
+                        onMouseReleased(button, tryTap, widget, interactable)) {
                     return true;
                 }
             }
@@ -443,8 +445,7 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
         });
     }
 
-    private boolean onMouseReleased(double mouseX, double mouseY, int button, boolean tryTap, LocatedWidget widget,
-                                    Interactable interactable) {
+    private boolean onMouseReleased(int button, boolean tryTap, LocatedWidget widget, Interactable interactable) {
         boolean stop = false;
         widget.applyMatrix(getContext());
         if (tryTap && this.mouse.acceptedInteractions.remove(interactable)) {
@@ -505,10 +506,6 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
 
     public boolean onKeyReleased(int keyCode, int scanCode, int modifiers) {
         return doSafeBool(() -> {
-            if (!this.keyboard.doRelease) {
-                this.keyboard.reset();
-                return false;
-            }
             if (interactFocused(widget -> widget.onKeyReleased(keyCode, scanCode, modifiers), false)) {
                 return true;
             }
@@ -604,9 +601,9 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
         });
     }
 
-    public boolean onMouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean onMouseScrolled(double deltaX, double deltaY) {
         return doSafeBool(() -> {
-            if (interactFocused(widget -> widget.onMouseScrolled(scrollX, scrollY), false)) {
+            if (interactFocused(widget -> widget.onMouseScrolled(deltaX, deltaY), false)) {
                 return true;
             }
             if (this.hovering.isEmpty()) return false;
@@ -614,7 +611,7 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
                 if (widget.getElement() == null || !widget.getElement().isValid()) continue;
                 if (widget.getElement() instanceof Interactable interactable) {
                     widget.applyMatrix(getContext());
-                    boolean result = interactable.onMouseScrolled(scrollX, scrollY);
+                    boolean result = interactable.onMouseScrolled(deltaX, deltaY);
                     widget.unapplyMatrix(getContext());
                     if (result) return true;
                 }
@@ -623,7 +620,7 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
         });
     }
 
-    public boolean onMouseDrag(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean onMouseDrag(int button, double dragX, double dragY) {
         return doSafeBool(() -> {
             if (this.currentResizing != null) {
                 this.currentResizingWidget.applyMatrix(getContext());
@@ -906,7 +903,6 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
         private boolean held;
         private long time;
         private int lastButton;
-        private boolean doRelease = true;
 
         private Input() {
             reset();
@@ -923,7 +919,6 @@ public class ModularPanel<W extends ModularPanel<W>> extends ParentWidget<W> imp
             this.held = false;
             this.time = -1;
             this.lastButton = -1;
-            this.doRelease = true;
         }
 
         private boolean isValid() {

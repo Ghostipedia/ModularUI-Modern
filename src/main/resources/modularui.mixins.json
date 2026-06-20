@@ -23,7 +23,9 @@
         "common.ServerPlayerAccessor",
         "common.WorldLoaderMixin",
         "common.CombinedInvWrapperAccessor",
-        "common.ComponentMixin"
+        "common.ComponentMixin",
+        "common.ComponentSerializerMixin",
+        "common.TextColorMixin"
     ],
     "injectors": {
         "defaultRequire": 1,

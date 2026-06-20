@@ -6,6 +6,7 @@ import brachy.modularui.ModularUIConfig;
 import brachy.modularui.api.IMuiScreen;
 import brachy.modularui.api.ITheme;
 import brachy.modularui.api.MCHelper;
+import brachy.modularui.api.UIType;
 import brachy.modularui.api.widget.IVanillaSlot;
 import brachy.modularui.api.widget.IWidget;
 import brachy.modularui.api.widget.Interactable;
@@ -24,6 +25,7 @@ import brachy.modularui.utils.FpsCounter;
 import brachy.modularui.utils.Stencil;
 import brachy.modularui.widget.sizer.Area;
 import brachy.modularui.widgets.RichTextWidget;
+import brachy.modularui.widgets.SchemaWidget;
 import brachy.modularui.widgets.slot.ItemSlot;
 import brachy.modularui.widgets.slot.ModularSlot;
 import brachy.modularui.widgets.slot.SlotGroup;
@@ -35,12 +37,14 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.HitResult;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -73,8 +77,11 @@ import java.util.function.Predicate;
 public class ClientScreenHandler {
 
     @Getter
-    private static final GuiContext defaultContext = new GuiContext();
+    private static final GuiContext defaultContext = new GuiContext(UIType.NONE);
     private static final FpsCounter fpsCounter = new FpsCounter();
+    private static final int DEFAULT_DEBUG_TEXT_COLOR = 0xFFAAAAAA;
+    private static final int DEFAULT_DEBUG_OUTLINE_COLOR = 0xDCB42873;
+
     private static ModularScreen currentScreen = null;
     @Getter
     private static long ticks = 0L;
@@ -106,7 +113,7 @@ public class ClientScreenHandler {
 
     @SubscribeEvent
     public static void onScreenKeyPressedHigh(ScreenEvent.KeyPressed.Pre event) {
-        defaultContext.updateLatestKey(event.getKeyCode(), event.getScanCode(), event.getModifiers());
+        defaultContext.updateKey(event.getKeyCode(), event.getScanCode(), event.getModifiers(), true);
         // TODO: early needs to be before recipe viewers, but emi does mixin into KeyboardHandler so it is before everything
         if (keyPressedEvent(event, InputPhase.EARLY)) {
             keyPressedEvent(event, InputPhase.LATE);
@@ -115,7 +122,7 @@ public class ClientScreenHandler {
 
     private static boolean keyPressedEvent(ScreenEvent.KeyPressed.Pre event, InputPhase phase) {
         if (validateGui(event.getScreen())) {
-            currentScreen.getContext().updateLatestKey(event.getKeyCode(), event.getScanCode(), event.getModifiers());
+            currentScreen.getContext().updateKey(event.getKeyCode(), event.getScanCode(), event.getModifiers(), true);
         }
         if (handleKeyboardInput(currentScreen, event.getScreen(), true, phase,
                 event.getKeyCode(), event.getScanCode(), event.getModifiers())) {
@@ -127,7 +134,7 @@ public class ClientScreenHandler {
 
     @SubscribeEvent
     public static void onScreenKeyReleasedHigh(ScreenEvent.KeyReleased.Pre event) {
-        defaultContext.updateLatestKey(event.getKeyCode(), event.getScanCode(), event.getModifiers());
+        defaultContext.updateKey(event.getKeyCode(), event.getScanCode(), event.getModifiers(), false);
         // TODO also needs to be before recipe viewers
         // dont need late for release event
         keyReleasedEvent(event, InputPhase.EARLY);
@@ -135,7 +142,7 @@ public class ClientScreenHandler {
 
     private static boolean keyReleasedEvent(ScreenEvent.KeyReleased.Pre event, InputPhase phase) {
         if (validateGui(event.getScreen())) {
-            currentScreen.getContext().updateLatestKey(event.getKeyCode(), event.getScanCode(), event.getModifiers());
+            currentScreen.getContext().updateKey(event.getKeyCode(), event.getScanCode(), event.getModifiers(), false);
         }
         if (handleKeyboardInput(currentScreen, event.getScreen(), false, phase,
                 event.getKeyCode(), event.getScanCode(), event.getModifiers())) {
@@ -148,13 +155,13 @@ public class ClientScreenHandler {
     // before JEI
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onScreenCharTyped(ScreenEvent.CharacterTyped.Pre event) {
-        int codePoint = event.getCodePoint();
+        char codePoint = event.getCodePoint();
         int modifiers = event.getModifiers();
-        defaultContext.updateLatestTypedChar(codePoint, modifiers);
-        if (validateGui(event.getScreen())) currentScreen.getContext().updateLatestTypedChar(codePoint, modifiers);
+        defaultContext.updateTypedChar(codePoint, modifiers);
+        if (validateGui(event.getScreen())) currentScreen.getContext().updateTypedChar(codePoint, modifiers);
 
         // vanilla also casts to char here
-        if (doAction(currentScreen, ms -> ms.charTyped((char) codePoint, modifiers))) {
+        if (doAction(currentScreen, ms -> ms.charTyped(codePoint, modifiers))) {
             event.setCanceled(true);
         }
     }
@@ -163,16 +170,14 @@ public class ClientScreenHandler {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onScreenMousePressed(ScreenEvent.MouseButtonPressed.Pre event) {
         int button = event.getButton();
-        double mouseX = event.getMouseX();
-        double mouseY = event.getMouseY();
-        defaultContext.updateMouseButton(button);
-        if (validateGui(event.getScreen())) currentScreen.getContext().updateMouseButton(button);
+        defaultContext.updateMouseButton(button, true);
+        if (validateGui(event.getScreen())) currentScreen.getContext().updateMouseButton(button, true);
 
         if (button == -1) {
             return;
         }
-        if (currentScreen != null && currentScreen.handleDraggableInput(mouseX, mouseY, button, true) ||
-                doAction(currentScreen, ms -> ms.mousePressed(mouseX, mouseY, button))) {
+        if (currentScreen != null && currentScreen.handleDraggableInput(button, true) ||
+                doAction(currentScreen, ms -> ms.mousePressed(button))) {
             RecipeViewerHandler.getCurrent().setSearchFocused(false);
             event.setCanceled(true);
         }
@@ -182,13 +187,11 @@ public class ClientScreenHandler {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onScreenMouseReleased(ScreenEvent.MouseButtonReleased.Pre event) {
         int button = event.getButton();
-        double mouseX = event.getMouseX();
-        double mouseY = event.getMouseY();
-        defaultContext.updateMouseButton(button);
-        if (validateGui(event.getScreen())) currentScreen.getContext().updateMouseButton(button);
+        defaultContext.updateMouseButton(button, false);
+        if (validateGui(event.getScreen())) currentScreen.getContext().updateMouseButton(button, false);
 
-        if (currentScreen != null && currentScreen.handleDraggableInput(mouseX, mouseY, button, false) ||
-                doAction(currentScreen, ms -> ms.mouseReleased(mouseX, mouseY, button))) {
+        if (currentScreen != null && currentScreen.handleDraggableInput(button, false) ||
+                doAction(currentScreen, ms -> ms.mouseReleased(button))) {
             RecipeViewerHandler.getCurrent().setSearchFocused(false);
             event.setCanceled(true);
         }
@@ -202,7 +205,7 @@ public class ClientScreenHandler {
         defaultContext.updateMouseWheel(wx, wy);
         if (validateGui(event.getScreen())) currentScreen.getContext().updateMouseWheel(wx, wy);
 
-        if (doAction(currentScreen, ms -> ms.mouseScrolled(event.getMouseX(), event.getMouseY(), wx, wy))) {
+        if (doAction(currentScreen, ms -> ms.mouseScrolled(wx, wy))) {
             event.setCanceled(true);
         }
     }
@@ -210,7 +213,7 @@ public class ClientScreenHandler {
     // before JEI
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onScreenMouseDragged(ScreenEvent.MouseDragged.Pre event) {
-        if (doAction(currentScreen, ms -> ms.mouseDragged(event.getMouseX(), event.getMouseY(),
+        if (doAction(currentScreen, ms -> ms.mouseDragged(
                 event.getMouseButton(), event.getDragX(), event.getDragY()))) {
             event.setCanceled(true);
         }
@@ -353,20 +356,31 @@ public class ClientScreenHandler {
         } else {
             debugToggleActive = false;
         }
-        if (keyCode == InputConstants.KEY_ESCAPE && screen.shouldCloseOnEsc()) {
-            onClose();
+        boolean hasLevel = Minecraft.getInstance().level != null;
+        boolean closeOnEsc = screen.shouldCloseOnEsc();
+        if (keyCode == InputConstants.KEY_ESCAPE && (!hasLevel || closeOnEsc)) {
+            if (hasLevel) {
+                // close everything in world
+                if (currentScreen.getContext().hasDraggable()) {
+                    currentScreen.getContext().dropDraggable(true);
+                }
+                currentScreen.getPanelManager().closePanelsAndScreen();
+            } else if (closeOnEsc || !currentScreen.getPanelManager().getTopMostPanel().isMainPanel()) {
+                // close top panel if screen can be close or the top panel is not a main panel
+                dropOrClosePanel();
+            }
             return true;
         }
-        boolean isInventoryKey = Minecraft.getInstance().options.keyInventory
-                .isActiveAndMatches(InputConstants.getKey(keyCode, scanCode));
-        if (keyCode == 1 || isInventoryKey) {
-            onClose();
+        if (!hasLevel) return false; // E only closes in world
+        if (Minecraft.getInstance().options.keyInventory
+                .isActiveAndMatches(InputConstants.getKey(keyCode, scanCode)) && !RecipeViewerHandler.getCurrent().isSearchFocused()) {
+            dropOrClosePanel();
             return true;
         }
         return false;
     }
 
-    private static void onClose() {
+    private static void dropOrClosePanel() {
         if (currentScreen.getContext().hasDraggable()) {
             currentScreen.getContext().dropDraggable(true);
         } else {
@@ -389,11 +403,11 @@ public class ClientScreenHandler {
                 // remove buttons to make sure they are not clicked
                 acc.setChildren(Collections.emptyList());
                 // set clicked slot to make sure the container clicks the desired slot
-                clickableScreen.mui$setClickedSlot(slot);
-                screen.mouseClicked(ctx.getMouseX(), ctx.getMouseY(), ctx.getMouseButton());
+                clickableScreen.modularui$setClickedSlot(slot);
+                screen.mouseClicked(ctx.getMouseX(), ctx.getMouseY(), ctx.getLastMouseButton());
             } finally {
                 // undo modifications
-                clickableScreen.mui$setClickedSlot(null);
+                clickableScreen.modularui$setClickedSlot(null);
                 acc.setChildren(buttonList);
             }
         }
@@ -402,7 +416,7 @@ public class ClientScreenHandler {
     public static void releaseSlot() {
         if (hasScreen() && getMCScreen() != null) {
             ModularGuiContext ctx = currentScreen.getContext();
-            getMCScreen().mouseReleased(ctx.getMouseX(), ctx.getMouseY(), ctx.getMouseButton());
+            getMCScreen().mouseReleased(ctx.getMouseX(), ctx.getMouseY(), ctx.getLastMouseButton());
         }
     }
 
@@ -435,8 +449,7 @@ public class ClientScreenHandler {
         }
     }
 
-    public static void drawScreenInternal(GuiGraphics graphics, ModularScreen muiScreen, Screen mcScreen,
-                                          int mouseX, int mouseY, float partialTicks) {
+    public static void drawScreenInternal(GuiGraphics graphics, ModularScreen muiScreen, Screen mcScreen, int mouseX, int mouseY, float partialTicks) {
         Stencil.reset();
         muiScreen.getContext().getStencil().push(muiScreen.getScreenArea());
         muiScreen.render(graphics, mouseX, mouseY, partialTicks);
@@ -444,7 +457,7 @@ public class ClientScreenHandler {
         drawVanillaElements(graphics, mcScreen, mouseX, mouseY, partialTicks);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         Lighting.setupForFlatItems();
-        muiScreen.drawForeground(graphics, partialTicks);
+        muiScreen.drawForeground(graphics);
         RenderSystem.enableDepthTest();
         Lighting.setupFor3DItems();
         muiScreen.getContext().getStencil().pop();
@@ -518,7 +531,7 @@ public class ClientScreenHandler {
             drawFloatingItemStack(mcScreen, graphics, acc.getSnapbackItem(), snapBackX, snapBackY, null);
         }
 
-        muiScreen.drawForeground(graphics, partialTicks);
+        muiScreen.drawForeground(graphics);
 
         RenderSystem.enableDepthTest();
         Lighting.setupFor3DItems();
@@ -539,15 +552,20 @@ public class ClientScreenHandler {
     }
 
     @ApiStatus.Internal
-    public static void drawVanillaElements(GuiGraphics graphics, Screen mcScreen, int mouseX, int mouseY,
-                                           float partialTicks) {
+    public static void drawVanillaElements(GuiGraphics graphics, Screen mcScreen, int mouseX, int mouseY, float partialTicks) {
+        drawVanillaElements(graphics, mcScreen, mouseX, mouseY, partialTicks, r -> true);
+    }
+
+    @ApiStatus.Internal
+    public static void drawVanillaElements(GuiGraphics graphics, Screen mcScreen, int mouseX, int mouseY, float partialTicks, Predicate<Renderable> filter) {
         for (Renderable renderable : mcScreen.renderables) {
-            renderable.render(graphics, mouseX, mouseY, partialTicks);
+            if (filter.test(renderable)) {
+                renderable.render(graphics, mouseX, mouseY, partialTicks);
+            }
         }
     }
 
-    public static void drawDebugScreen(GuiGraphics graphics, @Nullable ModularScreen muiScreen,
-                                       @Nullable ModularScreen fallback) {
+    public static void drawDebugScreen(GuiGraphics graphics, @Nullable ModularScreen muiScreen, @Nullable ModularScreen fallback) {
         fpsCounter.onDraw();
         if (!ModularUIConfig.Dev.debugUI()) return;
         if (muiScreen == null) {
@@ -566,19 +584,22 @@ public class ClientScreenHandler {
 
         int mouseX = context.getAbsMouseX(), mouseY = context.getAbsMouseY();
         int screenH = muiScreen.getScreenArea().height;
-        int outlineColor = ModularUIConfig.Dev.outlineColor(); // Color.argb(180, 40, 115, 220);
-        int textColor = ModularUIConfig.Dev.textColor(); // Color.argb(180, 40, 115, 220);
+        int outlineColor = Color.parseString(ModularUIConfig.DEBUG_OUTLINE_COLOR.get(), DEFAULT_DEBUG_OUTLINE_COLOR).resultOrPartial(s -> {}).orElseThrow();
+        int textColor = Color.parseString(ModularUIConfig.DEBUG_TEXT_COLOR.get(), DEFAULT_DEBUG_TEXT_COLOR).resultOrPartial(s -> {}).orElseThrow();
         float scale = ModularUIConfig.Dev.scale();
         int shift = (int) (11 * scale + 0.5f);
         int lineY = screenH - shift - 2;
         if (ModularUI.Mods.isRecipeViewerLoaded() &&
                 muiScreen.getContext().hasSettings() &&
                 muiScreen.getContext().getRecipeViewerSettings().isEnabled(muiScreen)) {
-            lineY -= 12;
+            lineY -= 18;
         }
-        GuiDraw.drawText(graphics, "Mouse Pos: " + mouseX + ", " + mouseY, 5, lineY, scale, outlineColor, false);
+
+        String s = I18n.get("modularui.debug.mouse_pos", mouseX, mouseY);
+        GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
         lineY -= shift;
-        GuiDraw.drawText(graphics, "FPS: " + fpsCounter.getFps(), 5, lineY, scale, outlineColor, false);
+        Component c = Component.translatable("modularui.debug.fps", fpsCounter.getFps());
+        GuiDraw.drawText(graphics, c, 5, lineY, scale, textColor, true);
         lineY -= shift;
         LocatedWidget locatedHovered = muiScreen.getPanelManager().getTopWidgetLocated(true);
         boolean showHovered = ModularUIConfig.Dev.showHovered();
@@ -590,10 +611,11 @@ public class ClientScreenHandler {
         } else {
             theme = context.getTheme();
         }
-        GuiDraw.drawText(graphics, "Theme ID: " + theme.getId(), 5, lineY, scale, outlineColor, false);
+        s = I18n.get("modularui.debug.theme_id", theme.getId());
+        GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
 
         if (locatedHovered != null && (showHovered || showParent)) {
-            drawSegmentLine(graphics, lineY -= 4, scale, outlineColor);
+            drawSegmentLine(graphics, lineY -= 4, scale, textColor);
             lineY -= 10;
 
             IWidget hovered = locatedHovered.getElement();
@@ -615,20 +637,22 @@ public class ClientScreenHandler {
             locatedHovered.unapplyMatrix(context);
             if (showHovered) {
                 if (ModularUIConfig.Dev.showWidgetTheme()) {
-                    GuiDraw.drawText(graphics, "Widget Theme: " + hovered.getWidgetTheme(hovered.getPanel().getTheme()).key().getFullName(),
-                            5, lineY, scale, textColor, false);
+                    s = I18n.get("modularui.debug.widget_theme", hovered.getWidgetTheme(hovered.getPanel().getTheme()).key().getFullName());
+                    GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
                     lineY -= shift;
                 }
                 if (ModularUIConfig.Dev.showSize()) {
-                    GuiDraw.drawText(graphics, "Size: " + area.width + ", " + area.height, 5, lineY, scale, textColor, false);
+                    s = I18n.get("modularui.debug.size", area.width, area.height);
+                    GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
                     lineY -= shift;
                 }
                 if (ModularUIConfig.Dev.showPos()) {
-                    GuiDraw.drawText(graphics, "Pos: " + area.x + ", " + area.y + "  Rel: " + area.rx + ", " + area.ry,
-                            5, lineY, scale, textColor, false);
+                    s = I18n.get("modularui.debug.pos_rel", area.x, area.y, area.rx, area.ry);
+                    GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
                     lineY -= shift;
                 }
-                GuiDraw.drawText(graphics, "Widget: " + hovered, 5, lineY, scale, textColor, false);
+                s = I18n.get("modularui.debug.widget", hovered);
+                GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
             }
             if (hovered.hasParent() && showParent) {
                 if (showHovered) {
@@ -636,40 +660,43 @@ public class ClientScreenHandler {
                     lineY -= 10;
                 }
                 if (ModularUIConfig.Dev.showParentWidgetTheme()) {
-                    GuiDraw.drawText(graphics, "Widget Theme: " +
-                                    parent.getWidgetTheme(parent.getPanel().getTheme()).key().getFullName(),
-                            5, lineY, scale, textColor, false);
+                    s = I18n.get("modularui.debug.widget_theme", parent.getWidgetTheme(parent.getPanel().getTheme()).key().getFullName());
+                    GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
                     lineY -= shift;
                 }
                 area = parent.getArea();
                 if (ModularUIConfig.Dev.showParentSize()) {
-                    GuiDraw.drawText(graphics, "Parent size: " + area.width + ", " + area.height, 5, lineY, scale, textColor, false);
+                    s = I18n.get("modularui.debug.parent_size", area.width, area.height);
+                    GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
                     lineY -= shift;
                 }
                 if (ModularUIConfig.Dev.showParentPos()) {
-                    GuiDraw.drawText(graphics, "Parent pos: " + area.x + ", " + area.y + "  Rel: " + area.rx + ", " + area.ry, 5, lineY, scale, textColor, false);
+                    s = I18n.get("modularui.debug.parent_pos_rel", area.x, area.y, area.rx, area.ry);
+                    GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
                     lineY -= shift;
                 }
-                GuiDraw.drawText(graphics, "Parent: " + parent, 5, lineY, scale, textColor, false);
+                s = I18n.get("modularui.debug.parent", parent);
+                GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
             }
             if (ModularUIConfig.Dev.showExtra()) {
                 if (hovered instanceof ItemSlot slotWidget) {
                     drawSegmentLine(graphics, lineY -= 4, scale, textColor);
                     lineY -= 10;
                     ModularSlot slot = slotWidget.getSlot();
-                    GuiDraw.drawText(graphics, "Slot Index: " + slot.getSlotIndex(), 5, lineY, scale, textColor, false);
+                    s = I18n.get("modularui.debug.slot_index", slot.getSlotIndex());
+                    GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
                     lineY -= shift;
-                    GuiDraw.drawText(graphics, "Slot Number: " + ((Slot) slot).index, 5, lineY, scale, textColor, false);
+                    s = I18n.get("modularui.debug.slot_number", ((Slot) slot).index);
+                    GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
                     lineY -= shift;
                     if (slotWidget.isSynced()) {
                         SlotGroup slotGroup = slot.getSlotGroup();
                         boolean allowShiftTransfer = slotGroup != null && slotGroup.isAllowShiftTransfer();
-                        GuiDraw.drawText(graphics,
-                                "Shift-Click Priority: " + (allowShiftTransfer ? slotGroup.getShiftClickPriority() : "DISABLED"),
-                                5, lineY, scale, textColor, false);
+                        s = I18n.get("modularui.debug.shift_click_priority", allowShiftTransfer ? slotGroup.getShiftClickPriority() : "DISABLED");
+                        GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
                     }
                 } else if (hovered instanceof RichTextWidget richTextWidget) {
-                    drawSegmentLine(graphics, lineY -= 4, scale, outlineColor);
+                    drawSegmentLine(graphics, lineY -= 4, scale, textColor);
                     lineY -= 10;
                     locatedHovered.applyMatrix(context);
                     Object hoveredElement = richTextWidget.getHoveredElement();
@@ -679,7 +706,32 @@ public class ClientScreenHandler {
                     } else if (hoveredElement instanceof Component component) {
                         hoveredElement = component.getString();
                     }
-                    GuiDraw.drawText(graphics, "Hovered: " + hoveredElement, 5, lineY, scale, textColor, false);
+                    s = I18n.get("modularui.debug.hovered", hoveredElement);
+                    GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
+                } else if (hovered instanceof SchemaWidget sw) {
+                    var r = sw.getSchemaRenderer();
+                    var res = r.lastRayTrace();
+                    if (r.captureDebugInfo() || res != null) {
+                        drawSegmentLine(graphics, lineY -= 4, scale, textColor);
+                        lineY -= 10;
+                    }
+                    if (r.captureDebugInfo()) {
+                        var vec = sw.getSchemaRenderer().openGLMousePos();
+                        s = I18n.get("modularui.debug.schema.debug", vec.z, vec.x, vec.y);
+                        GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
+                        lineY -= shift;
+                    }
+                    if (res != null) {
+                        String block = "Miss";
+                        if (res.getType() == HitResult.Type.BLOCK) {
+                            var bs = r.schema().getLevel().getBlockState(res.getBlockPos());
+                            block = bs.getBlock().getName().getString();
+                        }
+                        s = I18n.get("modularui.debug.schema.raytrace", block,
+                                res.getBlockPos().getX(), res.getBlockPos().getY(), res.getBlockPos().getZ());
+                        GuiDraw.drawText(graphics, s, 5, lineY, scale, textColor, true);
+                        lineY -= shift;
+                    }
                 }
             }
         }

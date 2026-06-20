@@ -1,52 +1,57 @@
 package brachy.modularui.widget.sizer;
 
 import brachy.modularui.api.GuiAxis;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 
+import net.minecraft.util.StringRepresentable;
+import com.mojang.serialization.Codec;
+
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Locale;
+import java.util.Objects;
 import java.util.function.DoubleSupplier;
 
 @ApiStatus.Internal
 public class Unit {
 
-    public enum State {
+    public static final MutableObjectCodec<Unit> CODEC = MutableObjectCodec.builder(Unit::new)
+            .addOpt("autoAnchor", Unit::setAutoAnchor, Unit::isAutoAnchor, Codec.BOOL, true)
+            .addOpt("value", Unit::setValue, Unit::getValue, Codec.FLOAT, 0f)
+            .addOpt("measure", Unit::setMeasure, Unit::getMeasure, Measure.CODEC, Measure.PIXEL)
+            .addOpt("anchor", Unit::setAnchor, Unit::getAnchor, Codec.FLOAT, 0f)
+            .addOpt("offset", Unit::setOffset, Unit::getOffset, Codec.INT, 0)
+            .addOpt("state", Unit::setState, Unit::getState, State.CODEC, State.UNUSED).neverEncode()
+            .addUnencodableOpt("valueSupplier", Unit::setValue, Unit::getValueSupplier, null)
+            .build();
 
-        UNUSED("", ""),
-        START("LEFT", "TOP"),
-        END("RIGHT", "BOTTOM"),
-        SIZE("WIDTH", "HEIGHT");
+    static final Unit ZERO = new Unit();
 
-        public final String xText, yText;
+    @Getter
+    @Setter
+    private boolean autoAnchor;
+    private float value;
+    @Getter(AccessLevel.PRIVATE)
+    private DoubleSupplier valueSupplier;
+    @Getter
+    @Setter
+    private Measure measure;
+    @Setter
+    private float anchor;
+    @Getter
+    @Setter
+    private int offset;
+    @Getter
+    @Setter(AccessLevel.PRIVATE)
+    public State state;
 
-        State(String xText, String yText) {
-            this.xText = xText;
-            this.yText = yText;
-        }
-
-        public String getText(GuiAxis axis) {
-            return axis.isHorizontal() ? this.xText : this.yText;
-        }
+    public Unit() {
+        reset();
     }
-
-    @Getter
-    @Setter
-    private boolean autoAnchor = true;
-    private float value = 0f;
-    private DoubleSupplier valueSupplier = null;
-    @Getter
-    @Setter
-    private Measure measure = Measure.PIXEL;
-    @Setter
-    private float anchor = 0f;
-    @Getter
-    @Setter
-    private int offset = 0;
-
-    public State state = State.UNUSED;
-
-    public Unit() {}
 
     public void reset() {
         this.state = State.UNUSED;
@@ -58,7 +63,12 @@ public class Unit {
         this.offset = 0;
     }
 
-    public void setFrom(Unit other) {
+    public void copyPropertiesOf(Unit other) {
+        copyPropertiesOf(other, false);
+    }
+
+    private void copyPropertiesOf(Unit other, boolean copyState) {
+        if (copyState) this.state = other.state;
         this.autoAnchor = other.autoAnchor;
         this.value = other.value;
         this.valueSupplier = other.valueSupplier;
@@ -104,8 +114,75 @@ public class Unit {
         return this.state == State.UNUSED;
     }
 
-    public enum Measure {
+    public boolean isEqual(Unit o) {
+        return o != null &&
+                this.autoAnchor == o.autoAnchor &&
+                Float.compare(this.value, o.value) == 0 &&
+                Float.compare(this.anchor, o.anchor) == 0 &&
+                this.offset == o.offset &&
+                this.measure == o.measure &&
+                this.valueSupplier == o.valueSupplier &&
+                this.state == o.state;
+    }
+
+    public static boolean areEqual(Unit a, Unit b) {
+        return a == null ? b == null : a.isEqual(b);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj != null && obj.getClass() == Unit.class && isEqual((Unit) obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(autoAnchor, value, valueSupplier, measure, anchor, offset, state);
+    }
+
+    public enum Measure implements StringRepresentable {
+
         PIXEL,
-        RELATIVE
+        RELATIVE;
+
+        public static final Codec<Measure> CODEC = StringRepresentable.fromEnum(Measure::values);
+
+        public final String name;
+
+        Measure() {
+            this.name = name().toLowerCase(Locale.ENGLISH);
+        }
+
+        @Override
+        public @NotNull String getSerializedName() {
+            return this.name;
+        }
+    }
+
+    public enum State implements StringRepresentable {
+
+        UNUSED("", ""),
+        START("LEFT", "TOP"),
+        END("RIGHT", "BOTTOM"),
+        SIZE("WIDTH", "HEIGHT");
+
+        public static final Codec<State> CODEC = StringRepresentable.fromEnum(State::values);
+
+        public final String name, xText, yText;
+
+        State(String xText, String yText) {
+            this.name = name().toLowerCase(Locale.ENGLISH);
+            this.xText = xText;
+            this.yText = yText;
+        }
+
+        public String getText(GuiAxis axis) {
+            return axis.isHorizontal() ? this.xText : this.yText;
+        }
+
+
+        @Override
+        public @NotNull String getSerializedName() {
+            return this.name;
+        }
     }
 }

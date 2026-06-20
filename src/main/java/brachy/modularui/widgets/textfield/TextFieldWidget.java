@@ -2,8 +2,8 @@ package brachy.modularui.widgets.textfield;
 
 import brachy.modularui.ModularUI;
 import brachy.modularui.api.drawable.IDrawable;
-import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.drawable.ITextLine;
+import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.value.IStringValue;
 import brachy.modularui.api.value.ISyncOrValue;
 import brachy.modularui.api.widget.ITooltip;
@@ -51,7 +51,7 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
     public double parse(String num) {
         if (!this.acceptsExpression) {
             try {
-                return NumberFormat.AMOUNT_TEXT.format.parse(num).doubleValue();
+                return NumberFormat.AMOUNT_TEXT.format().parse(num).doubleValue();
             } catch (ParseException ex) {
                 this.mathFailMessage = "Unable to parse number.";
                 return 0.0;
@@ -93,7 +93,7 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
     protected void setSyncOrValue(@NotNull ISyncOrValue syncOrValue) {
         super.setSyncOrValue(syncOrValue);
         this.stringValue = syncOrValue.castNullable(IStringValue.class);
-        if (syncOrValue instanceof ValueSyncHandler<?, ?> valueSyncHandler) {
+        if (syncOrValue instanceof ValueSyncHandler<?, ?, ?> valueSyncHandler) {
             valueSyncHandler.setChangeListener(() -> {
                 markTooltipDirty();
                 setText(this.stringValue.getValue().toString());
@@ -114,8 +114,8 @@ public class TextFieldWidget extends BaseTextFieldWidget<TextFieldWidget> {
 
     @Override
     public void drawForeground(ModularGuiContext context) {
-        if (hasTooltip() && (tooltipOverride || getScrollData().isScrollBarActive(getScrollArea())) &&
-                isHoveringFor(getTooltip().showUpTimer())) {
+        if (hasTooltip() && !context.getUISettings().drawTooltipExternally() &&
+                (tooltipOverride || getScrollData().isScrollBarActive(getScrollArea())) && isHoveringFor(getTooltip().showUpTimer())) {
             getTooltip().draw(getContext());
         }
     }

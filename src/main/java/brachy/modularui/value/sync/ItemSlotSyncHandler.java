@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
  * Wraps a slot and handles interactions for phantom slots.
  * Use {@link ModularSlot} directly.
  */
-public class ItemSlotSyncHandler extends SyncHandler {
+public class ItemSlotSyncHandler extends SyncHandler<ItemSlotSyncHandler> {
 
     public static final int SYNC_ITEM = 0;
     public static final int SYNC_ENABLED = 1;
@@ -29,6 +29,7 @@ public class ItemSlotSyncHandler extends SyncHandler {
     public ItemSlotSyncHandler(ModularSlot slot) {
         this.slot = slot;
         this.playerSlotType = PlayerSlotType.getPlayerSlotType(slot);
+        allowC2S();
     }
 
     @Override

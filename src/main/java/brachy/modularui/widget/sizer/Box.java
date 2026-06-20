@@ -3,9 +3,10 @@ package brachy.modularui.widget.sizer;
 import brachy.modularui.animation.IAnimatable;
 import brachy.modularui.api.GuiAxis;
 import brachy.modularui.utils.Interpolations;
-import brachy.modularui.utils.serialization.json.JsonHelper;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 
-import com.google.gson.JsonObject;
+import com.mojang.serialization.Codec;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -24,6 +25,13 @@ public class Box implements IAnimatable<Box> {
     public static final Box ZERO = new Box();
 
     public static final Box ONE = new Box().all(1);
+
+    public static final MutableObjectCodec<Box> CODEC = MutableObjectCodec.builder(Box::new)
+            .addOpt("left", Box::left, Box::left, Codec.INT, 0).alias("x", "all")
+            .addOpt("top", Box::top, Box::top, Codec.INT, 0).alias("y", "all")
+            .addOpt("right", Box::right, Box::right, Codec.INT, 0).alias("x", "all")
+            .addOpt("bottom", Box::bottom, Box::bottom, Codec.INT, 0).alias("y", "all")
+            .build();
 
     @Getter
     @Setter
@@ -93,29 +101,6 @@ public class Box implements IAnimatable<Box> {
 
     public int getEnd(GuiAxis axis) {
         return axis.isHorizontal() ? this.right : this.bottom;
-    }
-
-    public void fromJson(JsonObject json) {
-        all(JsonHelper.getInt(json, 0, "margin"));
-        if (json.has("marginHorizontal")) {
-            this.left = json.get("marginHorizontal").getAsInt();
-            this.right = this.left;
-        }
-        if (json.has("marginVertical")) {
-            this.top = json.get("marginVertical").getAsInt();
-            this.bottom = this.top;
-        }
-        this.top = JsonHelper.getInt(json, this.top, "marginTop");
-        this.bottom = JsonHelper.getInt(json, this.bottom, "marginBottom");
-        this.left = JsonHelper.getInt(json, this.left, "marginLeft");
-        this.right = JsonHelper.getInt(json, this.right, "marginRight");
-    }
-
-    public void toJson(JsonObject json) {
-        json.addProperty("marginTop", this.top);
-        json.addProperty("marginBottom", this.bottom);
-        json.addProperty("marginLeft", this.left);
-        json.addProperty("marginRight", this.right);
     }
 
     @Override

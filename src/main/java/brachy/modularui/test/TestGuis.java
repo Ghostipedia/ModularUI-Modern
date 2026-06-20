@@ -1,5 +1,6 @@
 package brachy.modularui.test;
 
+import brachy.modularui.utils.MUIRenderTypes;
 import brachy.modularui.ModularUI;
 import brachy.modularui.animation.Animator;
 import brachy.modularui.animation.IAnimator;
@@ -10,16 +11,20 @@ import brachy.modularui.api.drawable.IDrawable;
 import brachy.modularui.api.drawable.Text;
 import brachy.modularui.api.layout.IViewportStack;
 import brachy.modularui.api.widget.IWidget;
-import brachy.modularui.client.ModularUIRenderTypes;
+import brachy.modularui.drawable.schema.BlockHighlight;
+import brachy.modularui.drawable.FluidDrawable;
 import brachy.modularui.drawable.GuiDraw;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.drawable.ItemDrawable;
 import brachy.modularui.drawable.Rectangle;
+import brachy.modularui.drawable.SchemaRenderer;
 import brachy.modularui.drawable.UITexture;
 import brachy.modularui.drawable.graph.GraphDrawable;
+import brachy.modularui.drawable.progress.CircularProgressDrawable;
+import brachy.modularui.drawable.progress.ProgressDrawable;
 import brachy.modularui.factory.ClientGUI;
-import brachy.modularui.schema.ArraySchema;
-import brachy.modularui.schema.ISchema;
+import brachy.modularui.drawable.schema.ArraySchema;
+import brachy.modularui.drawable.schema.ISchema;
 import brachy.modularui.screen.CustomModularScreen;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
@@ -60,6 +65,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.Fluids;
+import net.neoforged.neoforge.fluids.FluidStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import com.google.common.base.CaseFormat;
@@ -76,6 +83,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -404,11 +412,16 @@ public class TestGuis extends CustomModularScreen {
                 .where('G', Blocks.DIAMOND_BLOCK)
                 .where('B', Blocks.BEACON)
                 .build();
+        var renderer = schema.createRenderer()
+                .rayTracing(true)
+                .highlightRenderer(new BlockHighlight(Color.withAlpha(Color.RED.main, 0.5f))
+                        .allSides(true)
+                        .thickness(0.1f));
 
         var panel = ModularPanel.defaultPanel("main").size(170);
-        panel.child(new SchemaWidget(schema)
+        panel.child(new SchemaWidget(renderer)
                         .full())
-                .child(new SchemaWidget.LayerButton(schema, 0, 3)
+                .child(new SchemaWidget.LayerButton(renderer, 0, 3)
                         .bottom(1)
                         .left(1)
                         .size(16));
@@ -493,7 +506,7 @@ public class TestGuis extends CustomModularScreen {
         IDrawable correctedGradient = (context1, x, y, width, height, widgetTheme) -> {
             int points = 500;
             Matrix4f pose = context1.graphicsPose().last().pose();
-            VertexConsumer buffer = context1.getGraphics().bufferSource().getBuffer(ModularUIRenderTypes.guiTriangleStrip());
+            VertexConsumer buffer = context1.getGraphics().bufferSource().getBuffer(MUIRenderTypes.guiTriangleStrip());
 
             float x0 = x;
             float w = (float) width / points;
@@ -696,7 +709,7 @@ public class TestGuis extends CustomModularScreen {
                                         .coverChildren())
                                 .child(new ProgressWidget()
                                         .size(20)
-                                        .texture(GuiTextures.PROGRESS_ARROW, 20)
+                                        .texture(GuiTextures.PROGRESS_ARROW, ProgressDrawable.Direction.RIGHT)
                                         .value(new DoubleValue.Dynamic(() -> Util.getMillis() % 5000 / 5000.0, null)))
                                 .child(SlotGroupWidget.builder()
                                         .matrix("II", "II")
@@ -731,6 +744,71 @@ public class TestGuis extends CustomModularScreen {
                                 .stateCount(3)
                                 .stateOverlay(GuiTextures.CYCLE_BUTTON_DEMO))
                         .name("side_options"));
+    }
+
+    public static @NotNull ModularPanel<?> buildProgressUI() {
+        Random rnd = new Random();
+        return new ModularPanel<>("progress")
+                .coverChildren()
+                .padding(5)
+                .child(Flow.col()
+                        .coverChildren()
+                        .childPadding(2)
+                        .child(Flow.row()
+                                .coverChildren()
+                                .childPadding(2)
+                                .child(new ProgressDrawable()
+                                        .left()
+                                        .progressDuration(3, TimeUnit.SECONDS)
+                                        .emptyTexture(new Rectangle().color(0xFFBBBBBB))
+                                        .filledTexture(rndRect(DARK_COLORS, rnd))
+                                        .asWidget()
+                                        .addTooltipLine("Right to Left")
+                                        .addTooltipLine("No step size (smooth)"))
+                                .child(new ProgressDrawable()
+                                        .right()
+                                        .progressDuration(3, TimeUnit.SECONDS)
+                                        .emptyTexture(new Rectangle().color(0xFFBBBBBB))
+                                        .filledTexture(rndRect(DARK_COLORS, rnd))
+                                        .progressStepSize(0.2f)
+                                        .asWidget()
+                                        .addTooltipLine("Left to Right")
+                                        .addTooltipLine("0.2 step size"))
+                                .child(new ProgressDrawable()
+                                        .up()
+                                        .progressDuration(3, TimeUnit.SECONDS)
+                                        .emptyTexture(new Rectangle().color(0xFFBBBBBB))
+                                        .filledTexture(Text.str("Text"))
+                                        .progressPixelStepSize(1)
+                                        .asWidget()
+                                        .width(24)
+                                        .height(12)
+                                        .addTooltipLine("Down to Up")
+                                        .addTooltipLine("1 pixel step size"))
+                                .child(new ProgressDrawable()
+                                        .down()
+                                        .progressDuration(3, TimeUnit.SECONDS)
+                                        .emptyTexture(new Rectangle().color(0xFFBBBBBB))
+                                        .filledTexture(rndRect(DARK_COLORS, rnd))
+                                        .progressPixelStepSize(4)
+                                        .asWidget()
+                                        .addTooltipLine("Up to Down")
+                                        .addTooltipLine("4 pixel step size")))
+                        .child(Flow.row()
+                                .coverChildren()
+                                .childPadding(2)
+                                .child(new CircularProgressDrawable()
+                                        .progressDuration(3, TimeUnit.SECONDS)
+                                        .filledTexture(new ItemDrawable(Items.DIAMOND))
+                                        .clockwise()
+                                        .asWidget())
+                                .child(new CircularProgressDrawable()
+                                        .progressDuration(3, TimeUnit.SECONDS)
+                                        .filledTexture(new FluidDrawable(new FluidStack(Fluids.WATER, 1)))
+                                        .counterClockwise()
+                                        .asWidget()))
+                        .coverChildren()
+                );
     }
 
     private static class TestPanel extends ModularPanel<TestPanel> {

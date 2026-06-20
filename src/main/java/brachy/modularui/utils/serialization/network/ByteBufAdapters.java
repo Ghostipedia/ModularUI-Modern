@@ -3,24 +3,44 @@ package brachy.modularui.utils.serialization.network;
 import brachy.modularui.utils.EqualityTest;
 import brachy.modularui.utils.NetworkUtils;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.Utf8String;
 import net.minecraft.network.VarInt;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.codec.StreamDecoder;
 import net.minecraft.network.codec.StreamEncoder;
 import net.minecraft.network.codec.StreamMemberEncoder;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+
+import com.mojang.serialization.Codec;
 import net.neoforged.neoforge.fluids.FluidStack;
 
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
+
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.DecoderException;
+import io.netty.handler.codec.EncoderException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.UUID;
 
 public class ByteBufAdapters {
 
@@ -31,7 +51,6 @@ public class ByteBufAdapters {
     public static final IByteBufAdapter<ByteBuf, String> STRING = makeAdapter(ByteBufCodecs.STRING_UTF8, null);
     public static final IByteBufAdapter<ByteBuf, ByteBuf> BYTE_BUF = makeAdapter(NetworkUtils::readByteBuf, NetworkUtils::writeByteBuf, null);
     public static final IByteBufAdapter<ByteBuf, FriendlyByteBuf> FRIENDLY_BYTE_BUF = makeAdapter(NetworkUtils::readFriendlyByteBuf, NetworkUtils::writeByteBuf, null);
-    // @formatter:on
 
     public static final IByteBufAdapter<ByteBuf, Integer> INT = makeAdapter(ByteBufCodecs.VAR_INT, null);
     public static final IByteBufAdapter<ByteBuf, Long> LONG = makeAdapter(ByteBufCodecs.VAR_LONG, null);
@@ -41,6 +60,14 @@ public class ByteBufAdapters {
     public static final IByteBufAdapter<ByteBuf, Byte> BYTE = makeAdapter(ByteBufCodecs.BYTE, null);
     public static final IByteBufAdapter<ByteBuf, Short> SHORT = makeAdapter(ByteBufCodecs.SHORT, null);
     public static final IByteBufAdapter<ByteBuf, Character> CHAR = makeAdapter(ByteBuf::readChar, (buf, c) -> buf.writeChar(c), null);
+
+    public static final IByteBufAdapter<ByteBuf, BlockState> BLOCKSTATE = makeAdapterFromCodec(BlockState.CODEC, BlockState::equals);
+    public static final IByteBufAdapter<ByteBuf, BlockPos> BLOCKPOS = makeAdapter(BlockPos.STREAM_CODEC, BlockPos::equals);
+    public static final IByteBufAdapter<ByteBuf, GlobalPos> GLOBAL_POS = makeAdapter(GlobalPos.STREAM_CODEC, GlobalPos::equals);
+    public static final IByteBufAdapter<ByteBuf, ResourceLocation> RESOURCE_LOCATION = makeAdapter(ResourceLocation.STREAM_CODEC, ResourceLocation::equals);
+    public static final IByteBufAdapter<ByteBuf, UUID> UUID = makeAdapter(UUIDUtil.STREAM_CODEC, java.util.UUID::equals);
+    public static final IByteBufAdapter<RegistryFriendlyByteBuf, Component> COMPONENT = makeAdapter(ComponentSerialization.STREAM_CODEC, Component::equals);
+    // @formatter:on
 
     public static final IByteBufAdapter<ByteBuf, byte[]> BYTE_ARR = makeAdapter(ByteBufCodecs.BYTE_ARRAY, (t1, t2) -> {
         if (t1.length != t2.length) return false;
@@ -149,5 +176,30 @@ public class ByteBufAdapters {
                                                                  @NotNull StreamMemberEncoder<B, V> memberEncoder,
                                                                  @Nullable EqualityTest<V> comparator) {
         return makeAdapter(decoder, (buffer, value) -> memberEncoder.encode(value, buffer), comparator);
+    }
+
+    public static <B extends ByteBuf, V> IByteBufAdapter<B, V> makeAdapterFromCodec(@NotNull Codec<V> codec, @NotNull EqualityTest<V> equals) {
+        return new IByteBufAdapter<>() {
+
+            private static final Gson GSON = new Gson();
+
+            @Override
+            public V decode(B buffer) {
+                JsonElement jsonelement = GsonHelper.fromJson(GSON, Utf8String.read(buffer, FriendlyByteBuf.MAX_STRING_LENGTH), JsonElement.class);
+                DataResult<V> dataresult = codec.parse(JsonOps.COMPRESSED, jsonelement);
+                return dataresult.getOrThrow(p_272382_ -> new DecoderException("Failed to decode json: " + p_272382_));
+            }
+
+            @Override
+            public void encode(B buffer, V u) {
+                DataResult<JsonElement> dataresult = codec.encodeStart(JsonOps.COMPRESSED, u);
+                Utf8String.write(buffer, GSON.toJson(dataresult.getOrThrow(e -> new EncoderException("Failed to encode json: " + e + " " + u))), FriendlyByteBuf.MAX_STRING_LENGTH);
+            }
+
+            @Override
+            public boolean areEqual(@NotNull V v1, @NotNull V v2) {
+                return equals.areEqual(v1, v2);
+            }
+        };
     }
 }

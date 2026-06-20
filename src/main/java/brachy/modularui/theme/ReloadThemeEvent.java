@@ -2,9 +2,8 @@ package brachy.modularui.theme;
 
 import net.neoforged.bus.api.Event;
 
-public class ReloadThemeEvent extends Event {
-
-    public static class Pre extends ReloadThemeEvent {}
-
-    public static class Post extends ReloadThemeEvent {}
-}
+/**
+ * This event is invoked when themes are reloaded, but not on startup.
+ * Do not use this to register themes. Use {@link net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent FMLConstructModEvent} instead.
+ */
+public class ReloadThemeEvent extends Event {}

@@ -67,7 +67,7 @@ public class OverlayStack {
             RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
             screen.render(graphics, mouseX, mouseY, partialTicks);
             RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-            screen.drawForeground(graphics, partialTicks);
+            screen.drawForeground(graphics);
             if (screen.getContext().isHovered()) hovered = screen;
             fallback = screen;
         }

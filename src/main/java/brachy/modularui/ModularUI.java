@@ -23,6 +23,7 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.fml.util.thread.SidedThreadGroups;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.data.loading.DatagenModLoader;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
@@ -44,16 +45,18 @@ public class ModularUI {
     public static final String MOD_ID = "modularui";
     public static final String NAME = "Modular UI";
     public static final Logger LOGGER = LogManager.getLogger(NAME);
+    public static final boolean UNIT_TEST = Boolean.getBoolean("unit.testing");
 
     private static final ResourceLocation TEMPLATE_LOCATION = ResourceLocation.fromNamespaceAndPath(MOD_ID, "");
 
     public ModularUI(IEventBus modBus, ModContainer modContainer) {
         // uncomment if mod bus event listeners are added to this class
         // modBus.register(this);
-        NeoForge.EVENT_BUS.addListener(this::registerReloadListeners);
-        NeoForge.EVENT_BUS.addListener(this::onTick);
-        NeoForge.EVENT_BUS.addListener(this::registerCommand);
-        NeoForge.EVENT_BUS.addListener(this::onPlayerLeave);
+        IEventBus forgeBus = NeoForge.EVENT_BUS;
+        forgeBus.addListener(this::onRegisterDataReloadListener);
+        forgeBus.addListener(this::onTick);
+        forgeBus.addListener(this::onRegisterCommand);
+        forgeBus.addListener(this::onPlayerLeave);
 
         modContainer.registerConfig(ModConfig.Type.CLIENT, ModularUIConfig.CONFIG, ModularUI.MOD_ID + ".toml");
 
@@ -85,6 +88,10 @@ public class ModularUI {
         return !isProd();
     }
 
+    public static boolean isTestEnv() {
+        return UNIT_TEST;
+    }
+
     /**
      * @return if we're running data generation
      */
@@ -109,7 +116,7 @@ public class ModularUI {
      */
     @SuppressWarnings("ConstantValue")
     public static boolean isClientThread() {
-        return isClientSide() && Minecraft.getInstance() != null && Minecraft.getInstance().isSameThread();
+        return isTestEnv() || (isClientSide() && Thread.currentThread().getThreadGroup() == SidedThreadGroups.CLIENT);
     }
 
     /**
@@ -119,7 +126,7 @@ public class ModularUI {
      * @see #isClientThread()
      */
     public static boolean isClientSide() {
-        return FMLEnvironment.dist.isClient();
+        return isTestEnv() || FMLEnvironment.dist.isClient();
     }
 
     /**
@@ -156,11 +163,11 @@ public class ModularUI {
         }
     }
 
-    private void registerReloadListeners(AddReloadListenerEvent event) {
+    private void onRegisterDataReloadListener(AddReloadListenerEvent event) {
         RegistryAccessContainer.update(event.getRegistryAccess(), event.getConditionContext());
     }
 
-    private void registerCommand(RegisterCommandsEvent event) {
+    private void onRegisterCommand(RegisterCommandsEvent event) {
         var command = Commands.literal("mui")
                 .then(Commands.literal("reload_themes")
                         .executes(ctx -> {

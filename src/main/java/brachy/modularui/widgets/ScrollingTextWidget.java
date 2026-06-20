@@ -10,9 +10,9 @@ import brachy.modularui.theme.WidgetTheme;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.Interpolation;
 
-import lombok.Getter;
-
 import net.minecraft.network.chat.Component;
+
+import lombok.Getter;
 
 public class ScrollingTextWidget extends TextWidget<ScrollingTextWidget> {
 
@@ -62,9 +62,9 @@ public class ScrollingTextWidget extends TextWidget<ScrollingTextWidget> {
             animator(new Animator().curve(Interpolation.SINE_INOUT));
         }
         if (this.line == null) {
-            updateLine(getKey());
+            updateLine(checkComponentUpdated());
         }
-        checkString();
+        checkComponentUpdated();
         WidgetTheme theme = getActiveWidgetTheme(widgetTheme, isHovering());
         TextRenderer renderer = TextRenderer.SHARED;
         renderer.setColor(getColor() != null ? getColor().getAsInt() : theme.getTextColor());

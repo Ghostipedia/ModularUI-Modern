@@ -9,5 +9,5 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface IngredientListOverlayAccessor {
 
     @Accessor("searchField")
-    GuiTextFieldFilter mui$getSearchField();
+    GuiTextFieldFilter getSearchField();
 }

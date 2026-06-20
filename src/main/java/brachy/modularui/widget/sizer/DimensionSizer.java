@@ -5,7 +5,11 @@ import brachy.modularui.ModularUI;
 import brachy.modularui.ModularUIConfig;
 import brachy.modularui.api.GuiAxis;
 import brachy.modularui.api.widget.IWidget;
+import brachy.modularui.utils.serialization.codec.MutableObjectCodec;
 
+import com.mojang.serialization.Codec;
+
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,19 +23,25 @@ import java.util.function.IntSupplier;
 @ApiStatus.Internal
 public class DimensionSizer {
 
+    public static final MutableObjectCodec<DimensionSizer> CODEC = MutableObjectCodec.builder(DimensionSizer.class)
+            .baseCopy(sizer -> new DimensionSizer(sizer.resizer, sizer.axis))
+            .addOpt("coverChildrenMinSize", DimensionSizer::setCoverChildrenMinSize, DimensionSizer::getCoverChildrenMinSize, Codec.INT, -1)
+            .addOpt("start", DimensionSizer::setStart, DimensionSizer::getStart, Unit.CODEC, Unit.ZERO).neverWriteDefault()
+            .addOpt("end", DimensionSizer::setEnd, DimensionSizer::getEnd, Unit.CODEC, Unit.ZERO).neverWriteDefault()
+            .addOpt("size", DimensionSizer::setSize, DimensionSizer::getSize, Unit.CODEC, Unit.ZERO).neverWriteDefault()
+            .build();
+
     private final ResizeNode resizer;
     private final GuiAxis axis;
 
     private final Unit p1 = new Unit(), p2 = new Unit();
-    private Unit start, end, size;
+    @Getter(AccessLevel.PRIVATE) private Unit start, end, size;
     private Unit next = p1;
 
     @Getter
     private int coverChildrenMinSize = -1;
     @Setter
     private boolean expanded = false;
-    @Setter
-    private boolean cancelAutoMovement = false;
 
     @Getter
     private boolean posCalculated = false, sizeCalculated = false;
@@ -83,15 +93,19 @@ public class DimensionSizer {
     }
 
     public void setCoverChildren(int minSize, IWidget widget) {
-        getSize(widget);
+        if (minSize >= 0) getSize(widget);
         this.coverChildrenMinSize = minSize;
+    }
+
+    private void setCoverChildrenMinSize(int minSize) {
+        setCoverChildren(minSize, null);
     }
 
     public void setUnit(Unit unit, Unit.State pos) {
         switch (pos) {
-            case START -> getStart(null).setFrom(unit);
-            case END -> getEnd(null).setFrom(unit);
-            case SIZE -> getSize(null).setFrom(unit);
+            case START -> getStart(null).copyPropertiesOf(unit);
+            case END -> getEnd(null).copyPropertiesOf(unit);
+            case SIZE -> getSize(null).copyPropertiesOf(unit);
         }
     }
 
@@ -271,9 +285,7 @@ public class DimensionSizer {
                     p = calcPoint(this.end, s, parentSize, parentCalculated) - s;
                 } else {
                     p = area.getRelativePoint(this.axis) + p0/* + area.getMargin().getStart(this.axis)*/;
-                    if (!this.cancelAutoMovement) {
-                        moveAmount = -p0;
-                    }
+                    moveAmount = -p0;
                 }
                 area.setRelativePoint(this.axis, p);
                 this.posCalculated = true;
@@ -432,5 +444,68 @@ public class DimensionSizer {
             this.size = getNext(widget, Unit.State.SIZE);
         }
         return this.size;
+    }
+
+    private void setStart(Unit unit) {
+        if (unit == null) {
+            if (this.start != null) {
+                this.start.reset();
+                if (this.next != this.start && !this.next.isUnused()) {
+                    this.next = this.start;
+                }
+                this.start = null;
+            }
+            return;
+        }
+        if (this.start != unit) getStart(null).copyPropertiesOf(unit);
+    }
+
+    private void setEnd(Unit unit) {
+        if (unit == null) {
+            if (this.end != null) {
+                this.end.reset();
+                if (this.next != this.end && !this.next.isUnused()) {
+                    this.next = this.end;
+                }
+                this.end = null;
+            }
+            return;
+        }
+        if (this.end != unit) getEnd(null).copyPropertiesOf(unit);
+    }
+
+    private void setSize(Unit unit) {
+        if (unit == null) {
+            if (this.size != null) {
+                this.size.reset();
+                if (this.next != this.size && !this.next.isUnused()) {
+                    this.next = this.size;
+                }
+                this.size = null;
+            }
+            return;
+        }
+        if (this.size != unit) getSize(null).copyPropertiesOf(unit);
+    }
+
+    public void copyPropertiesOf(DimensionSizer sizer) {
+        reset();
+        if (sizer.start != null) getStart(null).copyPropertiesOf(sizer.start);
+        if (sizer.end != null) getEnd(null).copyPropertiesOf(sizer.end);
+        if (sizer.size != null) getSize(null).copyPropertiesOf(sizer.size);
+        this.coverChildrenMinSize = sizer.coverChildrenMinSize;
+    }
+
+    public boolean isEqual(DimensionSizer o) {
+        return o != null &&
+                this.axis == o.axis &&
+                Unit.areEqual(this.start, o.start) &&
+                Unit.areEqual(this.end, o.end) &&
+                Unit.areEqual(this.size, o.size) &&
+                this.coverChildrenMinSize == o.coverChildrenMinSize;
+    }
+
+    public static boolean areEqual(DimensionSizer a, DimensionSizer b) {
+        return a == null ? b == null : a.isEqual(b);
     }
 }

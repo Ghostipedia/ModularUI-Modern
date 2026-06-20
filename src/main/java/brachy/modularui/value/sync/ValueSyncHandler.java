@@ -8,7 +8,7 @@ import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import lombok.Setter;
 
-public abstract class ValueSyncHandler<B extends ByteBuf, T> extends SyncHandler implements IValueSyncHandler<B, T> {
+public abstract class ValueSyncHandler<B extends ByteBuf, T, S extends ValueSyncHandler<B, T, S>> extends SyncHandler<S> implements IValueSyncHandler<B, T> {
 
     public static final int SYNC_VALUE = 0;
 
@@ -49,5 +49,10 @@ public abstract class ValueSyncHandler<B extends ByteBuf, T> extends SyncHandler
         if (this.changeListener != null) {
             this.changeListener.run();
         }
+    }
+
+    public S changeListener(Runnable changeListener) {
+        setChangeListener(changeListener);
+        return self();
     }
 }

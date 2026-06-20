@@ -2,6 +2,9 @@ package brachy.modularui.drawable;
 
 import brachy.modularui.theme.WidgetTheme;
 
+import net.minecraft.util.ExtraCodecs;
+import com.mojang.serialization.Codec;
+
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import lombok.Getter;
 
@@ -10,6 +13,8 @@ import java.util.Objects;
 import java.util.function.ToIntFunction;
 
 public class ColorType {
+
+    public static final Codec<ColorType> CODEC = Codec.stringResolver(ColorType::getName, ColorType::get);
 
     private static final Map<String, ColorType> COLOR_TYPES = new Object2ObjectOpenHashMap<>();
 

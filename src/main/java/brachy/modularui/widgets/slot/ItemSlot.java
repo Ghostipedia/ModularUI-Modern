@@ -19,8 +19,6 @@ import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.value.sync.ItemSlotSyncHandler;
 import brachy.modularui.widget.Widget;
 
-import lombok.Getter;
-
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -119,7 +117,7 @@ public class ItemSlot extends Widget<ItemSlot> implements IVanillaSlot, Interact
     @Override
     public void drawForeground(ModularGuiContext context) {
         RichTooltip tooltip = getTooltip();
-        if (tooltip != null && isHoveringFor(tooltip.showUpTimer())) {
+        if (tooltip != null && !context.getUISettings().drawTooltipExternally() && isHoveringFor(tooltip.showUpTimer())) {
             tooltip.draw(context, getSlot().getItem());
         }
     }

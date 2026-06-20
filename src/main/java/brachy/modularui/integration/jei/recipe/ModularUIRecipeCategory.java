@@ -33,12 +33,14 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+@ApiStatus.Experimental
 public abstract class ModularUIRecipeCategory<T> implements IRecipeCategory<T> {
 
     private final LoadingCache<T, ModularScreen> modularScreenCache;
@@ -165,22 +167,22 @@ public abstract class ModularUIRecipeCategory<T> implements IRecipeCategory<T> {
 
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            return getModularScreen(this.recipe).mousePressed(mouseX, mouseY, button);
+            return getModularScreen(this.recipe).mousePressed(button);
         }
 
         @Override
         public boolean mouseReleased(double mouseX, double mouseY, int button) {
-            return getModularScreen(this.recipe).mouseReleased(mouseX, mouseY, button);
+            return getModularScreen(this.recipe).mouseReleased(button);
         }
 
         @Override
         public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-            return getModularScreen(this.recipe).mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            return getModularScreen(this.recipe).mouseDragged(button, dragX, dragY);
         }
 
         @Override
-        public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-            return getModularScreen(this.recipe).mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+            return getModularScreen(this.recipe).mouseScrolled(deltaX, deltaY);
         }
 
         @Override

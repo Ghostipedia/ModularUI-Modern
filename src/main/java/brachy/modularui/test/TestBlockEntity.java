@@ -7,6 +7,9 @@ import brachy.modularui.api.drawable.Text;
 import brachy.modularui.drawable.Circle;
 import brachy.modularui.drawable.GuiTextures;
 import brachy.modularui.drawable.ItemDrawable;
+import brachy.modularui.drawable.progress.CircularProgressDrawable;
+import brachy.modularui.drawable.progress.CompositeProgress;
+import brachy.modularui.drawable.progress.ProgressDrawable;
 import brachy.modularui.factory.PosGuiData;
 import brachy.modularui.screen.ModularPanel;
 import brachy.modularui.screen.ModularScreen;
@@ -29,7 +32,6 @@ import brachy.modularui.widget.EmptyWidget;
 import brachy.modularui.widget.ParentWidget;
 import brachy.modularui.widgets.ButtonWidget;
 import brachy.modularui.widgets.CycleButtonWidget;
-import brachy.modularui.widgets.DynamicSyncedWidget;
 import brachy.modularui.widgets.Expandable;
 import brachy.modularui.widgets.ItemDisplayWidget;
 import brachy.modularui.widgets.PageButton;
@@ -37,6 +39,7 @@ import brachy.modularui.widgets.PagedWidget;
 import brachy.modularui.widgets.ProgressWidget;
 import brachy.modularui.widgets.SlotGroupWidget;
 import brachy.modularui.widgets.ToggleButton;
+import brachy.modularui.widgets.dynamic.DynamicWidget;
 import brachy.modularui.widgets.layout.Flow;
 import brachy.modularui.widgets.slot.FluidSlot;
 import brachy.modularui.widgets.slot.ItemSlot;
@@ -56,7 +59,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -75,7 +77,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Various test and demos for synced widgets, slots and JEI interactions. Anything that doesn't fall into any of those categories goes into
  * {@link TestGuis}.
  */
-public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData> {
+public class TestBlockEntity extends AbstractBlockEntity implements IUIHolder<PosGuiData> {
 
     private static final Object2IntMap<Item> handlerSizeMap = new Object2IntOpenHashMap<>() {{
         put(Items.DIAMOND, 9);
@@ -124,7 +126,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
 
         syncManager.registerSlotGroup("item_inv", 3);
         syncManager.registerSlotGroup(new SlotGroup("crafting", 3).setAllowSorting(false));
-        IntSyncValue cycleStateValue = new IntSyncValue(() -> this.cycleState, val -> this.cycleState = val);
+        IntSyncValue cycleStateValue = new IntSyncValue(() -> this.cycleState, val -> this.cycleState = val).allowC2S();
         syncManager.getHyperVisor().syncValue("cycle_state", cycleStateValue);
         syncManager.syncValue("progress", new DoubleSyncValue(() -> (double) this.progress / this.duration));
         syncManager.syncValue("display_item", GenericSyncValue.forItem(() -> this.displayItem, null));
@@ -186,7 +188,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                         .top(0)
                         .leftRelOffset(1f, 1)
                         .background(GuiTextures.MC_BACKGROUND)
-                        .recipeViewerExclusionArea()
+                        .excludeAreaInRecipeViewer()
                         .stencilTransform((r, expanded) -> {
                             r.width = Math.max(20, r.width - 5);
                             r.height = Math.max(20, r.height - 5);
@@ -249,7 +251,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                                                                     tooltip.addDrawableLine(GuiTextures.MUI_LOGO.asIcon().size(50).alignment(Alignment.TopCenter));
                                                                     tooltip.addLine(Text.str("And here a circle:"));
                                                                     tooltip.addDrawableLine(new Circle()
-                                                                                    .setColor(Color.RED.darker(2), Color.RED.brighter(2))
+                                                                                    .color(Color.RED.darker(2), Color.RED.brighter(2))
                                                                                     .asIcon()
                                                                                     .size(20))
                                                                             .addDrawableLine(new ItemDrawable(new ItemStack(Items.DIAMOND)).asIcon())
@@ -275,16 +277,19 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                                                                         .overlay(GuiTextures.CYCLE_BUTTON_DEMO.getSubArea(0, 2 / 3f, 1, 1))))
                                                         .child(Flow.row()
                                                                 .name("progress_row")
-                                                                .height(18)
+                                                                .coverChildrenHeight()
                                                                 .mainAxisAlignment(Alignment.MainAxis.SPACE_AROUND)
                                                                 .child(new ProgressWidget()
                                                                         .syncHandler("progress")
-                                                                        .texture(GuiTextures.PROGRESS_ARROW, 20))
-                                                                .child(new ProgressWidget()
+                                                                        .texture(GuiTextures.PROGRESS_ARROW, ProgressDrawable.Direction.RIGHT)
+                                                                        .size(20))
+                                                                .child(CompositeProgress.circularLike4Slice(
+                                                                                GuiTextures.PROGRESS_CYCLE.getSubArea(0, 0f, 1, 0.5f),
+                                                                                GuiTextures.PROGRESS_CYCLE.getSubArea(0, 0.5f, 1, 1f),
+                                                                                CircularProgressDrawable.Direction.CW)
+                                                                        .asWidget()
                                                                         .syncHandler("progress")
-                                                                        .texture(GuiTextures.PROGRESS_CYCLE, 20)
-                                                                        .direction(ProgressWidget.Direction.CIRCULAR_CW))
-                                                        )
+                                                                        .size(20)))
                                                 )
                                                 .child(Flow.col()
                                                         .name("slots_col")
@@ -316,7 +321,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                                         .name("dynamic_sync_page")
                                         .sizeRel(1f)
                                         .child(Flow.col()
-                                                .name("page 4 col, dynamic widgets")
+                                                .name("dynamic widgets")
                                                 .child(Text.str("Dynamic synced widget demo. Items act as keys to a unique storage with different amount of slots.").asWidget().scale(0.7f))
                                                 .child(new ItemSlot()
                                                         .slot(new ModularSlot(this.storageInventory0, 0)
@@ -325,11 +330,11 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
                                                                         dynamicSyncHandler.notifyUpdate(packet -> ItemStack.OPTIONAL_STREAM_CODEC.encode(packet, newItem));
                                                                     }
                                                                 }))))
-                                                .child(new DynamicSyncedWidget<>()
+                                                .child(new DynamicWidget<>()
                                                         .widthRel(1f)
                                                         .syncHandler(dynamicSyncHandler))
                                                 .child(Text.str("Dynamic linked sync handler demo.").asWidget().scale(0.7f).marginTop(6))
-                                                .child(new DynamicSyncedWidget<>()
+                                                .child(new DynamicWidget<>()
                                                         .widthRel(1f)
                                                         .coverChildrenHeight()
                                                         .syncHandler(dynamicLinkedSyncHandler))
@@ -394,6 +399,7 @@ public class TestBlockEntity extends BlockEntity implements IUIHolder<PosGuiData
         return panel;
     }
 
+    @Override
     public void update() {
         if (!getLevel().isClientSide) {
             if (this.time++ % 20 == 0) {

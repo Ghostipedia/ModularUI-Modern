@@ -6,13 +6,15 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import com.google.gson.JsonObject;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import java.util.Objects;
 
+@Accessors(fluent = true)
 public class TiledUITexture extends UITexture {
 
-    private final int imageWidth, imageHeight;
+    @Getter private final int imageWidth, imageHeight;
 
     /**
      * Use {@link UITexture#builder()} with {@link Builder#tiled()}
@@ -42,14 +44,6 @@ public class TiledUITexture extends UITexture {
     }
 
     @Override
-    protected void saveTextureToJson(JsonObject json) {
-        super.saveToJson(json);
-        json.addProperty("imageWidth", this.imageWidth);
-        json.addProperty("imageHeight", this.imageHeight);
-        json.addProperty("tiled", true);
-    }
-
-    @Override
     protected TiledUITexture copy() {
         return new TiledUITexture(location, u0, v0, u1, v1, colorType, nonOpaque, colorOverride, imageWidth, imageHeight);
     }
@@ -57,6 +51,11 @@ public class TiledUITexture extends UITexture {
     @Override
     public TiledUITexture withColorOverride(int color) {
         return (TiledUITexture) super.withColorOverride(color);
+    }
+
+    @Override
+    public Builder toBuilder() {
+        return super.toBuilder().tiled(this.imageWidth, this.imageHeight);
     }
 
     @Override

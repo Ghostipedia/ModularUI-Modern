@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
-public class BooleanSyncValue extends ValueSyncHandler<ByteBuf, Boolean>
+public class BooleanSyncValue extends ValueSyncHandler<ByteBuf, Boolean, BooleanSyncValue>
         implements IBoolSyncValue<ByteBuf, Boolean>, IStringSyncValue<ByteBuf, Boolean> {
 
     private final BooleanSupplier getter;
