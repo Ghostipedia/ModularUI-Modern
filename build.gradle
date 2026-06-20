@@ -32,7 +32,8 @@ sourceSets {
     }
 
     test {
-
+        compileClasspath += main.output
+        runtimeClasspath += test.output + main.output
     }
 }
 
@@ -48,6 +49,11 @@ configurations {
     clientRuntimeOnly.extendsFrom runtimeOnly
     clientImplementation.extendsFrom implementation
     clientLocalRuntime.extendsFrom localRuntime
+
+    // The Java plugin does this for the testRuntimeOnly & testImplementation configurations, replicate that here
+    testRuntimeOnly.extendsFrom runtimeOnly
+    testImplementation.extendsFrom implementation
+    testLocalRuntime.extendsFrom localRuntime
 
     renderNurseCfg {
         canBeConsumed = false

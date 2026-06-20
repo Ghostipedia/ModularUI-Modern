@@ -38,7 +38,6 @@ public class CodecTest {
 
     @Test
     void resizer() {
-        TestUtil.bootstrap();
         widgetTest(new Widget<>()
                 .name("cool name")
                 .syncHandler("sync_handler", 9)
@@ -53,7 +52,6 @@ public class CodecTest {
 
     @Test
     void drawable() {
-        TestUtil.bootstrap();
         drawableTest(IDrawable.EMPTY);
         drawableTest(IDrawable.NONE);
         decodeTest(new JsonPrimitive("null"), IDrawable.CODEC, IDrawable.EMPTY);
@@ -100,7 +98,6 @@ public class CodecTest {
 
     @Test
     void widgetTheme() {
-        TestUtil.bootstrap();
         test(IThemeApi.FALLBACK.getCodec().codec(), WidgetTheme.darkTextNoShadow(1, 2, GuiTextures.MENU_BACKGROUND), false);
     }
 

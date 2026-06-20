@@ -33,4 +33,7 @@ dependencies {
     clientLocalRuntime(forge.sodium)
     clientLocalRuntime(forge.iris)
     renderNurseCfg(libs.renderNurse)
+
+    // Runtime mods for the testing environment //
+    testRuntimeOnly(forge.curios)
 }
