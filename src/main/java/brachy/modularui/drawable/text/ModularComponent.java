@@ -21,10 +21,8 @@ import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.chat.contents.ScoreContents;
 import net.minecraft.network.chat.contents.SelectorContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.util.ExtraCodecs;
 import com.mojang.serialization.Codec;
 
-import com.sun.jna.platform.bsd.ExtAttr;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,7 +37,7 @@ import java.util.function.UnaryOperator;
 public class ModularComponent extends MutableComponent implements Text {
 
     public static final MutableObjectCodec<ModularComponent> CODEC = MutableObjectCodec.drawableBuilder(ModularComponent.class, "Text")
-            .wrapped(ExtraComponentCodecs.NEVER_FLAT_COMPONENT_CODEC.xmap(ModularComponent::of, mc -> mc))
+            .wrapped(ComponentSerialization.CODEC.xmap(ModularComponent::of, mc -> mc))
             .addOpt("alignment", ModularComponent::alignment, ModularComponent::getAlignment, Alignment.CODEC, Alignment.Center)
             .addOpt("scale", ModularComponent::scale, ModularComponent::getScale, Codec.FLOAT, 1f)
             .addOpt("shadow", ModularComponent::shadow, ModularComponent::getShadow, Codec.BOOL, null)
@@ -92,7 +90,7 @@ public class ModularComponent extends MutableComponent implements Text {
 
     public static ModularComponent of(Component component) {
         if (component instanceof ModularComponent mc) return mc;
-        return new ModularComponent(component.getContents(), component.getSiblings(), component.getStyle());
+        return new ModularComponent(component.getContents(), new ArrayList<>(component.getSiblings()), component.getStyle());
     }
 
     @Getter private Alignment alignment = Alignment.CENTER;
@@ -141,16 +139,21 @@ public class ModularComponent extends MutableComponent implements Text {
     }
 
     @Override
-    public @NotNull MutableComponent plainCopy() {
+    public @NotNull ModularComponent plainCopy() {
         return ModularComponent.create(getContents());
     }
 
     @Override
-    public @NotNull MutableComponent copy() {
+    public @NotNull ModularComponent copy() {
         return new ModularComponent(getContents(), new ArrayList<>(getSiblings()), getStyle())
                 .alignment(this.alignment)
                 .scale(this.scale)
                 .color(this.dynamicColor);
+    }
+
+    @Override
+    public @Nullable String tryCollapseToString() {
+        return null;
     }
 
     @Override

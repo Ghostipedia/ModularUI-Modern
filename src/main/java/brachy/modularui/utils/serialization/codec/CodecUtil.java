@@ -1,5 +1,6 @@
 package brachy.modularui.utils.serialization.codec;
 
+import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
@@ -24,6 +25,10 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class CodecUtil {
+
+    public static <T> T unboxEither(Either<? extends T, ? extends T> either) {
+        return either.map(Function.identity(), Function.identity());
+    }
 
     public static <A> Codec<A> nullDecoder() {
         return nullDecoder(() -> null);
@@ -261,7 +266,7 @@ public class CodecUtil {
     public static <A> Codec<List<A>> listLike(Codec<A> codec) {
         return chainedCodec(codec.flatComapMap(Collections::singletonList, list -> {
             if (list.size() != 1) return DataResult.error(() -> "List must contain exactly one element");
-            return DataResult.success(list.get(0));
+            return DataResult.success(list.getFirst());
         }), codec.listOf());
     }
 
