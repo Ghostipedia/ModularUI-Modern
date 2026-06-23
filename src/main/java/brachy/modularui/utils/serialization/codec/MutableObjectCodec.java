@@ -215,9 +215,8 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
             return builder;
         }
         if (this.wrapped != null) {
-            if (this.wrapped instanceof MapCodec.MapCodecCodec<T> mcc) {
-                var codec = mcc.codec();
-                builder = codec.encode(input, ops, builder);
+            if (this.wrapped instanceof MapCodecCodec<T>(MapCodec<T> mapCodec)) {
+                builder = mapCodec.encode(input, ops, builder);
             } else {
                 var prefix = builder.build(this.wrapped.encode(input, ops, ops.empty()));
                 var res = prefix.result();
@@ -243,8 +242,8 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
     @Override
     public <J> DataResult<T> decodeInstance(DynamicOps<J> ops, MapLike<J> input) {
         if (this.wrapped != null) {
-            if (this.wrapped instanceof MapCodec.MapCodecCodec<T> mcc) {
-                return mcc.codec().decode(ops, input);
+            if (this.wrapped instanceof MapCodecCodec<T>(MapCodec<T> mapCodec)) {
+                return mapCodec.decode(ops, input);
             }
             return this.wrapped.parse(ops, ops.createMap(input.entries()));
         }

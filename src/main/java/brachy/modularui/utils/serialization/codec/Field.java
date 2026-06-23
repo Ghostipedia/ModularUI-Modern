@@ -55,8 +55,8 @@ public final class Field<T, V> {
 
     public V getModifiableDefault() {
         V v = getDefault();
-        if (!this.dynamicSupplier && this.codec instanceof MapCodec.MapCodecCodec<V> mcc &&
-                mcc.codec() instanceof MutableObjectCodec<V> moc && moc.canCopy()) {
+        if (!this.dynamicSupplier && this.codec instanceof MapCodec.MapCodecCodec<V>(MapCodec<V> mapCodec) &&
+                mapCodec instanceof MutableObjectCodec<V> moc && moc.canCopy()) {
             v = moc.copy(v);
         }
         return v;
@@ -222,7 +222,7 @@ public final class Field<T, V> {
         b.append(this.name)
                 .append(": ");
         V value = this.fieldReader.readField(instance);
-        if (this.codec instanceof MapCodec.MapCodecCodec<V> mcc && mcc.codec() instanceof MutableObjectCodec<V> moc) {
+        if (this.codec instanceof MapCodec.MapCodecCodec<V>(MapCodec<V> mapCodec) && mapCodec instanceof MutableObjectCodec<V> moc) {
             b.append(moc.convertToString(value, indent));
         } else {
             b.append(value);
