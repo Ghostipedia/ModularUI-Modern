@@ -14,6 +14,7 @@ import com.mojang.serialization.RecordBuilder;
 import com.google.common.base.CaseFormat;
 import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceMap;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
@@ -297,7 +298,8 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
 
     public static class Builder<T> {
 
-        private final Object2ReferenceLinkedOpenHashMap<String, Field<T, ?>> fields = new Object2ReferenceLinkedOpenHashMap<>();
+        // deduplicate field names by using a map to store them
+        private final Object2ReferenceMap<String, Field<T, ?>> fields = new Object2ReferenceLinkedOpenHashMap<>();
         private InstanceMapDecoder<T> instanceDecoder;
         private UnaryOperator<T> baseCopy;
         private CodecRegistry<T> registry;
@@ -343,7 +345,10 @@ public class MutableObjectCodec<T> extends MapCodec<T> implements MutableMapDeco
 
         /**
          * When this object is encoded and decoded this codec will be called first. This is useful when this object is based on another
-         * object which already has a codec. Example: {@link brachy.modularui.drawable.text.ModularComponent#CODEC ModularComponent.CODEC}
+         * object which already has a codec.
+         *
+         * <p>
+         * Example: {@link brachy.modularui.drawable.text.ModularComponent#CODEC ModularComponent.CODEC}
          */
         public Builder<T> wrapped(Codec<T> codec) {
             this.wrapped = codec;
