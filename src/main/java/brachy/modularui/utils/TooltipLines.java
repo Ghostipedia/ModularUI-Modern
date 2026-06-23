@@ -199,7 +199,7 @@ public class TooltipLines extends AbstractList<Either<FormattedText, TooltipComp
 
     private static Component collapse(List<Component> components) {
         if (components.isEmpty()) return Text.EMPTY;
-        else if (components.size() == 1) return components.get(0);
+        else if (components.size() == 1) return components.getFirst();
         else return Text.comp(components.toArray(Component[]::new));
     }
 

@@ -118,9 +118,9 @@ public interface Text extends IDrawable {
         if (keys.length == 0) {
             return ModularComponent.empty();
         }
-        ModularComponent main = ModularComponent.empty();
-        for (Component key : keys) {
-            main.append(key);
+        ModularComponent main = keys[0].asModular();
+        for (int i = 1; i < keys.length; i++) {
+            main.append(keys[i]);
         }
         return main;
     }
