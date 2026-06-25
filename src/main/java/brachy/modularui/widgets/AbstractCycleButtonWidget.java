@@ -16,7 +16,6 @@ import brachy.modularui.screen.RichTooltip;
 import brachy.modularui.theme.WidgetThemeEntry;
 import brachy.modularui.utils.Alignment;
 import brachy.modularui.value.IntValue;
-import brachy.modularui.value.sync.SyncHandler;
 import brachy.modularui.widget.SingleChildWidget;
 
 import lombok.Getter;
@@ -141,11 +140,6 @@ public class AbstractCycleButtonWidget<W extends AbstractCycleButtonWidget<W>> e
             updateStateCount(enumValue.getEnumClass().getEnumConstants().length, true);
         } else if (syncOrValue instanceof IBoolValue) {
             updateStateCount(2, true);
-        }
-
-        // always allow C2S sync on buttons' sync handlers
-        if (syncOrValue instanceof SyncHandler<?> syncHandler) {
-            syncHandler.allowC2S();
         }
     }
 
