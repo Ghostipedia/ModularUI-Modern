@@ -54,9 +54,7 @@ public enum SIPrefix {
         this.factor = f;
         this.oneOverFactor = 1 / f;
         this.bigFactor = new BigDecimal(f);
-        if (inf) this.bigOneOverFactor = new BigDecimal(f == Double.MIN_VALUE ? Double.MAX_VALUE : Double.MIN_VALUE);
-        else this.bigOneOverFactor = new BigDecimal(this.oneOverFactor);
-
+        this.bigOneOverFactor = new BigDecimal(this.oneOverFactor);
         this.infiniteLike = inf;
     }
 
