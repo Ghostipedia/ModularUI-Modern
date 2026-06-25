@@ -201,7 +201,7 @@ public class ClientScreenHandler {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onScreenMouseScrolled(ScreenEvent.MouseScrolled.Pre event) {
         double wx = event.getScrollDeltaX(), wy = event.getScrollDeltaY();
-        if (wx == 0) return;
+        if (wx == 0 && wy == 0) return;
         defaultContext.updateMouseWheel(wx, wy);
         if (validateGui(event.getScreen())) currentScreen.getContext().updateMouseWheel(wx, wy);
 
