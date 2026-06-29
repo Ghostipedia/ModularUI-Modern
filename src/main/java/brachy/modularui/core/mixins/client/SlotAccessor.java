@@ -1,5 +1,6 @@
 package brachy.modularui.core.mixins.client;
 
+import net.minecraft.world.Container;
 import net.minecraft.world.inventory.Slot;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,4 +20,8 @@ public interface SlotAccessor {
     @Accessor("y")
     @Mutable
     void setY(int y);
+
+    @Accessor("container")
+    @Mutable
+    void setContainer(Container container);
 }
