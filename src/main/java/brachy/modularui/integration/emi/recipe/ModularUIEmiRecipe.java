@@ -186,5 +186,17 @@ public abstract class ModularUIEmiRecipe implements EmiRecipe {
         public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
             return SCREEN_CACHE.getUnchecked(this.recipe).keyPressed(keyCode, scanCode, modifiers);
         }
+
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+            return SCREEN_CACHE.getUnchecked(this.recipe).mouseScrolled(scrollX, scrollY);
+        }
+
+        public boolean mouseDragged(int button, double dragX, double dragY) {
+            return SCREEN_CACHE.getUnchecked(this.recipe).mouseDragged(button, dragX, dragY);
+        }
+
+        public boolean mouseReleased(int button) {
+            return SCREEN_CACHE.getUnchecked(this.recipe).mouseReleased(button);
+        }
     }
 }
